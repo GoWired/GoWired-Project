@@ -1,0 +1,299 @@
+/*
+ * This software is designed for various home automation nodes.
+ * This is a the main file which makes use of some custom libraries that handles various sensors
+ * (relays, buttons, thermometers, power meters, roller shutters) and communicates them 
+ * with a controller using MySensors protocol.
+ * 
+ * To define some important variables, look at NodeDefinitions.h
+ * 
+ * Created by feanaro (Domatic.org), 2018-10
+ * 
+ */
+
+/*  *******************************************************************************************
+ *                                      Includes
+ *  *******************************************************************************************/
+
+//#include <SoftwareSerial.h>
+//SoftwareSerial SSerial(10, A7); // RX, TX
+
+#include "NodeDefinitions.h"
+#include "PowerSensor.h"
+#include "InternalTemp.h"
+#include "UniversalInput.h"
+#include <MySensors.h>
+#include <SPI.h>
+//#include <dht.h>
+
+/*  *******************************************************************************************
+ *                                      Globals
+ *  *******************************************************************************************/
+//Power Sensor
+int ACVoltage = 230;                        // Typical AC voltage value for Power consumption calculation
+
+// Timer
+unsigned long LastUpdate = 0;               // Time of last update of interval sensors
+
+// Module Safety Indicators
+bool THERMAL_ERROR = false;                 // Thermal error status
+bool InformControllerTS = false;            // Was controller informed about error?
+bool OVERCURRENT_ERROR = false;             // Overcurrent error status
+bool InformControllerES = false;            // Was controller informed about error?
+//int ET_ERROR = false;                     // External thermometer status (0 - ok, 1 - checksum error, 2 - timeout error
+
+/*  *******************************************************************************************
+ *                                      Constructors
+ *  *******************************************************************************************/
+//Universal input constructor
+UniversalInput UI[UI_SENSORS_NUMBER];
+MyMessage msgUI(0, V_LIGHT);
+
+// Power sensor constructor 
+PowerSensor PS;                             
+MyMessage msgPS(PS_ID, V_WATT);
+
+// External thermometer constructor 
+//dht DHT;
+//MyMessage msgETT(ETT_ID, V_TEMP);
+//MyMessage msgETH(ETH_ID, V_HUM);
+
+// Internal thermometer constructor
+InternalTemp IT(IT_PIN);
+MyMessage msgIT(IT_ID, V_TEMP);
+
+// Module Safety Indicators
+MyMessage msgSI(0, V_STATUS);
+
+/*  *******************************************************************************************
+ *                                          Setup
+ *  *******************************************************************************************/
+void setup() {
+
+  //SSerial.begin(4800);
+
+  sendSketchInfo(SN, SV);
+
+  UI[FIRST_RELAY_ID].SetValuesBR(RELAY_1, BUTTON_1);
+    present(FIRST_RELAY_ID, S_BINARY, "Relay 1");
+    send(msgUI.setSensor(FIRST_RELAY_ID).set(UI[FIRST_RELAY_ID].NewState));
+
+  UI[FIRST_RELAY_ID+1].SetValuesBR(RELAY_2, BUTTON_2);
+    present(FIRST_RELAY_ID+1, S_BINARY, "Relay 2");
+    send(msgUI.setSensor(FIRST_RELAY_ID+1).set(UI[FIRST_RELAY_ID+1].NewState));
+
+  present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button");
+  //present(SPECIAL_BUTTON_ID+1, S_BINARY, "Special Button 2");
+
+  present(PS_ID, S_POWER, "Power Sensor");
+    pinMode(PS_PIN, INPUT);
+
+  present(IT_ID, S_TEMP, "Internal Thermometer");
+    pinMode(IT_PIN, INPUT);
+
+  //present(ETT_ID, S_TEMP, "External Termometer");
+  //present(ETH_ID, S_HUM, "External Termometer");
+    //pinMode(ET_PIN, INPUT);
+  
+  // Module Safety Indicators
+  present(TS_ID, S_BINARY, "THERMAL ERROR");
+  present(ES_ID, S_BINARY, "OVERCURRENT ERROR");
+  //present(ETS_ID, S_BINARY, "EXTERNAL THERMOMETER STATUS");
+  
+}
+
+/*  *******************************************************************************************
+ *                                      MySensors Receive
+ *  *******************************************************************************************/
+void receive(const MyMessage &message)  {
+
+  if (message.type == V_STATUS) {
+    if(message.sensor == ES_ID)  {
+      OVERCURRENT_ERROR = message.getBool();
+      if(OVERCURRENT_ERROR == false)  {
+        InformControllerES = false;
+      }
+      #ifdef MY_DEBUG
+        SSerial.print("O Err new val: ");
+        SSerial.println(OVERCURRENT_ERROR);
+      #endif
+    }
+    else if(message.sensor == TS_ID)  {
+      THERMAL_ERROR = message.getBool();
+      if(THERMAL_ERROR == false)  {
+        InformControllerTS = false;
+      }
+      #ifdef MY_DEBUG
+        SSerial.print("T Err new val: ");
+        SSerial.println(THERMAL_ERROR);
+      #endif
+    }
+    else if(message.sensor == SPECIAL_BUTTON_ID)  {
+      // Ignore this message
+    }
+    else if(message.sensor == FIRST_RELAY_ID || message.sensor == FIRST_RELAY_ID+1)  {
+      UI[message.sensor].NewState = message.getBool();
+      #ifdef MY_DEBUG
+        SSerial.print("New val for sensor:");
+        SSerial.print(message.sensor);
+        SSerial.print(", New status: ");
+        SSerial.println(UI[message.sensor].NewState);
+      #endif
+    }
+  }
+}
+
+/*  *******************************************************************************************
+ *                                    External Thermometer
+ *  *******************************************************************************************/
+/*void ETUpdate()  {
+
+  if(et_timer == ET_TIMER)  {
+    int chk = DHT.read22(ET_PIN);
+    et_timer = 0;
+    switch (chk)
+    {
+      case DHTLIB_OK:
+        ET_ERROR = 0;
+        send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+        send(msgETT.set(DHT.temperature, 1));
+        send(msgETH.set(DHT.humidity, 1));
+        send(msgETT.setDestination(MY_HEATING_CONTROLLER).set(DHT.temperature, 1));
+        break;
+      case DHTLIB_ERROR_CHECKSUM:
+        ET_ERROR = 1;
+        send(msgSI.setSensor(ETS_ID).set(ET_ERROR)); 
+        break;
+      case DHTLIB_ERROR_TIMEOUT:
+        ET_ERROR = 2;
+        send(msgSI.setSensor(ETS_ID).set(ET_ERROR)); 
+        break;
+      default: 
+        break;
+    }
+  }
+  else  {
+    et_timer++;
+  }
+}*/
+
+/*  *******************************************************************************************
+ *                                      Universal Input
+ *  *******************************************************************************************/
+void UIUpdate() {
+
+  for(int i=FIRST_RELAY_ID; i<FIRST_RELAY_ID+NUMBER_OF_RELAYS; i++)  {
+    UI[i].CheckInput();
+    if(UI[i].NewState != UI[i].OldState)  {
+      switch(UI[i].SensorType) {
+        case 0:
+          // Security Sensor
+          send(msgUI.setSensor(i).set(UI[i].NewState));
+          UI[i].OldState = UI[i].NewState;
+          break;
+        case 1:
+          // Button Sensor
+          send(msgUI.setSensor(i).set(UI[i].NewState));
+          UI[i].OldState = UI[i].NewState;
+          break;
+        case 2:
+          // Button+Relay Sensor
+          if(UI[i].NewState != 2)  {
+            if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
+              UI[i].SetRelay();
+              send(msgUI.setSensor(i).set(UI[i].NewState));
+              if(UI[i].NewState == RELAY_OFF)  {
+                send(msgPS.set(0));
+              }
+            }
+            else  {
+              #ifdef MY_DEBUG
+                SSerial.println("Safety Err! No relays!");
+              #endif
+            }
+          }
+          else if(UI[i].NewState == 2)  {
+            send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
+            UI[i].NewState = UI[i].OldState;
+          }
+          break;
+        default:
+          // Nothing to do here
+          break;
+      }
+    }
+  }
+}
+
+/*  *******************************************************************************************
+ *                                      Power Sensor
+ *  *******************************************************************************************/
+void PSUpdate(int SensorPin)  {
+  
+  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(SensorPin), ACVoltage), 0));
+}
+
+/*  *******************************************************************************************
+ *                                   Internal Thermometer
+ *  *******************************************************************************************/
+void ITUpdate() {
+
+  send(msgIT.set((int)IT.MeasureT()));
+}
+
+/*  *******************************************************************************************
+ *                                      Main Loop
+ *  *******************************************************************************************/
+void loop() {
+
+  // Safety check
+  OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC(PS_PIN));
+  THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT());
+  
+  // Regular main loop
+  UIUpdate();
+  
+  if(millis() > LastUpdate + INTERVAL )  {
+    ITUpdate();
+    //ETUPDATE();
+    if(digitalRead(RELAY_1) == RELAY_ON || digitalRead(RELAY_2) == RELAY_ON)  {
+      PSUpdate(PS_PIN);
+    }
+    LastUpdate = millis();
+  }
+
+  // Handling safety procedures
+  if(THERMAL_ERROR == true && InformControllerTS == false) {
+    // Board temperature to hot
+    // Turn off relays/triacs
+    for(int i=FIRST_RELAY_ID; i<FIRST_RELAY_ID+NUMBER_OF_RELAYS; i++)  {
+      UI[i].NewState = RELAY_OFF;
+      UI[i].SetRelay();
+      send(msgUI.setSensor(i).set(UI[i].NewState));
+    }
+    send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
+    InformControllerTS = true;
+  }
+  else if(THERMAL_ERROR == false && InformControllerTS == true) {
+    send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
+    InformControllerTS = false;
+  }
+
+  if(OVERCURRENT_ERROR == true && InformControllerES == false) {
+    // AC current to big
+    // Turn off relays/triacs
+    for(int i=FIRST_RELAY_ID; i<FIRST_RELAY_ID+NUMBER_OF_RELAYS; i++)  {
+      UI[i].NewState = RELAY_OFF;
+      UI[i].SetRelay();
+      send(msgUI.setSensor(i).set(UI[i].NewState));
+    }
+    send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR));
+    InformControllerES = true;
+  }
+  
+  wait(LOOP_TIME);
+}
+/*
+ * 
+ * EOF
+ * 
+ */
