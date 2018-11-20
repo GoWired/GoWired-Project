@@ -13,10 +13,6 @@
 /*  *******************************************************************************************
  *                                      Includes
  *  *******************************************************************************************/
-
-//#include <SoftwareSerial.h>
-//SoftwareSerial SSerial(10, A7); // RX, TX
-
 #include "NodeDefinitions.h"
 #include "PowerSensor.h"
 #include "InternalTemp.h"
@@ -28,7 +24,7 @@
 /*  *******************************************************************************************
  *                                      Globals
  *  *******************************************************************************************/
-//Power Sensor
+// Power Sensor
 int ACVoltage = 230;                        // Typical AC voltage value for Power consumption calculation
 
 // Timer
@@ -39,7 +35,7 @@ bool THERMAL_ERROR = false;                 // Thermal error status
 bool InformControllerTS = false;            // Was controller informed about error?
 bool OVERCURRENT_ERROR = false;             // Overcurrent error status
 bool InformControllerES = false;            // Was controller informed about error?
-//int ET_ERROR = false;                     // External thermometer status (0 - ok, 1 - checksum error, 2 - timeout error
+//int ET_ERROR = false;                     // External thermometer status (0 - ok, 1 - checksum error, 2 - timeout error)
 
 /*  *******************************************************************************************
  *                                      Constructors
@@ -52,14 +48,14 @@ MyMessage msgUI(0, V_LIGHT);
 PowerSensor PS;                             
 MyMessage msgPS(PS_ID, V_WATT);
 
+// Internal thermometer constructor
+InternalTemp IT(IT_PIN);
+MyMessage msgIT(IT_ID, V_TEMP);
+
 // External thermometer constructor 
 //dht DHT;
 //MyMessage msgETT(ETT_ID, V_TEMP);
 //MyMessage msgETH(ETH_ID, V_HUM);
-
-// Internal thermometer constructor
-InternalTemp IT(IT_PIN);
-MyMessage msgIT(IT_ID, V_TEMP);
 
 // Module Safety Indicators
 MyMessage msgSI(0, V_STATUS);
