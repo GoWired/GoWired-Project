@@ -12,13 +12,13 @@
  *                            MySensors Definitions
  *  *******************************************************************************************/
 // Identification
-#define MY_NODE_ID 128
-#define SN "RS485 FOTA Node"
+#define MY_NODE_ID AUTO
+#define SN "RS485 FOTW Node"
 #define SV "1.0"
 
 // Selecting radio type and transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
-#define MY_RS485_DE_PIN 9                     // DE Pin definition
+#define MY_RS485_DE_PIN 7                     // DE Pin definition
 #define MY_RS485_BAUD_RATE 57600              // Set RS485 baud rate to use
 #define MY_RS485_HWSERIAL Serial              // Enable for Hardware Serial
 
@@ -59,8 +59,8 @@
  *  *******************************************************************************************/
 // Universal Input
 #define FIRST_RELAY_ID 0                    // Sensor ID of first relay
-#define RELAY_1 6                           // Pin of first relay
-#define RELAY_2 7
+#define RELAY_1 5                           // Pin of first relay
+#define RELAY_2 9
 #define NUMBER_OF_RELAYS 2                  // Board dependable
 
 #define RELAY_ON HIGH
@@ -79,18 +79,16 @@
 
 // Power Sensor
 #define PS_ID 8                             // Power Sensor ID
-#define PS_PIN A5                           // Power Sensor pin
-
-// External Thermometer
-//#define ETT_ID 9                          // External Thermometer temperature sensor ID
-//#define ETH_ID 10                         // External Thermometer humidity sensor ID
-//#define ET_PIN 10                         // External Thermometer pin
-//#define ET_TIMER 3000                     // External Thermometer timer 
+#define PS_PIN A0                           // Power Sensor pin
 
 // Internal Thermometer
-#define IT_ID 11                            // Internal Thermometer sensor ID
-#define IT_PIN A6                           // Internal Thermometer pin
-#define IT_TIMER 3000                       // Internal Thermometer timer
+#define IT_ID 9                            // Internal Thermometer sensor ID
+#define IT_PIN A7                           // Internal Thermometer pin
+
+// External Thermometer
+//#define ETT_ID 10                          // External Thermometer temperature sensor ID
+//#define ETH_ID 11                         // External Thermometer humidity sensor ID
+//#define ET_PIN A6                         // External Thermometer pin
 
 // Module Safety and Faultlessness Indicators
 #define TS_ID 12                            // Thermal Status sensor ID
@@ -100,7 +98,7 @@
 /*  *******************************************************************************************
  *                                  Other Definitions
  *  *******************************************************************************************/
-#define INTERVAL 10000                     // Interval value for reporting certain sensors
+#define INTERVAL 300000                     // Interval value for reporting certain sensors
 //#define MY_HEATING_CONTROLLER 28            // Node to which this node is going to send temperature data as a part of heating controller network
 #define LOOP_TIME 100                       // Main loop wait time
  
