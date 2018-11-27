@@ -1,6 +1,6 @@
 # RS485
 
-This is software for RS485 Modules Family, open home automation hardware released at openhardware.io [openhardware.io](https://www.openhardware.io/user/2098#view=projects)
+This is software for RS485 Modules Family, open home automation hardware released at [openhardware.io](https://www.openhardware.io/user/2098#view=projects)
 
 Be careful! This is still work in progress and there are some bugs which need fixing.
 
