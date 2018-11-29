@@ -4,5 +4,11 @@ This is software for **RS485 Modules Family**, open home automation hardware rel
 
 Files listed here usually need other files from [DOMATIClib](https://github.com/feanor-anglin/DOMATIClib) repository to work properly. Just look what files are included and copy them to your program folder.
 
+## Features
+- MySensors library covers communication through RS485 protocol
+- FOTW updates ready
+- Thermal and electrical security implemented, when possible
+
+##
 **Be careful!** This is still work in progress and there are some bugs which need fixing. Known problems:
 - Faulty current sensor operation.
