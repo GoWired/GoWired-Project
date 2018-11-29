@@ -1,6 +1,6 @@
 /*
  * This software is designed for various home automation nodes.
- * This is a the main file which makes use of some custom libraries that handles various sensors
+ * This is the main file which makes use of some custom libraries that handles various sensors
  * (relays, buttons, thermometers, power meters, roller shutters) and communicates them 
  * with a controller using MySensors protocol.
  * 
