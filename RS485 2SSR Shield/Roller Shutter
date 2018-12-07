@@ -1,0 +1,353 @@
+/*
+ * This software is designed for various home automation nodes.
+ * This is a the main file which makes use of some custom libraries that handles various sensors
+ * (relays, buttons, thermometers, power meters, roller shutters) and communicates them 
+ * with a controller using MySensors protocol.
+ * 
+ * To define some important variables, look at NodeDefinitions.h
+ * 
+ * 
+ * Created by feanaro (Domatic.org), 2018-10-01
+ * 
+ */
+
+/*  *******************************************************************************************
+ *                                      Includes
+ *  *******************************************************************************************/
+#include "NodeDefinitions.h"
+#include "PowerSensor.h"
+#include "InternalTemp.h"
+#include "UniversalInput.h"
+#include "RShutterControl.h"
+#include <MySensors.h>
+#include <SPI.h>
+//#include <dht.h>
+
+/*  *******************************************************************************************
+ *                                      Globals
+ *  *******************************************************************************************/
+//Power Sensor
+int ACVoltage = 230;                        // Typical AC voltage value for Power consumption calculation
+
+// RShutter
+int NewPosition;
+
+// Timer
+unsigned long LastUpdate = 0;               // Time of last update of interval sensors
+
+// Module Safety Indicators
+bool THERMAL_ERROR = false;                 // Thermal error status
+bool InformControllerTS = false;            // Was controller informed about error?
+bool OVERCURRENT_ERROR = false;             // Overcurrent error status
+bool InformControllerES = false;            // Was controller informed about error?
+//int ET_ERROR = false;                     // External thermometer status (0 - ok, 1 - checksum error, 2 - timeout error
+
+/*  *******************************************************************************************
+ *                                      Constructors
+ *  *******************************************************************************************/
+//Universal input constructor
+UniversalInput UI[UI_SENSORS_NUMBER];
+//MyMessage msgUI(0, V_LIGHT);
+
+// Power sensor constructor 
+PowerSensor PS;                             
+MyMessage msgPS(PS_ID, V_WATT);
+
+// Blinds Control Constructor
+RShutterControl RS(RELAY_1, RELAY_2);
+MyMessage msgRS1(RS_ID, V_UP);
+MyMessage msgRS2(RS_ID, V_DOWN);
+MyMessage msgRS3(RS_ID, V_STOP);
+MyMessage msgRS4(RS_ID, V_PERCENTAGE);
+//MyMessage msgRS2(RS_ID, V_STATUS);
+
+// External thermometer constructor 
+//dht DHT;
+//MyMessage msgETT(ETT_ID, V_TEMP);
+//MyMessage msgETH(ETH_ID, V_HUM);
+
+// Internal thermometer constructor
+InternalTemp IT(IT_PIN);
+MyMessage msgIT(IT_ID, V_TEMP);
+
+// Module Safety Indicators
+MyMessage msgSI(0, V_STATUS);
+
+/*  *******************************************************************************************
+ *                                          Setup
+ *  *******************************************************************************************/
+void setup() {
+
+  Serial.begin(115200);
+
+  sendSketchInfo(SN, SV);
+
+  UI[RS_ID].SetValuesB(BUTTON_1);
+
+  UI[RS_ID+1].SetValuesB(BUTTON_2);
+
+  present(RS_ID, S_COVER, "Roller Shutter");
+  //present(RS_ID, S_DIMMER, "RShutter Percentage");
+
+  present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button");
+
+  present(PS_ID, S_POWER, "Power Sensor");
+    pinMode(PS_PIN, INPUT);
+
+  present(IT_ID, S_TEMP, "Internal Thermometer");
+    pinMode(IT_PIN, INPUT);
+
+  //present(ETT_ID, S_TEMP, "External Termometer");
+  //present(ETH_ID, S_HUM, "External Termometer");
+    //pinMode(ET_PIN, INPUT);
+  
+  // Module Safety Indicators
+  present(TS_ID, S_BINARY, "THERMAL ERROR");
+  present(ES_ID, S_BINARY, "OVERCURRENT ERROR");
+  //present(ETS_ID, S_BINARY, "EXTERNAL THERMOMETER STATUS");
+  
+}
+
+/*  *******************************************************************************************
+ *                                      MySensors Receive
+ *  *******************************************************************************************/
+void receive(const MyMessage &message)  {
+
+  if (message.type == V_STATUS) {
+    if(message.sensor == ES_ID)  {
+      OVERCURRENT_ERROR = message.getBool();
+      if(OVERCURRENT_ERROR == false)  {
+        InformControllerES = false;
+      }
+      #ifdef MY_DEBUG
+        Serial.print("OVERCURRENT_ERROR changed from Gateway to: ");
+        Serial.println(OVERCURRENT_ERROR);
+      #endif
+    }
+    else if(message.sensor == TS_ID)  {
+      THERMAL_ERROR = message.getBool();
+      if(THERMAL_ERROR == false)  {
+        InformControllerTS = false;
+      }
+      #ifdef MY_DEBUG
+        Serial.print("THERMAL_ERROR changed from Gateway to: ");
+        Serial.println(THERMAL_ERROR);
+      #endif
+    }
+    else if(message.sensor == SPECIAL_BUTTON_ID)  {
+      // Ignore this message
+    }
+    else if(message.sensor == RS_ID)  {
+      if(message.getBool() == true) {
+        UI[RS_ID+1].NewState = message.getBool();
+      }
+      else  {
+        UI[RS_ID].NewState = message.getBool();
+      }
+    }
+    /*
+    else  {
+      UI.NewState[message.sensor] = message.getBool();
+      #ifdef MY_DEBUG
+        Serial.print("Incoming change for sensor:");
+        Serial.print(message.sensor);
+        Serial.print(", New status: ");
+        Serial.println(UI.NewState[message.sensor]);
+      #endif
+    }*/
+  }
+  else if(message.type == V_PERCENTAGE) {
+    NewPosition = atoi(message.data);
+    NewPosition = NewPosition > 100 ? 100 : NewPosition;
+    NewPosition = NewPosition < 0 ? 0 : NewPosition;
+  }
+  else if(message.type == V_DOWN) {
+    UI[RS_ID+1].NewState = 1;
+  }
+  else if(message.type == V_UP) {
+    UI[RS_ID].NewState = 1;
+  }
+  else if(message.type == V_STOP) {
+    UI[RS_ID].NewState = 0;
+    UI[RS_ID+1].NewState = 0;
+  }
+}
+
+/*  *******************************************************************************************
+ *                                    External Thermometer
+ *  *******************************************************************************************/
+/*void ETUpdate()  {
+
+  if(et_timer == ET_TIMER)  {
+    int chk = DHT.read22(ET_PIN);
+    et_timer = 0;
+    switch (chk)
+    {
+      case DHTLIB_OK:
+        ET_ERROR = 0;
+        send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+        send(msgETT.set(DHT.temperature, 1));
+        send(msgETH.set(DHT.humidity, 1));
+        break;
+      case DHTLIB_ERROR_CHECKSUM:
+        ET_ERROR = 1;
+        send(msgSI.setSensor(ETS_ID).set(ET_ERROR)); 
+        break;
+      case DHTLIB_ERROR_TIMEOUT:
+        ET_ERROR = 2;
+        send(msgSI.setSensor(ETS_ID).set(ET_ERROR)); 
+        break;
+      default: 
+        break;
+    }
+  }
+  else  {
+    et_timer++;
+  }
+}*/
+
+/*  *******************************************************************************************
+ *                                      Roller Shutter
+ *  *******************************************************************************************/
+void RSUpdate() {
+
+  // Handling movement ordered by controller (new position percentage)
+  if(NewPosition != RS.Position)  {
+    float MovementRange = ((float)NewPosition - (float)RS.Position) / 100;       // Downward => MR > 0; Upward MR < 0
+    int MovementDirection = MovementRange > 0 ? 1 : 0;                           // MovementDirection: 1 -> Down; 0 -> Up
+    
+    int MovementTime = RS.Move(MovementDirection) * (abs(MovementRange) * 1000);
+    wait(MovementTime);
+    RS.Stop();
+
+    RS.Position = NewPosition;
+    EEPROM.write(EEA_RS_POSITION, RS.Position);
+    send(msgRS4.set(RS.Position));
+  }
+  // If no new position set by percentage, check buttons
+  else  {
+    for(int i=RS_ID; i<RS_ID+2; i++)  {
+      UI[i].CheckInput();
+      if(UI[i].NewState != UI[i].OldState)  {
+        // Handling regular upwards/downwards movement of the roller shutter
+        if(UI[i].NewState == 0 || UI[i].NewState == 1) {
+          int Time = RS.Move(i);
+          UI[i].OldState = UI[i].NewState;
+        
+          unsigned long TIME_1 = millis();
+          unsigned long TIME_2 = 0;
+          unsigned long TIME_3 = 0;
+
+          while(UI[RS_ID].NewState == UI[RS_ID].OldState && UI[RS_ID+1].NewState == UI[RS_ID+1].OldState) {
+            UI[RS_ID].CheckInput();
+            UI[RS_ID+1].CheckInput();
+            wait(100);
+
+            TIME_2 = millis();
+            TIME_3 = (TIME_2 - TIME_1) / 1000;
+
+            if(TIME_3 > Time) {
+              RS.Stop();
+              RS.Position = (i == 1 ? 100 : 0);
+              UI[RS_ID].NewState = 0; UI[RS_ID+1].NewState = 0;
+              break;
+            }
+          }
+          if(TIME_3 < Time)  {
+            RS.Stop();
+            UI[RS_ID].NewState = 0; UI[RS_ID+1].NewState = 0;
+            int PositionChange = (int)(TIME_3 / Time);
+            RS.Position += (i == 1 ? PositionChange : -PositionChange);
+            RS.Position = RS.Position > 100 ? 100 : RS.Position;
+            RS.Position = RS.Position < 0 ? 0 : RS.Position;
+          }
+          UI[RS_ID].OldState = UI[RS_ID].NewState;
+          UI[RS_ID+1].OldState = UI[RS_ID+1].NewState;
+          EEPROM.write(EEA_RS_POSITION, RS.Position);
+          send(msgRS4.set(RS.Position));
+        }
+        // Procedure to call out calibration process
+        else if(UI[i].NewState == 2)  {
+          int SecondButton = (i == RS_ID ? RS_ID+1 : RS_ID);
+
+          RS.Move(1);
+          wait(2000);
+          RS.Stop();
+          for(int j=0; j<10; j++) {
+            UI[SecondButton].CheckInput();
+            wait(200);
+            if(UI[SecondButton].NewState == 2)  {
+              RS.Calibration();
+              break;
+            }
+          }
+          UI[i].OldState = UI[i].NewState;
+          UI[SecondButton].OldState = UI[SecondButton].NewState;
+        }
+      }
+    }
+  }
+}
+
+/*  *******************************************************************************************
+ *                                      Power Sensor
+ *  *******************************************************************************************/
+/*void PSUpdate(int SensorPin)  {
+
+  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(SensorPin), ACVoltage), 1));
+}
+
+/*  *******************************************************************************************
+ *                                   Internal Thermometer
+ *  *******************************************************************************************/
+void ITUpdate() {
+
+  send(msgIT.set((int)IT.MeasureT()));
+  
+}
+
+/*  *******************************************************************************************
+ *                                      Main Loop
+ *  *******************************************************************************************/
+void loop() {
+
+  // Safety check
+  OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC(PS_PIN));
+  THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT());
+  
+  // Regular main loop
+  RSUpdate();
+
+  if(millis() > LastUpdate + INTERVAL )  {
+    ITUpdate();
+    //ETUPDATE();
+    LastUpdate = millis();
+  }
+
+  // Handling safety procedures
+  if(THERMAL_ERROR == true && InformControllerTS == false) {
+    // Board temperature to hot
+    // Turn off relays/triacs
+    send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
+    InformControllerTS = true;
+    }
+  else if(THERMAL_ERROR == false && InformControllerTS == true) {
+    send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
+    InformControllerTS = false;
+  }
+
+  if(OVERCURRENT_ERROR == true && InformControllerES == false) {
+    // AC current to big
+    // Turn off relays/triac
+    send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR));
+    InformControllerES = true;
+    }
+
+  
+  wait(LOOP_TIME);
+}
+/*
+ * 
+ * EOF
+ * 
+ */
