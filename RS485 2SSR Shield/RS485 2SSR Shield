@@ -177,7 +177,7 @@ void receive(const MyMessage &message)  {
  *  *******************************************************************************************/
 void UIUpdate() {
 
-  for(int i=FIRST_RELAY_ID; i<FIRST_RELAY_ID+NUMBER_OF_RELAYS; i++)  {
+  for(int i=FIRST_RELAY_ID; i<FIRST_RELAY_ID+UI_SENSORS_NUMBER; i++)  {
     UI[i].CheckInput();
     if(UI[i].NewState != UI[i].OldState)  {
       switch(UI[i].SensorType) {
