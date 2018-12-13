@@ -29,6 +29,7 @@ int ACVoltage = 230;                        // Typical AC voltage value for Powe
 
 // Timer
 unsigned long LastUpdate = 0;               // Time of last update of interval sensors
+bool CheckNow = true;
 
 // Module Safety Indicators
 bool THERMAL_ERROR = false;                 // Thermal error status
@@ -197,9 +198,7 @@ void UIUpdate() {
             if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
               UI[i].SetRelay();
               send(msgUI.setSensor(i).set(UI[i].NewState));
-              if(UI[i].NewState == RELAY_OFF)  {
-                send(msgPS.set(0));
-              }
+              CheckNow = true;
             }
             else  {
               #ifdef MY_DEBUG
@@ -248,13 +247,17 @@ void loop() {
   // Regular main loop
   UIUpdate();
   
-  if(millis() > LastUpdate + INTERVAL )  {
+  if((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {
     ITUpdate();
     //ETUPDATE();
     if(digitalRead(RELAY_1) == RELAY_ON || digitalRead(RELAY_2) == RELAY_ON)  {
       PSUpdate(PS_PIN);
     }
+    else if(digitalRead(RELAY_1) == RELAY_OFF && digitalRead(RELAY_2) == RELAY_OFF) {
+      send(msgPS.set(0));
+    }
     LastUpdate = millis();
+    CheckNow = false;
   }
 
   // Handling safety procedures
