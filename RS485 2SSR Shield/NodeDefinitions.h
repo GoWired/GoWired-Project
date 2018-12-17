@@ -21,6 +21,7 @@
 #define MY_RS485_DE_PIN 7                     // DE Pin definition
 #define MY_RS485_BAUD_RATE 57600              // Set RS485 baud rate to use
 #define MY_RS485_HWSERIAL Serial              // Enable for Hardware Serial
+#define MY_RS485_SOH_COUNT 3                  // Collision avoidance
 
 // FOTA Feature
 #define MY_OTA_FIRMWARE_FEATURE
