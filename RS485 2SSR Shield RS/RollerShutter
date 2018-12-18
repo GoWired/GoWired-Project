@@ -215,13 +215,15 @@ void RSUpdate() {
   if(NewPosition != RS.Position)  {
     float MovementRange = ((float)NewPosition - (float)RS.Position) / 100;       // Downward => MR > 0; Upward MR < 0
     int MovementDirection = MovementRange > 0 ? 1 : 0;                           // MovementDirection: 1 -> Down; 0 -> Up
+
+    Serial.println("Percentage movement");
     
     int MovementTime = RS.Move(MovementDirection) * (abs(MovementRange) * 1000);
     wait(MovementTime);
     RS.Stop();
 
     RS.Position = NewPosition;
-    EEPROM.write(EEA_RS_POSITION, RS.Position);
+    EEPROM.put(EEA_RS_POSITION, RS.Position);
     send(msgRS4.set(RS.Position));
   }
   // If no new position set by percentage, check buttons
@@ -230,13 +232,15 @@ void RSUpdate() {
       UI[i].CheckInput();
       if(UI[i].NewState != UI[i].OldState)  {
         // Handling regular upwards/downwards movement of the roller shutter
-        if(UI[i].NewState == 0 || UI[i].NewState == 1) {
+        if(UI[i].NewState == 1) {
           int Time = RS.Move(i);
           UI[i].OldState = UI[i].NewState;
+
+          Serial.println("Button movement");
         
           unsigned long TIME_1 = millis();
           unsigned long TIME_2 = 0;
-          unsigned long TIME_3 = 0;
+          float TIME_3 = 0;
 
           while(UI[RS_ID].NewState == UI[RS_ID].OldState && UI[RS_ID+1].NewState == UI[RS_ID+1].OldState) {
             UI[RS_ID].CheckInput();
@@ -244,7 +248,7 @@ void RSUpdate() {
             wait(100);
 
             TIME_2 = millis();
-            TIME_3 = (TIME_2 - TIME_1) / 1000;
+            TIME_3 = ((float) TIME_2 - (float) TIME_1) / 1000;
 
             if(TIME_3 > Time) {
               RS.Stop();
@@ -256,15 +260,26 @@ void RSUpdate() {
           if(TIME_3 < Time)  {
             RS.Stop();
             UI[RS_ID].NewState = 0; UI[RS_ID+1].NewState = 0;
-            int PositionChange = (int)(TIME_3 / Time);
+            int PositionChange = (float) TIME_3 / (float) Time * 100;
             RS.Position += (i == 1 ? PositionChange : -PositionChange);
             RS.Position = RS.Position > 100 ? 100 : RS.Position;
             RS.Position = RS.Position < 0 ? 0 : RS.Position;
+
+            #ifdef MY_DEBUG
+              Serial.print("TIME_3: ");  Serial.println(TIME_3);
+              Serial.print("Time: ");  Serial.println(Time);
+              Serial.print("Position change: ");  Serial.println(PositionChange);
+            #endif
           }
           UI[RS_ID].OldState = UI[RS_ID].NewState;
           UI[RS_ID+1].OldState = UI[RS_ID+1].NewState;
-          EEPROM.write(EEA_RS_POSITION, RS.Position);
+          NewPosition = RS.Position;
+          EEPROM.put(EEA_RS_POSITION, RS.Position);
           send(msgRS4.set(RS.Position));
+          
+          #ifdef MY_DEBUG
+            Serial.print("Position: "); Serial.println(RS.Position);
+          #endif
         }
         // Procedure to call out calibration process
         else if(UI[i].NewState == 2)  {
