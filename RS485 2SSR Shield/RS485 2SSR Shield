@@ -182,18 +182,36 @@ void UIUpdate() {
     UI[i].CheckInput();
     if(UI[i].NewState != UI[i].OldState)  {
       switch(UI[i].SensorType) {
+        // Door/window sensor
         case 0:
-          // Security Sensor
           send(msgUI.setSensor(i).set(UI[i].NewState));
           UI[i].OldState = UI[i].NewState;
           break;
+        // Motion sensor
         case 1:
-          // Button Sensor
           send(msgUI.setSensor(i).set(UI[i].NewState));
           UI[i].OldState = UI[i].NewState;
           break;
+        // Button input
         case 2:
-          // Button+Relay Sensor
+          send(msgUI.setSensor(i).set(UI[i].NewState));
+          UI[i].OldState = UI[i].NewState;
+          //UI[i].NewState = UI[i].OldState;
+          break;
+        // Relay output
+        case 3:
+          if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
+            UI[i].SetRelay();
+            CheckNow = true;
+          }
+          else  {
+            #ifdef MY_DEBUG
+              //Serial.println("Safety Err! No relays!");
+            #endif
+            }
+          break;
+        case 4:
+          // Button input + Relay output
           if(UI[i].NewState != 2)  {
             if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
               UI[i].SetRelay();
@@ -202,7 +220,7 @@ void UIUpdate() {
             }
             else  {
               #ifdef MY_DEBUG
-                SSerial.println("Safety Err! No relays!");
+                //SSerial.println("Safety Err! No relays!");
               #endif
             }
           }
@@ -222,9 +240,9 @@ void UIUpdate() {
 /*  *******************************************************************************************
  *                                      Power Sensor
  *  *******************************************************************************************/
-void PSUpdate(int SensorPin)  {
+void PSUpdate()  {
   
-  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(SensorPin), ACVoltage), 0));
+  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(), ACVoltage), 0));
 }
 
 /*  *******************************************************************************************
@@ -251,7 +269,7 @@ void loop() {
     ITUpdate();
     //ETUPDATE();
     if(digitalRead(RELAY_1) == RELAY_ON || digitalRead(RELAY_2) == RELAY_ON)  {
-      PSUpdate(PS_PIN);
+      PSUpdate();
     }
     else if(digitalRead(RELAY_1) == RELAY_OFF && digitalRead(RELAY_2) == RELAY_OFF) {
       send(msgPS.set(0));
