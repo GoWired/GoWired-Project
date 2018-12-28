@@ -181,57 +181,47 @@ void UIUpdate() {
   for(int i=FIRST_RELAY_ID; i<FIRST_RELAY_ID+UI_SENSORS_NUMBER; i++)  {
     UI[i].CheckInput();
     if(UI[i].NewState != UI[i].OldState)  {
-      switch(UI[i].SensorType) {
-        // Door/window sensor
-        case 0:
-          send(msgUI.setSensor(i).set(UI[i].NewState));
-          UI[i].OldState = UI[i].NewState;
-          break;
-        // Motion sensor
-        case 1:
-          send(msgUI.setSensor(i).set(UI[i].NewState));
-          UI[i].OldState = UI[i].NewState;
-          break;
-        // Button input
-        case 2:
-          send(msgUI.setSensor(i).set(UI[i].NewState));
-          UI[i].OldState = UI[i].NewState;
-          //UI[i].NewState = UI[i].OldState;
-          break;
-        // Relay output
-        case 3:
+      // Door/window/motion sensor
+      if(UI[i].SensorType == 0 || UI[i].SensorType == 1)  {
+        send(msgUI.setSensor(i).set(UI[i].NewState));
+        UI[i].OldState = UI[i].NewState;
+      }
+      // Button input
+      else if(UI[i].SensorType == 2)  {
+        send(msgUI.setSensor(i).set(UI[i].NewState));
+        UI[i].OldState = UI[i].NewState;
+        //UI[i].NewState = UI[i].OldState;  
+      }
+      // Relay output
+      else if(UI[i].SensorType == 3)  {
+        if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
+          UI[i].SetRelay();
+          CheckNow = true;
+          }
+        else  {
+          #ifdef MY_DEBUG
+            //Serial.println("Safety Err! No relays!");
+          #endif
+        }
+      }
+      // Button input + Relay output
+      else if(UI[i].SensorType == 4)  {
+        if(UI[i].NewState != 2)  {
           if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
             UI[i].SetRelay();
+            send(msgUI.setSensor(i).set(UI[i].NewState));
             CheckNow = true;
           }
           else  {
             #ifdef MY_DEBUG
-              //Serial.println("Safety Err! No relays!");
+              //SSerial.println("Safety Err! No relays!");
             #endif
-            }
-          break;
-        case 4:
-          // Button input + Relay output
-          if(UI[i].NewState != 2)  {
-            if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
-              UI[i].SetRelay();
-              send(msgUI.setSensor(i).set(UI[i].NewState));
-              CheckNow = true;
-            }
-            else  {
-              #ifdef MY_DEBUG
-                //SSerial.println("Safety Err! No relays!");
-              #endif
-            }
           }
-          else if(UI[i].NewState == 2)  {
-            send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
-            UI[i].NewState = UI[i].OldState;
-          }
-          break;
-        default:
-          // Nothing to do here
-          break;
+        }
+        else if(UI[i].NewState == 2)  {
+          send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
+          UI[i].NewState = UI[i].OldState;
+        }
       }
     }
   }
