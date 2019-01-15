@@ -46,6 +46,7 @@
 #define MY_RS485_DE_PIN 7                                 // Define this to enables DE-pin management on defined pin
 #define MY_RS485_BAUD_RATE 57600                          // Set RS485 baud rate to use
 #define MY_RS485_HWSERIAL Serial                          // Enable for Hardware Serial
+#define MY_RS485_SOH_COUNT 3                              // Use this in case of collisions on the bus
 
 #define MY_GATEWAY_ENC28J60                               // Enable gateway ethernet module type 
 #define MY_IP_ADDRESS 192,168,0,10                        // Gateway IP address
