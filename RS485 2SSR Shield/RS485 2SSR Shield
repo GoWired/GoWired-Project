@@ -70,11 +70,11 @@ void setup() {
 
   sendSketchInfo(SN, SV);
 
-  UI[FIRST_RELAY_ID].SetValuesBR(RELAY_1, BUTTON_1);
+  UI[FIRST_RELAY_ID].SetValues(4, BUTTON_1, RELAY_1);
     present(FIRST_RELAY_ID, S_BINARY, "Relay 1");
     send(msgUI.setSensor(FIRST_RELAY_ID).set(UI[FIRST_RELAY_ID].NewState));
 
-  UI[FIRST_RELAY_ID+1].SetValuesBR(RELAY_2, BUTTON_2);
+  UI[FIRST_RELAY_ID+1].SetValues(4, BUTTON_2, RELAY_2);
     present(FIRST_RELAY_ID+1, S_BINARY, "Relay 2");
     send(msgUI.setSensor(FIRST_RELAY_ID+1).set(UI[FIRST_RELAY_ID+1].NewState));
 
