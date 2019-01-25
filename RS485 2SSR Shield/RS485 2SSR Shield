@@ -65,37 +65,51 @@ MyMessage msgSI(0, V_STATUS);
  *                                          Setup
  *  *******************************************************************************************/
 void setup() {
-
-  //SSerial.begin(4800);
-
-  sendSketchInfo(SN, SV);
-
+  
+  // Universal Input Devices
   UI[FIRST_RELAY_ID].SetValues(4, BUTTON_1, RELAY_1);
-    present(FIRST_RELAY_ID, S_BINARY, "Relay 1");
-    send(msgUI.setSensor(FIRST_RELAY_ID).set(UI[FIRST_RELAY_ID].NewState));
 
   UI[FIRST_RELAY_ID+1].SetValues(4, BUTTON_2, RELAY_2);
-    present(FIRST_RELAY_ID+1, S_BINARY, "Relay 2");
-    send(msgUI.setSensor(FIRST_RELAY_ID+1).set(UI[FIRST_RELAY_ID+1].NewState));
+  
+  // Power Sensor
+  PS.SetValues(PS_PIN);
+  
+  // External Thermometer
+  //pinMode(ET_PIN, INPUT);
+  
+}
 
+/*  *******************************************************************************************
+ *                                          Presentation
+ *  *******************************************************************************************/
+void presentation() {
+
+  sendSketchInfo(SN, SV);
+  
+  // Universal Input Devices
+  present(FIRST_RELAY_ID, S_BINARY, "Relay 1");
+    send(msgUI.setSensor(FIRST_RELAY_ID).set(UI[FIRST_RELAY_ID].NewState));
+  
+  present(FIRST_RELAY_ID+1, S_BINARY, "Relay 2");
+    send(msgUI.setSensor(FIRST_RELAY_ID+1).set(UI[FIRST_RELAY_ID+1].NewState));
+  
   present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button");
   //present(SPECIAL_BUTTON_ID+1, S_BINARY, "Special Button 2");
-
+  
+  // Power Sensor
   present(PS_ID, S_POWER, "Power Sensor");
-    pinMode(PS_PIN, INPUT);
-
+  
+  // Internal Thermometer
   present(IT_ID, S_TEMP, "Internal Thermometer");
-    pinMode(IT_PIN, INPUT);
 
   //present(ETT_ID, S_TEMP, "External Termometer");
   //present(ETH_ID, S_HUM, "External Termometer");
-    //pinMode(ET_PIN, INPUT);
   
   // Module Safety Indicators
   present(TS_ID, S_BINARY, "THERMAL ERROR");
   present(ES_ID, S_BINARY, "OVERCURRENT ERROR");
   //present(ETS_ID, S_BINARY, "EXTERNAL THERMOMETER STATUS");
-  
+    
 }
 
 /*  *******************************************************************************************
@@ -109,32 +123,18 @@ void receive(const MyMessage &message)  {
       if(OVERCURRENT_ERROR == false)  {
         InformControllerES = false;
       }
-      #ifdef MY_DEBUG
-        SSerial.print("O Err new val: ");
-        SSerial.println(OVERCURRENT_ERROR);
-      #endif
     }
     else if(message.sensor == TS_ID)  {
       THERMAL_ERROR = message.getBool();
       if(THERMAL_ERROR == false)  {
         InformControllerTS = false;
       }
-      #ifdef MY_DEBUG
-        SSerial.print("T Err new val: ");
-        SSerial.println(THERMAL_ERROR);
-      #endif
     }
     else if(message.sensor == SPECIAL_BUTTON_ID)  {
       // Ignore this message
     }
     else if(message.sensor == FIRST_RELAY_ID || message.sensor == FIRST_RELAY_ID+1)  {
       UI[message.sensor].NewState = message.getBool();
-      #ifdef MY_DEBUG
-        SSerial.print("New val for sensor:");
-        SSerial.print(message.sensor);
-        SSerial.print(", New status: ");
-        SSerial.println(UI[message.sensor].NewState);
-      #endif
     }
   }
 }
@@ -171,7 +171,7 @@ void receive(const MyMessage &message)  {
   else  {
     et_timer++;
   }
-}*/
+}
 
 /*  *******************************************************************************************
  *                                      Universal Input
@@ -198,11 +198,6 @@ void UIUpdate() {
           UI[i].SetRelay();
           CheckNow = true;
           }
-        else  {
-          #ifdef MY_DEBUG
-            //Serial.println("Safety Err! No relays!");
-          #endif
-        }
       }
       // Button input + Relay output
       else if(UI[i].SensorType == 4)  {
@@ -211,11 +206,6 @@ void UIUpdate() {
             UI[i].SetRelay();
             send(msgUI.setSensor(i).set(UI[i].NewState));
             CheckNow = true;
-          }
-          else  {
-            #ifdef MY_DEBUG
-              //SSerial.println("Safety Err! No relays!");
-            #endif
           }
         }
         else if(UI[i].NewState == 2)  {
