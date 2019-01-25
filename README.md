@@ -10,5 +10,4 @@ Files listed here usually need other files from [DOMATIClib](https://github.com/
 - Thermal and electrical security implemented, when possible
 
 ##
-**Be careful!** This is still work in progress and there are some bugs which need fixing. Known problems:
-- Faulty current sensor operation.
+**Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch is not tested, use on your own responsibility. 
