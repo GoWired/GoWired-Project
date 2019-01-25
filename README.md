@@ -7,7 +7,7 @@ Files listed here usually need other files from [DOMATIClib](https://github.com/
 ## Features
 - MySensors library covers communication through RS485 protocol
 - FOTW updates ready
-- Thermal and electrical security implemented, when possible
+- Thermal and electrical security procedures
 
 ##
 **Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch is not tested, use on your own responsibility. 
