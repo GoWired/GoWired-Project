@@ -29,7 +29,7 @@
 //#define OTA_WAIT_PERIOD 300
 
 // Other
-#define MY_TRANSPORT_WAIT_READY_MS 15000      // Time to wait for gateway to respond at startup
+#define MY_TRANSPORT_WAIT_READY_MS 60000      // Time to wait for gateway to respond at startup
 //#define MY_DEBUG                              // Enable debug prints to serial monitor
 //#define MY_DEBUGDEVICE SSerial                // Changing direction of debug prints
 //#define MY_REPEATER_FEATURE                 // Enable repeater functionality for this node (wireless only)
@@ -38,14 +38,11 @@
  *                           Custom Libraries Definitions
  *  *******************************************************************************************/
 #define UI_SENSORS_NUMBER 2                   // UniversalInput Default 5  
-//#define UI_PIN_SHIFT 2                        // UniversalInput Default 2
 //#define RELAY_ON HIGH
 //#define RELAY_OFF LOW
 //#define MAX_TEMPERATURE 60                  // InternalTemp Default 60
 //#define MAX_CURRENT 3                       // PowerSensor Default 3
 //#define POWER_MEASURING_TIME 100            // PowerSensor Default 100
-//#define TEMPRERATURE_SENSOR_TYPE MCP9700A
-//#define POWER_SENSOR_TYPE ACS7125A
 
 /*  *******************************************************************************************
  *                                  EEPROM Definitions
