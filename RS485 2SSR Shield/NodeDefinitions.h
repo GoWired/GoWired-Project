@@ -13,7 +13,7 @@
  *  *******************************************************************************************/
 // Identification
 #define MY_NODE_ID AUTO
-#define SN "RS485 FOTW Node"
+#define SN "RS485 2SSR Module"
 #define SV "1.0"
 
 // Selecting radio type and transmission settings
