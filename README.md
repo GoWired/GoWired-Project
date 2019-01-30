@@ -1,4 +1,3 @@
-# RS485 Home Automation Hardware
 
 This is software for **RS485 Modules Family**, open home automation hardware released at [openhardware.io](https://www.openhardware.io/user/2098#view=projects)
 
@@ -11,3 +10,4 @@ Files listed here usually need other files from [DOMATIClib](https://github.com/
 
 ##
 **Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch is not tested, use on your own responsibility. 
+

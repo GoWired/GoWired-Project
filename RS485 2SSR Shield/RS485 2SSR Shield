@@ -65,37 +65,51 @@ MyMessage msgSI(0, V_STATUS);
  *                                          Setup
  *  *******************************************************************************************/
 void setup() {
+  
+  // Universal Input Devices
+  UI[FIRST_RELAY_ID].SetValues(4, BUTTON_1, RELAY_1);
 
-  //SSerial.begin(4800);
+  UI[FIRST_RELAY_ID+1].SetValues(4, BUTTON_2, RELAY_2);
+  
+  // Power Sensor
+  PS.SetValues(PS_PIN);
+  
+  // External Thermometer
+  //pinMode(ET_PIN, INPUT);
+  
+}
+
+/*  *******************************************************************************************
+ *                                          Presentation
+ *  *******************************************************************************************/
+void presentation() {
 
   sendSketchInfo(SN, SV);
-
-  UI[FIRST_RELAY_ID].SetValuesBR(RELAY_1, BUTTON_1);
-    present(FIRST_RELAY_ID, S_BINARY, "Relay 1");
+  
+  // Universal Input Devices
+  present(FIRST_RELAY_ID, S_BINARY, "Relay 1");
     send(msgUI.setSensor(FIRST_RELAY_ID).set(UI[FIRST_RELAY_ID].NewState));
-
-  UI[FIRST_RELAY_ID+1].SetValuesBR(RELAY_2, BUTTON_2);
-    present(FIRST_RELAY_ID+1, S_BINARY, "Relay 2");
+  
+  present(FIRST_RELAY_ID+1, S_BINARY, "Relay 2");
     send(msgUI.setSensor(FIRST_RELAY_ID+1).set(UI[FIRST_RELAY_ID+1].NewState));
-
+  
   present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button");
   //present(SPECIAL_BUTTON_ID+1, S_BINARY, "Special Button 2");
-
+  
+  // Power Sensor
   present(PS_ID, S_POWER, "Power Sensor");
-    pinMode(PS_PIN, INPUT);
-
+  
+  // Internal Thermometer
   present(IT_ID, S_TEMP, "Internal Thermometer");
-    pinMode(IT_PIN, INPUT);
 
   //present(ETT_ID, S_TEMP, "External Termometer");
   //present(ETH_ID, S_HUM, "External Termometer");
-    //pinMode(ET_PIN, INPUT);
   
   // Module Safety Indicators
   present(TS_ID, S_BINARY, "THERMAL ERROR");
   present(ES_ID, S_BINARY, "OVERCURRENT ERROR");
   //present(ETS_ID, S_BINARY, "EXTERNAL THERMOMETER STATUS");
-  
+    
 }
 
 /*  *******************************************************************************************
@@ -109,32 +123,18 @@ void receive(const MyMessage &message)  {
       if(OVERCURRENT_ERROR == false)  {
         InformControllerES = false;
       }
-      #ifdef MY_DEBUG
-        SSerial.print("O Err new val: ");
-        SSerial.println(OVERCURRENT_ERROR);
-      #endif
     }
     else if(message.sensor == TS_ID)  {
       THERMAL_ERROR = message.getBool();
       if(THERMAL_ERROR == false)  {
         InformControllerTS = false;
       }
-      #ifdef MY_DEBUG
-        SSerial.print("T Err new val: ");
-        SSerial.println(THERMAL_ERROR);
-      #endif
     }
     else if(message.sensor == SPECIAL_BUTTON_ID)  {
       // Ignore this message
     }
     else if(message.sensor == FIRST_RELAY_ID || message.sensor == FIRST_RELAY_ID+1)  {
       UI[message.sensor].NewState = message.getBool();
-      #ifdef MY_DEBUG
-        SSerial.print("New val for sensor:");
-        SSerial.print(message.sensor);
-        SSerial.print(", New status: ");
-        SSerial.println(UI[message.sensor].NewState);
-      #endif
     }
   }
 }
@@ -171,7 +171,7 @@ void receive(const MyMessage &message)  {
   else  {
     et_timer++;
   }
-}*/
+}
 
 /*  *******************************************************************************************
  *                                      Universal Input
@@ -181,39 +181,37 @@ void UIUpdate() {
   for(int i=FIRST_RELAY_ID; i<FIRST_RELAY_ID+UI_SENSORS_NUMBER; i++)  {
     UI[i].CheckInput();
     if(UI[i].NewState != UI[i].OldState)  {
-      switch(UI[i].SensorType) {
-        case 0:
-          // Security Sensor
-          send(msgUI.setSensor(i).set(UI[i].NewState));
-          UI[i].OldState = UI[i].NewState;
-          break;
-        case 1:
-          // Button Sensor
-          send(msgUI.setSensor(i).set(UI[i].NewState));
-          UI[i].OldState = UI[i].NewState;
-          break;
-        case 2:
-          // Button+Relay Sensor
-          if(UI[i].NewState != 2)  {
-            if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
-              UI[i].SetRelay();
-              send(msgUI.setSensor(i).set(UI[i].NewState));
-              CheckNow = true;
-            }
-            else  {
-              #ifdef MY_DEBUG
-                SSerial.println("Safety Err! No relays!");
-              #endif
-            }
+      // Door/window/motion sensor
+      if(UI[i].SensorType == 0 || UI[i].SensorType == 1)  {
+        send(msgUI.setSensor(i).set(UI[i].NewState));
+        UI[i].OldState = UI[i].NewState;
+      }
+      // Button input
+      else if(UI[i].SensorType == 2)  {
+        send(msgUI.setSensor(i).set(UI[i].NewState));
+        UI[i].OldState = UI[i].NewState;
+        //UI[i].NewState = UI[i].OldState;  
+      }
+      // Relay output
+      else if(UI[i].SensorType == 3)  {
+        if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
+          UI[i].SetRelay();
+          CheckNow = true;
           }
-          else if(UI[i].NewState == 2)  {
-            send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
-            UI[i].NewState = UI[i].OldState;
+      }
+      // Button input + Relay output
+      else if(UI[i].SensorType == 4)  {
+        if(UI[i].NewState != 2)  {
+          if(OVERCURRENT_ERROR != true && THERMAL_ERROR != true)  {
+            UI[i].SetRelay();
+            send(msgUI.setSensor(i).set(UI[i].NewState));
+            CheckNow = true;
           }
-          break;
-        default:
-          // Nothing to do here
-          break;
+        }
+        else if(UI[i].NewState == 2)  {
+          send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
+          UI[i].NewState = UI[i].OldState;
+        }
       }
     }
   }
@@ -222,9 +220,9 @@ void UIUpdate() {
 /*  *******************************************************************************************
  *                                      Power Sensor
  *  *******************************************************************************************/
-void PSUpdate(int SensorPin)  {
+void PSUpdate()  {
   
-  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(SensorPin), ACVoltage), 0));
+  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(), ACVoltage), 0));
 }
 
 /*  *******************************************************************************************
@@ -241,7 +239,9 @@ void ITUpdate() {
 void loop() {
 
   // Safety check
-  OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC(PS_PIN));
+  if(!OVERCURRENT_ERROR) {
+    OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC());
+  }
   THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT());
   
   // Regular main loop
@@ -251,7 +251,7 @@ void loop() {
     ITUpdate();
     //ETUPDATE();
     if(digitalRead(RELAY_1) == RELAY_ON || digitalRead(RELAY_2) == RELAY_ON)  {
-      PSUpdate(PS_PIN);
+      PSUpdate();
     }
     else if(digitalRead(RELAY_1) == RELAY_OFF && digitalRead(RELAY_2) == RELAY_OFF) {
       send(msgPS.set(0));
