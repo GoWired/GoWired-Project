@@ -124,12 +124,6 @@ void receive(const MyMessage &message)  {
         InformControllerES = false;
       }
     }
-    else if(message.sensor == TS_ID)  {
-      THERMAL_ERROR = message.getBool();
-      if(THERMAL_ERROR == false)  {
-        InformControllerTS = false;
-      }
-    }
     else if(message.sensor == SPECIAL_BUTTON_ID)  {
       // Ignore this message
     }
