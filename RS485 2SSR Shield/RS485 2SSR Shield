@@ -265,6 +265,7 @@ void loop() {
     }
     send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
     InformControllerTS = true;
+    CheckNow = true;
   }
   else if(THERMAL_ERROR == false && InformControllerTS == true) {
     send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
@@ -281,6 +282,7 @@ void loop() {
     }
     send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR));
     InformControllerES = true;
+    CheckNow = true;
   }
   
   wait(LOOP_TIME);
