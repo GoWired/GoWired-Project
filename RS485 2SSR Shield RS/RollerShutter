@@ -333,7 +333,7 @@ void ITUpdate() {
 void loop() {
 
   // Safety check
-  OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC(PS_PIN));
+  OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC());
   THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT());
   
   // Regular main loop
