@@ -18,9 +18,9 @@
 
 // Selecting radio type and transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
-#define MY_RS485_DE_PIN A6                    // DE Pin definition
+#define MY_RS485_DE_PIN 7                    // DE Pin definition
 #define MY_RS485_BAUD_RATE 57600              // Set RS485 baud rate to use
-//#define MY_RS485_HWSERIAL Serial1             // For RS485 connected to Hardware Serial port (0, 1)
+#define MY_RS485_HWSERIAL Serial1             // For RS485 connected to Hardware Serial port (0, 1)
 
 // FOTA Feature
 #define MY_OTA_FIRMWARE_FEATURE
