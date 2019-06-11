@@ -78,28 +78,34 @@ MyMessage msgSI(0, V_STATUS);
  *  *******************************************************************************************/
 void setup() {
 
-  Serial.begin(115200);
+  // Roller Shutter
+  UI[RS_ID].SetValues(2, BUTTON_1);
+
+  UI[RS_ID+1].SetValues(2, BUTTON_2);
+
+  // Power Sensor
+  PS.SetValues(PS_PIN);
+  
+}
+
+/*  *******************************************************************************************
+ *                                          Presentation
+ *  *******************************************************************************************/
+void presentation() {
 
   sendSketchInfo(SN, SV);
-
-  UI[RS_ID].SetValuesB(BUTTON_1);
-
-  UI[RS_ID+1].SetValuesB(BUTTON_2);
-
+  
   present(RS_ID, S_COVER, "Roller Shutter");
   //present(RS_ID, S_DIMMER, "RShutter Percentage");
 
   present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button");
 
   present(PS_ID, S_POWER, "Power Sensor");
-    pinMode(PS_PIN, INPUT);
-
+  
   present(IT_ID, S_TEMP, "Internal Thermometer");
-    pinMode(IT_PIN, INPUT);
-
+  
   //present(ETT_ID, S_TEMP, "External Termometer");
   //present(ETH_ID, S_HUM, "External Termometer");
-    //pinMode(ET_PIN, INPUT);
   
   // Module Safety Indicators
   present(TS_ID, S_BINARY, "THERMAL ERROR");
@@ -307,9 +313,9 @@ void RSUpdate() {
 /*  *******************************************************************************************
  *                                      Power Sensor
  *  *******************************************************************************************/
-/*void PSUpdate(int SensorPin)  {
+/*void PSUpdate()  {
 
-  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(SensorPin), ACVoltage), 1));
+  send(msgPS.set(PS.CalculatePower(PS.MeasureAC(), ACVoltage), 0));
 }
 
 /*  *******************************************************************************************
@@ -327,7 +333,7 @@ void ITUpdate() {
 void loop() {
 
   // Safety check
-  OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC(PS_PIN));
+  OVERCURRENT_ERROR = PS.ElectricalStatus(PS.MeasureAC());
   THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT());
   
   // Regular main loop

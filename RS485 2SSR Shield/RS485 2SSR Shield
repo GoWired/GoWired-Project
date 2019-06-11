@@ -124,6 +124,12 @@ void receive(const MyMessage &message)  {
         InformControllerES = false;
       }
     }
+    else if(message.sensor == TS_ID)  {
+      THERMAL_ERROR = message.getBool();
+      if(THERMAL_ERROR == false)  {
+        InformControllerTS = false;
+      }
+    }
     else if(message.sensor == SPECIAL_BUTTON_ID)  {
       // Ignore this message
     }
@@ -265,7 +271,6 @@ void loop() {
     }
     send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
     InformControllerTS = true;
-    CheckNow = true;
   }
   else if(THERMAL_ERROR == false && InformControllerTS == true) {
     send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
@@ -282,7 +287,6 @@ void loop() {
     }
     send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR));
     InformControllerES = true;
-    CheckNow = true;
   }
   
   wait(LOOP_TIME);
