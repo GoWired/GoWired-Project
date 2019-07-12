@@ -135,12 +135,12 @@ void setup() {
   #endif
   
   #ifdef RGB
-    Dimmer.SetValues(LED_PIN_1, LED_PIN_1, LED_PIN_3);
+    Dimmer.SetValues(LED_PIN_1, LED_PIN_2, LED_PIN_3);
     request(DIMMER_ID, V_PERCENTAGE);
   #endif
   
   #ifdef RGBW
-    Dimmer.SetValues(LED_PIN_1, LED_PIN_1, LED_PIN_3, LED_PIN_4);
+    Dimmer.SetValues(LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
     request(DIMMER_ID, V_PERCENTAGE);
   #endif
     
@@ -363,7 +363,7 @@ void receive(const MyMessage &message)  {
       if(message.sensor >= RELAY_ID_1 && message.sensor < NUMBER_OF_RELAYS) {
         for(int i=RELAY_ID_1; i<RELAY_ID_1+NUMBER_OF_RELAYS; i++) {
           if(message.sensor == i) {
-            if(!OVERCURRENT_ERROR[i] && !THERMAL_ERROR) {
+            if(!OVERCURRENT_ERROR[i]) {
               UI[message.sensor].NewState = message.getBool();
               UI[message.sensor].SetRelay();
               CheckNow = true;

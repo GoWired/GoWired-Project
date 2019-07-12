@@ -24,7 +24,7 @@
 class RShutterControl
 {
   public:
-    RShutterControl(int UpPin, int DownPi);
+    RShutterControl(int UpPin, int DownPin);
 
     uint8_t Position;
 
