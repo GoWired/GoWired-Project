@@ -106,6 +106,7 @@ void setup() {
   
   // OUTPUT
   #ifdef SINGLE_RELAY
+<<<<<<< HEAD
 	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 4, BUTTON_1, RELAY_1);
   #endif
   
@@ -117,6 +118,19 @@ void setup() {
   #ifdef ROLLER_SHUTTER
     UI[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
     UI[RS_ID+1].SetValues(RELAY_OFF, 3, BUTTON_2);
+=======
+	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 3, BUTTON_1, RELAY_1);
+  #endif
+  
+  #ifdef DOUBLE_RELAY
+	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 3, BUTTON_1, RELAY_1);
+	  UI[RELAY_ID_2].SetValues(RELAY_OFF, 3, BUTTON_2, RELAY_2);
+  #endif
+
+  #ifdef ROLLER_SHUTTER
+    UI[RS_ID].SetValues(RELAY_OFF, 4, BUTTON_1);
+    UI[RS_ID+1].SetValues(RELAY_OFF, 4, BUTTON_2);
+>>>>>>> Developement
   #endif
   
   #ifdef FOUR_RELAY
