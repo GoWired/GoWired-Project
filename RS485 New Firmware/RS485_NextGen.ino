@@ -13,22 +13,18 @@
 /*  *******************************************************************************************
  *                                      Includes
  *  *******************************************************************************************/
-#include "Configuration.h"
 #include "PowerSensor.h"
 #include "InternalTemp.h"
 #include "UniversalInput.h"
 #include "Dimmer.h"
 #include "RShutterControl.h"
+#include "Configuration.h"
 #include <MySensors.h>
-#include <SPI.h>
 #include <dht.h>
 
 /*  *******************************************************************************************
  *                                      Globals
  *  *******************************************************************************************/
-// Power Sensor
-int ACVoltage = 230;                        // Typical AC voltage value for Power consumption calculation
-
 // RShutter
 int NewPosition;
 
@@ -43,7 +39,7 @@ bool CheckNow = true;
 // Module Safety Indicators
 bool THERMAL_ERROR = false;                 // Thermal error status
 bool InformControllerTS = false;            // Was controller informed about error?
-bool OVERCURRENT_ERROR[4] = {false};             // Overcurrent error status
+bool OVERCURRENT_ERROR[4] = {false, false, false, false};             // Overcurrent error status
 bool InformControllerES = false;            // Was controller informed about error?
 int ET_ERROR = false;                     // External thermometer status (0 - ok, 1 - checksum error, 2 - timeout error)
 
@@ -58,8 +54,8 @@ int ET_ERROR = false;                     // External thermometer status (0 - ok
 
 // Dimmer
 #if defined(DIMMER) || defined(RGB) || defined(RGBW)
-  Dimmer Dimmer;
-  //MyMessage msgDIM(DIMMER_ID, V_PERCENTAGE);
+	Dimmer Dimmer;
+  MyMessage msgDIM(DIMMER_ID, V_PERCENTAGE);
 #endif
 
 // Power sensor constructor
@@ -67,28 +63,28 @@ int ET_ERROR = false;                     // External thermometer status (0 - ok
 	PowerSensor PS;                             
 	MyMessage msgPS(PS_ID, V_WATT);
 #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
-  PowerSensor PS[NUMBER_OF_RELAYS];
-  MyMessage msgPS(0, V_WATT);
+	PowerSensor PS[NUMBER_OF_RELAYS];
+	MyMessage msgPS(0, V_WATT);
 #endif
 
 // RShutter Control Constructor
 #ifdef ROLLER_SHUTTER
-  RShutterControl RS(RELAY_1, RELAY_2);
-  MyMessage msgRS1(RS_ID, V_UP);
-  MyMessage msgRS2(RS_ID, V_DOWN);
-  MyMessage msgRS3(RS_ID, V_STOP);
-  MyMessage msgRS4(RS_ID, V_PERCENTAGE);
+	RShutterControl RS(RELAY_1, RELAY_2, CALIBRATION_SAMPLES, PS_OFFSET, RELAY_ON, RELAY_OFF);
+	MyMessage msgRS1(RS_ID, V_UP);
+	MyMessage msgRS2(RS_ID, V_DOWN);
+	MyMessage msgRS3(RS_ID, V_STOP);
+	MyMessage msgRS4(RS_ID, V_PERCENTAGE);
 #endif
 
 // Internal thermometer constructor
 #ifdef INTERNAL_TEMP
-	InternalTemp IT(IT_PIN);
+	InternalTemp IT(IT_PIN, MAX_TEMPERATURE, MVPERC, ZEROVOLTAGE, MCU_VOLTAGE);
 	MyMessage msgIT(IT_ID, V_TEMP);
 #endif
 
 // External thermometer constructor 
 #ifdef EXTERNAL_TEMP
-  dht DHT;
+	dht DHT;
 	MyMessage msgETT(ETT_ID, V_TEMP);
 	MyMessage msgETH(ETH_ID, V_HUM);
 #endif
@@ -98,8 +94,9 @@ int ET_ERROR = false;                     // External thermometer status (0 - ok
 	MyMessage msgSI(0, V_STATUS);
 #endif
 
-#ifdef MY_DEBUG
+#ifdef RS485_DEBUG
 	MyMessage msgDEBUG(DEBUG_ID, V_TEXT);
+  MyMessage msgDEBUG2(DEBUG_ID, V_WATT);
 #endif
 
 /*  *******************************************************************************************
@@ -109,82 +106,82 @@ void setup() {
   
   // OUTPUT
   #ifdef SINGLE_RELAY
-	  UI[RELAY_ID_1].SetValues(3, BUTTON_1, RELAY_1);
+	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 3, BUTTON_1, RELAY_1);
   #endif
   
   #ifdef DOUBLE_RELAY
-	  UI[RELAY_ID_1].SetValues(3, BUTTON_1, RELAY_1);
-	  UI[RELAY_ID_2].SetValues(3, BUTTON_2, RELAY_2);
+	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 3, BUTTON_1, RELAY_1);
+	  UI[RELAY_ID_2].SetValues(RELAY_OFF, 3, BUTTON_2, RELAY_2);
   #endif
 
   #ifdef ROLLER_SHUTTER
-	  UI[RELAY_ID_1].SetValues(3, BUTTON_1, RELAY_1);
-	  UI[RELAY_ID_2].SetValues(3, BUTTON_2, RELAY_2);
+    UI[RS_ID].SetValues(RELAY_OFF, 4, BUTTON_1);
+    UI[RS_ID+1].SetValues(RELAY_OFF, 4, BUTTON_2);
   #endif
   
   #ifdef FOUR_RELAY
-	  UI[RELAY_ID_1].SetValues(2, RELAY_1);
-	  UI[RELAY_ID_2].SetValues(2, RELAY_2);
-	  UI[RELAY_ID_3].SetValues(2, RELAY_3);
-	  UI[RELAY_ID_4].SetValues(2, RELAY_4);
+	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 2, RELAY_1);
+	  UI[RELAY_ID_2].SetValues(RELAY_OFF, 2, RELAY_2);
+	  UI[RELAY_ID_3].SetValues(RELAY_OFF, 2, RELAY_3);
+	  UI[RELAY_ID_4].SetValues(RELAY_OFF, 2, RELAY_4);
   #endif
   
   #ifdef DIMMER
-    Dimmer.SetValues(LED_PIN_1);
+    Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
 	  request(DIMMER_ID, V_PERCENTAGE);
   #endif
   
   #ifdef RGB
-    Dimmer.SetValues(LED_PIN_1, LED_PIN_2, LED_PIN_3);
+    Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3);
     request(DIMMER_ID, V_PERCENTAGE);
   #endif
   
   #ifdef RGBW
-    Dimmer.SetValues(LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
+    Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
     request(DIMMER_ID, V_PERCENTAGE);
   #endif
     
   // INPUT
   #ifdef INPUT_1
     #ifdef PULLUP_1
-      UI[INPUT_ID_1].SetValues(0, PIN_1);
+      UI[INPUT_ID_1].SetValues(RELAY_OFF, 0, PIN_1);
     #else
-      UI[INPUT_ID_1].SetValues(1, PIN_1);
+      UI[INPUT_ID_1].SetValues(RELAY_OFF, 1, PIN_1);
     #endif
   #endif
 
   #ifdef INPUT_2
     #ifdef PULLUP_2
-      UI[INPUT_ID_2].SetValues(0, PIN_2);
+      UI[INPUT_ID_2].SetValues(RELAY_OFF, 0, PIN_2);
     #else
-      UI[INPUT_ID_2].SetValues(1, PIN_2);
+      UI[INPUT_ID_2].SetValues(RELAY_OFF, 1, PIN_2);
     #endif
   #endif
 
   #ifdef INPUT_3
     #ifdef PULLUP_3
-      UI[INPUT_ID_3].SetValues(0, PIN_3);
+      UI[INPUT_ID_3].SetValues(RELAY_OFF, 0, PIN_3);
     #else
-      UI[INPUT_ID_3].SetValues(1, PIN_3);  
+      UI[INPUT_ID_3].SetValues(RELAY_OFF, 1, PIN_3);  
     #endif
   #endif
 
   #ifdef INPUT_4
     #ifdef PULLUP_4
-      UI[INPUT_ID_4].SetValues(0, PIN_4);
+      UI[INPUT_ID_4].SetValues(RELAY_OFF, 0, PIN_4);
     #else
-      UI[INPUT_ID_4].SetValues(1, PIN_4);
+      UI[INPUT_ID_4].SetValues(RELAY_OFF, 1, PIN_4);
     #endif
   #endif
 
   // POWER SENSOR
   #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
-    PS.SetValues(PS_PIN);
+    PS.SetValues(PS_PIN, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, MCU_VOLTAGE);
   #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
-      PS[RELAY_ID_1].SetValues(PS_PIN_1);
-      PS[RELAY_ID_2].SetValues(PS_PIN_2);
-      PS[RELAY_ID_3].SetValues(PS_PIN_3);
-      PS[RELAY_ID_4].SetValues(PS_PIN_4);
+      PS[RELAY_ID_1].SetValues(PS_PIN_1, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, MCU_VOLTAGE);
+      PS[RELAY_ID_2].SetValues(PS_PIN_2, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, MCU_VOLTAGE);
+      PS[RELAY_ID_3].SetValues(PS_PIN_3, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, MCU_VOLTAGE);
+      PS[RELAY_ID_4].SetValues(PS_PIN_4, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, MCU_VOLTAGE);
   #endif
     
   // 1WIRE THERMOMETER
@@ -300,7 +297,7 @@ void presentation() {
     #endif
   #endif
 
-  #ifdef MY_DEBUG
+  #ifdef RS485_DEBUG
     present(DEBUG_ID, S_INFO, "DEBUG INFO");
   #endif
     
@@ -352,7 +349,6 @@ void receive(const MyMessage &message)  {
     #if defined(SINGLE_RELAY) || defined(DOUBLE_RELAY) //|| defined(FOUR_RELAY)
       if(message.sensor >= RELAY_ID_1 && message.sensor < NUMBER_OF_RELAYS)  {
           if(!OVERCURRENT_ERROR[0] && !THERMAL_ERROR) {
-            send(msgDEBUG.set("Status Received"));
             UI[message.sensor].NewState = message.getBool();
             UI[message.sensor].SetRelay();
             CheckNow = true;
@@ -363,7 +359,7 @@ void receive(const MyMessage &message)  {
       if(message.sensor >= RELAY_ID_1 && message.sensor < NUMBER_OF_RELAYS) {
         for(int i=RELAY_ID_1; i<RELAY_ID_1+NUMBER_OF_RELAYS; i++) {
           if(message.sensor == i) {
-            if(!OVERCURRENT_ERROR[i]) {
+            if(!OVERCURRENT_ERROR[i] && !THERMAL_ERROR) {
               UI[message.sensor].NewState = message.getBool();
               UI[message.sensor].SetRelay();
               CheckNow = true;
@@ -423,13 +419,16 @@ void ETUpdate()  {
   
   switch (chk)  {
     case DHTLIB_OK:
+
+      send(msgETT.set(DHT.temperature, 1));
+      send(msgETH.set(DHT.humidity, 1));
+
+      wait(100);
+      
       #ifdef ERROR_REPORTING
         ET_ERROR = 0;
         send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
       #endif
-      
-      send(msgETT.set(DHT.temperature, 1));
-      send(msgETH.set(DHT.humidity, 1));
       
       #ifdef HEATING_SECTION_SENSOR
         send(msgETT.setDestination(MY_HEATING_CONTROLLER).set(DHT.temperature, 1));
@@ -489,7 +488,6 @@ void UIUpdate() {
         else if(UI[i].SensorType == 3)  {
           if(UI[i].NewState != 2)  {
             if(!OVERCURRENT_ERROR[0] && !THERMAL_ERROR)  {
-              send(msgDEBUG.set("Button pressed"));
               UI[i].SetRelay();
               send(msgUI.setSensor(i).set(UI[i].NewState));
               CheckNow = true;
@@ -518,10 +516,12 @@ void RSUpdate() {
     float MovementRange = ((float)NewPosition - (float)RS.Position) / 100;       // Downward => MR > 0; Upward MR < 0
     int MovementDirection = MovementRange > 0 ? 1 : 0;                           // MovementDirection: 1 -> Down; 0 -> Up
 
-    Serial.println("Percentage movement");
+    #ifdef RS485_DEBUG
+    send(msgDEBUG.set("Percentage movement"));
+    #endif
     
     int MovementTime = RS.Move(MovementDirection) * (abs(MovementRange) * 1000);
-    wait(MovementTime*1000);
+    wait(MovementTime);
     RS.Stop();
 
     RS.Position = NewPosition;
@@ -536,13 +536,16 @@ void RSUpdate() {
         // Handling regular upwards/downwards movement of the roller shutter
         if(UI[i].NewState == 1) {
           int Time = RS.Move(i);
+          send(msgDEBUG2.set(Time));
           UI[i].OldState = UI[i].NewState;
 
-          Serial.println("Button movement");
+          /*#ifdef RS485_DEBUG
+          send(msgDEBUG.set("Button movement"));
+          #endif*/
         
           unsigned long TIME_1 = millis();
           unsigned long TIME_2 = 0;
-          float TIME_3 = 0;
+          unsigned long TIME_3 = 0;
 
           while(UI[RS_ID].NewState == UI[RS_ID].OldState && UI[RS_ID+1].NewState == UI[RS_ID+1].OldState) {
             UI[RS_ID].CheckInput();
@@ -550,9 +553,16 @@ void RSUpdate() {
             wait(100);
 
             TIME_2 = millis();
-            TIME_3 = ((float) TIME_2 - (float) TIME_1) / 1000;
+            TIME_3 = TIME_2 - TIME_1;
+            TIME_3 = TIME_3 / 1000;
+            //send(msgDEBUG2.set(TIME_3));
 
             if(TIME_3 > Time) {
+
+              #ifdef RS485_DEBUG
+              send(msgDEBUG.set("TIME_3 > Time"));
+              #endif
+              
               RS.Stop();
               RS.Position = (i == 1 ? 100 : 0);
               UI[RS_ID].NewState = 0; UI[RS_ID+1].NewState = 0;
@@ -560,32 +570,45 @@ void RSUpdate() {
             }
           }
           if(TIME_3 < Time)  {
+
+            #ifdef RS485_DEBUG
+            send(msgDEBUG.set("TIME_3 < Time"));
+            #endif
+            
             RS.Stop();
             UI[RS_ID].NewState = 0; UI[RS_ID+1].NewState = 0;
             int PositionChange = (float) TIME_3 / (float) Time * 100;
             RS.Position += (i == 1 ? PositionChange : -PositionChange);
             RS.Position = RS.Position > 100 ? 100 : RS.Position;
             RS.Position = RS.Position < 0 ? 0 : RS.Position;
-
+            /*
             #ifdef MY_DEBUG
               Serial.print("TIME_3: ");  Serial.println(TIME_3);
               Serial.print("Time: ");  Serial.println(Time);
               Serial.print("Position change: ");  Serial.println(PositionChange);
-            #endif
+            #endif*/
           }
           UI[RS_ID].OldState = UI[RS_ID].NewState;
           UI[RS_ID+1].OldState = UI[RS_ID+1].NewState;
           NewPosition = RS.Position;
           EEPROM.put(EEA_RS_POSITION, RS.Position);
           send(msgRS4.set(RS.Position));
-          
+
+          #ifdef RS485_DEBUG
+          send(msgDEBUG.set("Zapisanie pozycji do eeprom"));
+          #endif
+          /*
           #ifdef MY_DEBUG
             Serial.print("Position: "); Serial.println(RS.Position);
-          #endif
+          #endif*/
         }
         // Procedure to call out calibration process
         else if(UI[i].NewState == 2)  {
           int SecondButton = (i == RS_ID ? RS_ID+1 : RS_ID);
+
+          #ifdef RS485_DEBUG
+          send(msgDEBUG.set("Special Button"));
+          #endif
 
           RS.Move(1);
           wait(2000);
@@ -613,9 +636,9 @@ void RSUpdate() {
 void PSUpdate(int Sensor=0)  {
 
   #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
-    send(msgPS.set(PS.CalculatePower(PS.MeasureAC(), ACVoltage), 0));
+    send(msgPS.set(PS.CalculatePower(PS.MeasureAC()), 0));
   #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
-    send(msgPS.setSensor(Sensor).set(PS[Sensor].CalculatePower(PS[Sensor].MeasureAC(), ACVoltage), 0));
+    send(msgPS.setSensor(Sensor).set(PS[Sensor-4].CalculatePower(PS[Sensor-4].MeasureAC()), 0));
   #endif
 }
 
@@ -664,7 +687,7 @@ void loop() {
       ITUpdate();
     #endif
     #ifdef EXTERNAL_TEMP
-      ETUPDATE();
+      ETUpdate();
     #endif
     #if defined(POWER_SENSOR) && defined(SINGLE_RELAY)
       if(digitalRead(RELAY_1) == RELAY_ON)  {
@@ -699,6 +722,9 @@ void loop() {
     #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
       for(int i=RELAY_ID_1; i<RELAY_ID_1+NUMBER_OF_RELAYS; i++) {
         if(UI[i].NewState == RELAY_ON)  {
+          if(CheckNow)  {
+            wait(100);
+          }
         PSUpdate(PS_ID_1+i);
       }
       else  {
@@ -748,6 +774,9 @@ void loop() {
           #endif
         }
       }
+      if(OVERCURRENT_ERROR[0] == false && OVERCURRENT_ERROR[1] == false && OVERCURRENT_ERROR[2] == false && OVERCURRENT_ERROR[3] == false && InformControllerES == true) {
+        InformControllerES = false;
+      }
     #elif defined(SINGLE_RELAY) || defined(DOUBLE_RELAY)
       if(OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
         for(int i=RELAY_ID_1; i<RELAY_ID_1+NUMBER_OF_RELAYS; i++)  {
@@ -758,8 +787,20 @@ void loop() {
           InformControllerES = true;
         }
       }
+      if(OVERCURRENT_ERROR[0] == false && InformControllerES == true) {
+        InformControllerES = false;
+      }
     #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-      //
+      if(OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
+        bool NewStatus = false;
+        Dimmer.ChangeStatus(NewStatus);
+        send(msgUI.setSensor(i).set(UI[i].NewState));
+        send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
+        InformControllerES = true;
+      }
+      if(OVERCURRENT_ERROR[0] == false && InformControllerES == true) {
+        InformControllerES = false;
+      }
     #endif
   #endif
   

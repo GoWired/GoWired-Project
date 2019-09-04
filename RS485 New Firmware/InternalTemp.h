@@ -11,22 +11,10 @@
 
 #include "Arduino.h"
 
-#ifndef MAX_TEMPERATURE
-#define MAX_TEMPERATURE 85
-#endif
-
-#ifndef MVPERC
-#define MVPERC 0.01
-#endif
-
-#ifndef ZEROVOLTAGE
-#define ZEROVOLTAGE 0.5
-#endif
-
 class InternalTemp
 {
   public:
-    InternalTemp(int SensorPin);
+    InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage, float MCUVoltage);
   
     float Temperature;
 
@@ -35,8 +23,10 @@ class InternalTemp
 
   private:
     uint8_t _SensorPin;
+	  uint8_t _MaxTemperature;
     float _mVperC;
     float _ZeroVoltage;
+	  float _MCUVoltage;
 };
 
 
