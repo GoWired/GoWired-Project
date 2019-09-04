@@ -7,13 +7,15 @@
 /*  *******************************************************************************************
  *                                      Constructor
  *  *******************************************************************************************/
-InternalTemp::InternalTemp(int SensorPin)  {
+InternalTemp::InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage, float MCUVoltage)  {
+	
+	_SensorPin = SensorPin;
+	_MaxTemperature = MaxTemperature;
+	_mVperC = mVperC;
+	_ZeroVoltage = ZeroVoltage;
+	_MCUVoltage = MCUVoltage;
 
-  pinMode(SensorPin, INPUT);
-  _SensorPin = SensorPin;
-
-  _mVperC = MVPERC;
-  _ZeroVoltage = ZEROVOLTAGE;
+	pinMode(SensorPin, INPUT);
   
 }
 
@@ -23,7 +25,7 @@ InternalTemp::InternalTemp(int SensorPin)  {
 float InternalTemp::MeasureT()  {
 
   int ReadValue = analogRead(_SensorPin);
-  float Result = (ReadValue * 5.0) / 1024.0;
+  float Result = (ReadValue * _MCUVoltage) / 1024.0;
   Result -= _ZeroVoltage;                        // V = 500 mV in 0C
   Temperature = Result / _mVperC;       // Temperature coefficient 10mV/C
 
@@ -35,7 +37,7 @@ float InternalTemp::MeasureT()  {
  *  *******************************************************************************************/
 bool InternalTemp::ThermalStatus(float Temperature)  {
 
-  if(Temperature > MAX_TEMPERATURE)  {
+  if(Temperature > _MaxTemperature)  {
     return true;
   }
   else  {

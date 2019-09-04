@@ -17,7 +17,9 @@ UniversalInput::UniversalInput()  {
 /*  *******************************************************************************************
  *                                    Set Values
  *  *******************************************************************************************/
-void UniversalInput::SetValues(int Type, int Pin1, int Pin2) {
+void UniversalInput::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0) {
+	
+	_RelayOFF = RelayOFF;
 
   SensorType = Type;
   switch(SensorType)  {
@@ -35,15 +37,19 @@ void UniversalInput::SetValues(int Type, int Pin1, int Pin2) {
     case 2:
       _RelayPin = Pin1;
       pinMode(_RelayPin, OUTPUT);
-      digitalWrite(_RelayPin, RELAY_OFF);
+      digitalWrite(_RelayPin, _RelayOFF);
       break;
     // Button input + Relay output
     case 3:
       _SensorPin = Pin1;
+      pinMode(_SensorPin, INPUT_PULLUP);
+      break;
+    case 4:
+      _SensorPin = Pin1;
       _RelayPin = Pin2;
       pinMode(_SensorPin, INPUT_PULLUP);
       pinMode(_RelayPin, OUTPUT);
-      digitalWrite(_RelayPin, RELAY_OFF);
+      digitalWrite(_RelayPin, _RelayOFF);
       break;
     default:
       break;
@@ -63,7 +69,7 @@ void UniversalInput::CheckInput() {
       NewState = 1;
     }
   }
-  else if(SensorType == 2 || SensorType == 3)  {
+  else if(SensorType == 3 || SensorType == 4)  {
     
     if(digitalRead(_SensorPin) != LOW)  {
       _HighStateDetection = true;

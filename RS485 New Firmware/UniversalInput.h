@@ -8,7 +8,8 @@
  * 0 - INPUT_PULLUP sensor
  * 1 - INPUT sensor 
  * 2 - Relay output
- * 3 - Button input + Relay output
+ * 3 - Button input
+ * 4 - Button input + Relay output
  *
  */
 
@@ -17,39 +18,28 @@
 
 #include "Arduino.h"
 
-#ifndef UI_SENSORS_NUMBER
-#define UI_SENSORS_NUMBER 4  // ilosc UI sensorow
-#endif
-
-#ifndef RELAY_ON
-#define RELAY_ON HIGH
-#endif
-
-#ifndef RELAY_OFF
-#define RELAY_OFF LOW
-#endif
-
 
 class UniversalInput
 {
   public:
-  UniversalInput();       
+    UniversalInput();       
 
-  uint8_t SensorType;
-  uint8_t NewState;
-  uint8_t OldState;
+    uint8_t SensorType;
+    uint8_t NewState;
+    uint8_t OldState;
 
-  void SetValues(int Type, int Pin1, int Pin2=0);
-  void CheckInput();
-  void SetRelay();
+    void SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0);
+    void CheckInput();
+    void SetRelay();
   
   private:
-  uint8_t _RelayPin;
-  uint8_t _SensorPin;
-  bool _LowStateDetection;
-  bool _HighStateDetection;
-  bool _Condition;
-  
+    uint8_t _RelayPin;
+    uint8_t _SensorPin;
+    bool _LowStateDetection;
+    bool _HighStateDetection;
+    bool _Condition;
+    bool _RelayOFF;
+   
 };
 
 #endif
