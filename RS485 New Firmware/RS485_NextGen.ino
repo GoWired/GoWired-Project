@@ -69,7 +69,7 @@ int ET_ERROR = false;                     // External thermometer status (0 - ok
 
 // RShutter Control Constructor
 #ifdef ROLLER_SHUTTER
-	RShutterControl RS(RELAY_1, RELAY_2, CALIBRATION_SAMPLES, PS_OFFSET, RELAY_ON, RELAY_OFF);
+	RShutterControl RS(RELAY_1, RELAY_2, RELAY_ON, RELAY_OFF);
 	MyMessage msgRS1(RS_ID, V_UP);
 	MyMessage msgRS2(RS_ID, V_DOWN);
 	MyMessage msgRS3(RS_ID, V_STOP);
@@ -106,7 +106,6 @@ void setup() {
   
   // OUTPUT
   #ifdef SINGLE_RELAY
-<<<<<<< HEAD
 	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 4, BUTTON_1, RELAY_1);
   #endif
   
@@ -118,19 +117,12 @@ void setup() {
   #ifdef ROLLER_SHUTTER
     UI[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
     UI[RS_ID+1].SetValues(RELAY_OFF, 3, BUTTON_2);
-=======
-	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 3, BUTTON_1, RELAY_1);
-  #endif
-  
-  #ifdef DOUBLE_RELAY
-	  UI[RELAY_ID_1].SetValues(RELAY_OFF, 3, BUTTON_1, RELAY_1);
-	  UI[RELAY_ID_2].SetValues(RELAY_OFF, 3, BUTTON_2, RELAY_2);
-  #endif
 
-  #ifdef ROLLER_SHUTTER
-    UI[RS_ID].SetValues(RELAY_OFF, 4, BUTTON_1);
-    UI[RS_ID+1].SetValues(RELAY_OFF, 4, BUTTON_2);
->>>>>>> Developement
+    #ifdef RS_AUTO_CALIBRATION
+      RS.Calibration(CALIBRATION_SAMPLES, PS_OFFSET, RS.Calibrated);
+    #else
+      RS.Calibration(0,0, RS.Calibrated, UP_TIME, DOWN_TIME);
+    #endif
   #endif
   
   #ifdef FOUR_RELAY
@@ -549,10 +541,6 @@ void RSUpdate() {
           int Time = RS.Move(i);
           send(msgDEBUG2.set(Time));
           UI[i].OldState = UI[i].NewState;
-
-          /*#ifdef RS485_DEBUG
-          send(msgDEBUG.set("Button movement"));
-          #endif*/
         
           unsigned long TIME_1 = millis();
           unsigned long TIME_2 = 0;
@@ -592,12 +580,6 @@ void RSUpdate() {
             RS.Position += (i == 1 ? PositionChange : -PositionChange);
             RS.Position = RS.Position > 100 ? 100 : RS.Position;
             RS.Position = RS.Position < 0 ? 0 : RS.Position;
-            /*
-            #ifdef MY_DEBUG
-              Serial.print("TIME_3: ");  Serial.println(TIME_3);
-              Serial.print("Time: ");  Serial.println(Time);
-              Serial.print("Position change: ");  Serial.println(PositionChange);
-            #endif*/
           }
           UI[RS_ID].OldState = UI[RS_ID].NewState;
           UI[RS_ID+1].OldState = UI[RS_ID+1].NewState;
@@ -606,12 +588,8 @@ void RSUpdate() {
           send(msgRS4.set(RS.Position));
 
           #ifdef RS485_DEBUG
-          send(msgDEBUG.set("Zapisanie pozycji do eeprom"));
+          send(msgDEBUG.set("Saving position to EEPROM"));
           #endif
-          /*
-          #ifdef MY_DEBUG
-            Serial.print("Position: "); Serial.println(RS.Position);
-          #endif*/
         }
         // Procedure to call out calibration process
         else if(UI[i].NewState == 2)  {
@@ -621,19 +599,29 @@ void RSUpdate() {
           send(msgDEBUG.set("Special Button"));
           #endif
 
-          RS.Move(1);
-          wait(2000);
-          RS.Stop();
           for(int j=0; j<10; j++) {
             UI[SecondButton].CheckInput();
-            wait(200);
-            if(UI[SecondButton].NewState == 2)  {
-              RS.Calibration();
-              break;
-            }
+            wait(50);
           }
-          UI[i].OldState = UI[i].NewState;
-          UI[SecondButton].OldState = UI[SecondButton].NewState;
+                    
+          if(UI[SecondButton].NewState == 2)  {
+
+            #ifdef RS485_DEBUG
+              send(msgDEBUG.set("Calibration!"));
+            #endif
+            
+            UI[SecondButton].NewState = UI[SecondButton].OldState;
+            RS.Calibration(CALIBRATION_SAMPLES, PS_OFFSET, false);
+          }
+          else  {
+
+            #ifdef RS485_DEBUG
+              send(msgDEBUG.set("No Calibration"));
+            #endif
+            
+            send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
+            UI[i].NewState = UI[i].OldState;
+          }
         }
       }
     }

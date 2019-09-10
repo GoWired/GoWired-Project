@@ -7,90 +7,97 @@
 /*  *******************************************************************************************
  *                                      Constructor
  *  *******************************************************************************************/
-RShutterControl::RShutterControl(int UpPin, int DownPin)  {
+RShutterControl::RShutterControl(uint8_t UpPin, uint8_t DownPin, bool RelayOn, bool RelayOff)  {
 
   _DownPin = DownPin;
   _UpPin = UpPin;
-  int DownTime;
-  int UpTime;
+  _RelayOn = RelayOn;
+  _RelayOff = RelayOff;
   
-  pinMode(_UpPin, OUTPUT);
-  pinMode(_DownPin, OUTPUT);
+  pinMode(_UpPin, OUTPUT);  digitalWrite(_UpPin, RelayOff);
+  pinMode(_DownPin, OUTPUT);  digitalWrite(_DownPin, RelayOff);
+
+  uint8_t DownTime;
+  uint8_t UpTime;
 
   EEPROM.get(EEA_RS_TIME_DOWN, DownTime);
   EEPROM.get(EEA_RS_TIME_UP, UpTime);
-  
-  if(UpTime > 30000 || DownTime > 30000)  {
-    //Calibration();          // Calibration function not tested yet!
-  }
-  else  {
+
+  if(UpTime != 255 && DownTime != 255)  {
+    Calibrated = true;
     _UpTime = UpTime;
     _DownTime = DownTime;
-    EEPROM.get(EEA_RS_POSITION, Position);
   }
+  else  {
+    Calibrated = false;
+  }
+
 }
 
 /*  *******************************************************************************************
- *                                        Calibration
+ *                                        Auto Calibration
  *  *******************************************************************************************/
-void RShutterControl::Calibration()  {
+void RShutterControl::Calibration(uint8_t CalibrationSamples, float PSOffset, bool Calibrated, uint8_t UpTime=0, uint8_t DownTime=0)  {
 
-  #ifdef MY_DEBUG
-    Serial.println("Start Calibration");
-  #endif
-
-  // Move the roller shutter from unknown position upwards, stop when there is no current measured
-  digitalWrite(_DownPin, RELAY_OFF);  
-  digitalWrite(_UpPin, RELAY_ON);
-
-  delay(100);
-  while(PS.MeasureAC() > PS_OFFSET)  {     // Tu moze byc problem z okresleniem wartosci pradu
+  if(UpTime != 0 && DownTime != 0)  {
+    _UpTime = UpTime;
+    _DownTime = DownTime;
   }
-  digitalWrite(_UpPin, RELAY_OFF);
+  else if(CalibrationSamples != 0 && Calibrated != true)  {
 
-  // Initialize variables
-  int DownTimeCumulated = 0;
-  int UpTimeCumulated = 0;
-  unsigned long TIME_1 = 0;
-  unsigned long TIME_2 = 0;
-  unsigned long TIME_3 = 0;
+    int DownTimeCumulated = 0;
+    int UpTimeCumulated = 0;
+    unsigned long TIME_1 = 0;
+    unsigned long TIME_2 = 0;
+    unsigned long TIME_3 = 0;
+    
+    digitalWrite(_DownPin, _RelayOff);
+    digitalWrite(_UpPin, _RelayOn);
 
-  // Calibration: 1. Move down, 2. Move up, 3. Save measured values
-  for(int i=0; i<CALIBRATION_SAMPLES; i++) {
-
-    TIME_1 = millis();
-    digitalWrite(_DownPin, RELAY_ON);
     delay(100);
-    while(PS.MeasureAC() > PS_OFFSET) {
-      TIME_2 = millis();
+
+    while(PS.MeasureAC() > PSOffset)  {
+      delay(100);
     }
-    digitalWrite(_DownPin, RELAY_OFF);
+    digitalWrite(_UpPin, _RelayOff);
 
-    TIME_3 = TIME_2 - TIME_1;
-    DownTimeCumulated += (int)(TIME_3 / 1000);
+    for(int i=0; i<CalibrationSamples; i++) {
+      TIME_1 = millis();
+      digitalWrite(_DownPin, _RelayOn);
+      delay(100);
 
-    delay(1000);
+      while(PS.MeasureAC() > PS_OFFSET) {
+        TIME_2 = millis();
+      }
+      digitalWrite(_DownPin, _RelayOff);
 
-    TIME_1 = millis();
-    digitalWrite(_UpPin, RELAY_ON);
-    delay(100);
-    while(PS.MeasureAC() > PS_OFFSET) {
-      TIME_2 = millis();
+      TIME_3 = TIME_2 - TIME_1;
+      DownTimeCumulated += (int)(TIME_3 / 1000);
+
+      delay(1000);
+
+      TIME_1 = millis();
+      digitalWrite(_UpPin, _RelayOn);
+      delay(100);
+      
+      while(PS.MeasureAC() > PSOffset) {
+        TIME_2 = millis();
+      }
+      digitalWrite(_UpPin, _RelayOff);
+
+      TIME_3 = TIME_2 - TIME_1;
+      UpTimeCumulated += (int)(TIME_3 / 1000);
     }
-    digitalWrite(_UpPin, RELAY_OFF);
 
-    TIME_3 = TIME_2 - TIME_1;
-    UpTimeCumulated += (int)(TIME_3 / 1000);
+    Position = 0;
+
+    _DownTime = (int)(DownTimeCumulated / CalibrationSamples);
+    _UpTime = (int)(UpTimeCumulated / CalibrationSamples);
+
+    EEPROM.put(EEA_RS_TIME_DOWN, _DownTime);
+    EEPROM.put(EEA_RS_TIME_UP, _UpTime);
+    EEPROM.put(EEA_RS_POSITION, Position);
   }
-
-  Position = 0;
-
-  _DownTime = (int)(DownTimeCumulated / CALIBRATION_SAMPLES);
-  _UpTime = (int)(UpTimeCumulated / CALIBRATION_SAMPLES);
-
-  EEPROM.put(EEA_RS_TIME_DOWN, _DownTime);
-  EEPROM.put(EEA_RS_TIME_UP, _UpTime);
-  EEPROM.put(EEA_RS_POSITION, Position);
 }
 
 int RShutterControl::Move(int Direction)  {
@@ -104,14 +111,14 @@ int RShutterControl::Move(int Direction)  {
     pin = _UpPin; pin2 = _DownPin; Time = _UpTime;
   }
   
-  digitalWrite(pin2, RELAY_OFF);
-  digitalWrite(pin, RELAY_ON);
+  digitalWrite(pin2, _RelayOff);
+  digitalWrite(pin, _RelayOn);
 
   return Time;
 }
 
 void RShutterControl::Stop()  {
 
-  digitalWrite(_DownPin, RELAY_OFF);
-  digitalWrite(_UpPin, RELAY_OFF);
+  digitalWrite(_DownPin, _RelayOff);
+  digitalWrite(_UpPin, _RelayOff);
 }

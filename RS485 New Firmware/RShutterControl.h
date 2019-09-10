@@ -10,26 +10,17 @@
 #include <EEPROM.h>
 #include "Configuration.h"
 #include "PowerSensor.h"
-#include "UniversalInput.h"
-//#include <core/MySensorsCore.h>
-
-#ifndef PS_OFFSET
-#define PS_OFFSET 0.2
-#endif
-
-#ifndef CALIBRATION_SAMPLES
-#define CALIBRATION_SAMPLES 2
-#endif
 
 class RShutterControl
 {
   public:
-    RShutterControl(int UpPin, int DownPin);
+    RShutterControl(uint8_t UpPin, uint8_t DownPin, bool RelayOn, bool RelayOff);
 
-    uint8_t Position;
+    int Position;
+    bool Calibrated;
 
-    void Calibration();     // Find up and down time by measuring current, save values to eeprom for use even after power failure
-    uint8_t Move(bool Direction);
+    void Calibration(uint8_t CalibrationSamples, float PSOffset, bool Calibrated, uint8_t UpTime=0, uint8_t DownTime=0);     // Find up and down time by measuring current, save values to eeprom for use even after power failure
+    int Move(int Direction);
     void Stop();
 
   private:
@@ -37,6 +28,8 @@ class RShutterControl
     uint8_t _DownPin;
     uint8_t _UpTime;
     uint8_t _DownTime;
+    bool _RelayOn;
+    bool _RelayOff;
 
     PowerSensor PS;
         

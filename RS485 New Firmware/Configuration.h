@@ -78,7 +78,7 @@
 #define MAX_TEMPERATURE 85                  // Maximum temperature a module can achieve before reporting error
 
 // Power Sensor
-#define MAX_CURRENT 3                      // 2SSR - 3; 4RelayDin - 10 [A]
+#define MAX_CURRENT 3                       // 2SSR - 3; 4RelayDin - 10 [A]
 #define POWER_MEASURING_TIME 20
 #define MVPERAMP 185               			    // ACS7125A: 185 mV/A; ACS71220A: 100 mV/A
 #define RECEIVER_VOLTAGE 230                // 230V, 24V, 12V - values for power usage calculation
@@ -91,8 +91,14 @@
 #define MCU_VOLTAGE 3.3
 
 // Roller Shutter
-#define PS_OFFSET 0.5
-#define CALIBRATION_SAMPLES 2             
+#define RS_AUTO_CALIBRATION
+#ifdef RS_AUTO_CALIBRATION
+  #define CALIBRATION_SAMPLES 2
+  #define PS_OFFSET 0.5
+#else
+  #define UP_TIME 21
+  #define DOWN_TIME 20
+#endif             
 
 /*  *******************************************************************************************
  *                                   OUTPUT Config
