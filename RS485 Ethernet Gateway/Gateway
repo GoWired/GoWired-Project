@@ -60,9 +60,9 @@
 #define MY_LEDS_BLINKING_FEATURE                          // Flash leds on rx/tx/err
 //#define MY_WITH_LEDS_BLINKING_INVERSE                     // Define to inverse LED behaviour
 #define MY_DEFAULT_LED_BLINK_PERIOD 100                   // Set blinking period
-#define MY_DEFAULT_ERR_LED_PIN 6                          // Error led pin
-#define MY_DEFAULT_RX_LED_PIN  4                          // Receive led pin
-#define MY_DEFAULT_TX_LED_PIN  5                          // Transmit led pin
+#define MY_DEFAULT_ERR_LED_PIN 4                          // Error led pin
+#define MY_DEFAULT_RX_LED_PIN  5                          // Receive led pin
+#define MY_DEFAULT_TX_LED_PIN  6                          // Transmit led pin
 
 //#define MY_DEBUG                                        // Enable debug prints to serial monitor
 
