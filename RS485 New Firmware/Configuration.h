@@ -91,7 +91,7 @@
 #define MCU_VOLTAGE 3.3
 
 // Roller Shutter
-#define RS_AUTO_CALIBRATION
+//#define RS_AUTO_CALIBRATION
 #ifdef RS_AUTO_CALIBRATION
   #define CALIBRATION_SAMPLES 2
   #define PS_OFFSET 0.5
