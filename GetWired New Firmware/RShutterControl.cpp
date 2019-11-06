@@ -66,7 +66,7 @@ void RShutterControl::Calibration(uint8_t CalibrationSamples, float PSOffset, bo
       digitalWrite(_DownPin, _RelayOn);
       delay(100);
 
-      while(PS.MeasureAC() > PS_OFFSET) {
+      while(PS.MeasureAC() > PSOffset) {
         TIME_2 = millis();
       }
       digitalWrite(_DownPin, _RelayOff);
