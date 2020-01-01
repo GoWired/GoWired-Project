@@ -1,5 +1,5 @@
 
-Tis is software for **GetWired Home Automation Modules by Domatic**, open home automation hardware previously released at [openhardware.io](https://www.openhardware.io/user/2098#view=projects). 
+Software for **GetWired Home Automation Modules by Domatic**, open home automation hardware previously released at [openhardware.io](https://www.openhardware.io/view/649/RS485-Ethernet-Gateway). 
 
 Soon it will take part in a **[crowdfunding campaign](https://www.crowdsupply.com/domatic/getwired)**. We will be very grateful for any kind of support.
 
