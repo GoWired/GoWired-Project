@@ -12,7 +12,7 @@ This is a repository for **GetWired**, RS485 & MySensors based, open source home
 - Sensors: built-in current sensor and temperature sensor handling.
 
 ## Wiki
-To learn more, have a look at our (wiki)[https://github.com/feanor-anglin/GetWired-Project/wiki].
+To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWired-Project/wiki).
 
 ##
 **Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch may not be tested, use on your own responsibility.
