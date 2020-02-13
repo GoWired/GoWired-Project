@@ -280,7 +280,7 @@
 	#endif
 #endif
 
-#define RS485_DEBUG
+//#define RS485_DEBUG
 #ifdef RS485_DEBUG
 	#define DEBUG_ID 16
 #endif
