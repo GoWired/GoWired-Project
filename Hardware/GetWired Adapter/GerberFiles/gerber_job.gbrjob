@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2020-04-21T10:05:12Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.5.1"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 1.57,
+        "LayerNumber": 2,
+        "Name": {
+            "ProjectId": "Adapter GetWired v1b produkcyjna"
+        },
+        "Owner": "Slawomir Kiwala <slawkiwala@gmail.com>",
+        "Size": {
+            "X": 21,
+            "Y": 33.5
+        }
+    }
+}
