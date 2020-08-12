@@ -1,12 +1,9 @@
 /*
- * This is a code written for easy management of digital input/output sensors such as door/window/pir security sensors,
- * buttons and relays. It menages easy sensor initialization, holds sensor states, changes relays states and provides a quite smart 
- * function for reading inputs (including special button functionality which change its state after one second of holding a button).
- * 
+ * UniversalInput.h
  * 
  * SensorType:
  * 0 - INPUT_PULLUP sensor
- * 1 - INPUT sensor 
+ * 1 - INPUT sensor
  * 2 - Relay output
  * 3 - Button input
  * 4 - Button input + Relay output

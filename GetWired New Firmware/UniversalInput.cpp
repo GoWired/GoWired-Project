@@ -1,6 +1,5 @@
 /*
- * PinShift - variable corresponding to arythmetical difference
- * between a sensor and its pin
+ * UniversalInput.cpp
  */
 
 #include "UniversalInput.h"
@@ -17,7 +16,7 @@ UniversalInput::UniversalInput()  {
 /*  *******************************************************************************************
  *                                    Set Values
  *  *******************************************************************************************/
-void UniversalInput::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0) {
+void UniversalInput::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2) {
 	
 	_RelayOFF = RelayOFF;
 
@@ -39,11 +38,12 @@ void UniversalInput::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_
       pinMode(_RelayPin, OUTPUT);
       digitalWrite(_RelayPin, _RelayOFF);
       break;
-    // Button input + Relay output
+    // Button input
     case 3:
       _SensorPin = Pin1;
       pinMode(_SensorPin, INPUT_PULLUP);
       break;
+    // Button + Relay
     case 4:
       _SensorPin = Pin1;
       _RelayPin = Pin2;
@@ -109,8 +109,5 @@ void UniversalInput::SetRelay() {
   digitalWrite(_RelayPin, NewState);
   OldState = NewState;
 }
-/*
- * 
- * EOF
- * 
- */
+
+

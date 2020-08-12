@@ -1,5 +1,5 @@
 /*
- *
+ * Dimmer.cpp
  */
  
 #include "Dimmer.h"
@@ -14,7 +14,7 @@ Dimmer::Dimmer()	{
 /*  *******************************************************************************************
  *                                      Set Values
  *  *******************************************************************************************/
-void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t DimmingInterval, uint8_t Pin1, uint8_t Pin2=0, uint8_t Pin3=0, uint8_t Pin4=0)	{
+void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t DimmingInterval, uint8_t Pin1, uint8_t Pin2, uint8_t Pin3, uint8_t Pin4)	{
 	
 	_NumberOfChannels = NumberOfChannels;
 	_DimmingStep = DimmingStep;
@@ -64,9 +64,9 @@ void Dimmer::ChangeColors() {
   for(int i=0; i<_NumberOfChannels; i++) {
     Delta = (_Values[i] - _NewValues[i]) > 0 ? -_DimmingStep : _DimmingStep;
     while(_Values[i] != _NewValues[i]) {
-		if(millis() > _DimmerTime + _DimmingInterval)	{
+		  if(millis() > _DimmerTime + _DimmingInterval)	{
 			  _Values[i] += Delta;
-			  analogWrite(_Channels[i], (int)(_DimmingLevel / 100.0 * _Values[i]));
+        analogWrite(_Channels[i], (int)(_DimmingLevel / 100.0 * _Values[i]));
 			  _DimmerTime = millis();
 		  }
     }
@@ -109,7 +109,15 @@ void Dimmer::NewColorValues(const char *input) {
     _NewValues[1] = fromhex(&input[2]);
     _NewValues[2] = fromhex(&input[4]);
     _NewValues[3] = 0;
-  } else if (strlen(input) == 9) {
+  }
+  else if (strlen(input) == 8) {
+    //Serial.println("new rgbw value");
+    _NewValues[0] = fromhex(&input[0]);
+    _NewValues[1] = fromhex(&input[2]);
+    _NewValues[2] = fromhex(&input[4]);
+    _NewValues[3] = fromhex(&input[6]);
+  }
+  else if (strlen(input) == 9) {
     //Serial.println("new rgbw value");
     _NewValues[0] = fromhex(&input[1]); // ignore # as first sign
     _NewValues[1] = fromhex(&input[3]);

@@ -1,8 +1,5 @@
 /*
- * For use with MCP9700A analog temperature sensor
- * mVperC = 10
- * ZeroVoltage = 0.5
- * 
+ * InternalTemp.h
  */
 
 
@@ -14,11 +11,11 @@
 class InternalTemp
 {
   public:
-    InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage, float MCUVoltage);
+    InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage);
   
     float Temperature;
 
-    float MeasureT();
+    float MeasureT(float Vcc);
     bool ThermalStatus(float Temperature);
 
   private:
@@ -26,7 +23,7 @@ class InternalTemp
 	  uint8_t _MaxTemperature;
     float _mVperC;
     float _ZeroVoltage;
-	  float _MCUVoltage;
+
 };
 
 
