@@ -14,10 +14,7 @@ This is a repository for **GetWired**, RS485 & MySensors based, open source home
 ## Wiki
 To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWired-Project/wiki).
 
-##
-**Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch may not be tested, use on your own responsibility.
-
-2020-08-12 Changelog (master):
+## 2020-08-12 Changelog (master):
 - Support for Home Assistant
 - DC current measurement
 - Improved analog sensors accuracy
@@ -25,3 +22,6 @@ To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWir
 - Support for defining cos(fi) value of the load for current sensor
 - New "Quick config" section in Configuration.h
 - SHT30 temp&hum sensor support
+
+##
+**Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch may not be tested, use on your own responsibility.
