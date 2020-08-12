@@ -14,7 +14,7 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation. *
+ * version 3 as published by the Free Software Foundation. *
  *
  * DESCRIPTION
  * The Ethernet Gateway sends data received from sensors to the ethernet link.
