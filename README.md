@@ -21,6 +21,7 @@ To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWir
 - New, more advanced procedure of updating current values to the controller
 - Support for defining cos(fi) value of the load for current sensor
 - New "Quick config" section in Configuration.h
+- Roller shutter autocalibration
 - SHT30 temp&hum sensor support
 
 ##
