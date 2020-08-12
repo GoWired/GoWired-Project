@@ -17,3 +17,11 @@ To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWir
 ##
 **Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch may not be tested, use on your own responsibility.
 
+2020-08-12 Changelog (master):
+- Support for Home Assistant
+- DC current measurement
+- Improved analog sensors accuracy
+- New, more advanced procedure of updating current values to the controller
+- Support for defining cos(fi) value of the load for current sensor
+- New "Quick config" section in Configuration.h
+- SHT30 temp&hum sensor support

@@ -1,5 +1,5 @@
 /*
- * 
+ * InternalTemp.cpp
  */
 
 #include "InternalTemp.h"
@@ -7,13 +7,12 @@
 /*  *******************************************************************************************
  *                                      Constructor
  *  *******************************************************************************************/
-InternalTemp::InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage, float MCUVoltage)  {
+InternalTemp::InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage)  {
 	
 	_SensorPin = SensorPin;
 	_MaxTemperature = MaxTemperature;
 	_mVperC = mVperC;
 	_ZeroVoltage = ZeroVoltage;
-	_MCUVoltage = MCUVoltage;
 
 	pinMode(SensorPin, INPUT);
   
@@ -22,10 +21,10 @@ InternalTemp::InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVpe
 /*  *******************************************************************************************
  *                                 Temperature measurement
  *  *******************************************************************************************/
-float InternalTemp::MeasureT()  {
+float InternalTemp::MeasureT(float Vcc)  {
 
   int ReadValue = analogRead(_SensorPin);
-  float Result = (ReadValue * _MCUVoltage) / 1024.0;
+  float Result = (ReadValue * Vcc) / 1024.0;
   Result -= _ZeroVoltage;                        // V = 500 mV in 0C
   Temperature = Result / _mVperC;       // Temperature coefficient 10mV/C
 
