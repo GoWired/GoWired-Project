@@ -730,7 +730,7 @@ void UIUpdate() {
  *  *******************************************************************************************/
 void RSCalibration(float Vcc)  {
 
-  #ifdef ROLLER_SHUTTER
+  #if defined(ROLLER_SHUTTER) && defined(RS_AUTO_CALIBRATION)
 
   uint16_t DownTimeCumulated = 0;
   uint16_t UpTimeCumulated = 0;
@@ -1115,7 +1115,7 @@ void loop() {
       if (OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
         bool NewStatus = false;
         Dimmer.ChangeStatus(NewStatus);
-        send(msgUI.setSensor(i).set(UI[i].NewState));
+        send(msgUI.setSensor(DIMMER_ID).set(Dimmer.DimmerStatus));
         send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
         InformControllerES = true;
       }
