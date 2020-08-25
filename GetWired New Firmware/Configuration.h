@@ -45,17 +45,17 @@
 
 // Input Config - define according to your needs
 // Digital Inputs
-//#define INPUT_1
-//#define INPUT_2
-//#define INPUT_3
-//#define INPUT_4
+#define INPUT_1
+#define INPUT_2
+#define INPUT_3
+#define INPUT_4
 
 // Board dependent
 #define POWER_SENSOR
 #define INTERNAL_TEMP
 
 // External temperature sensor
-#define EXTERNAL_TEMP
+//#define EXTERNAL_TEMP
 
 /*  *******************************************************************************************
                     MCU Pin Definitions
@@ -143,6 +143,7 @@
   #define BUTTON_1 INPUT_PIN_1
   #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_RELAYS 2
+  #define UI_OUTPUTS 2
 #endif
 
 // Roller Shutter
@@ -154,6 +155,7 @@
   #define BUTTON_1 INPUT_PIN_1
   #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_RELAYS 2
+  #define UI_OUTPUTS 2
 #endif
 
 // 4RelayDin 4 Relay Output
@@ -167,6 +169,7 @@
   #define RELAY_3 OUTPUT_PIN_1
   #define RELAY_4 OUTPUT_PIN_4
   #define NUMBER_OF_RELAYS 4
+  #define UI_OUTPUTS 0
 #endif
 
 // Dimmer / RGB / RGBW
@@ -177,14 +180,16 @@
   #define LED_PIN_3 OUTPUT_PIN_3
   #define LED_PIN_4 OUTPUT_PIN_4
   #define NUMBER_OF_CHANNELS 4
+  #define UI_OUTPUTS 0
 #endif
 
 #ifdef RGB
-#define DIMMER_ID 0
-#define LED_PIN_1 OUTPUT_PIN_4
-#define LED_PIN_2 OUTPUT_PIN_1
-#define LED_PIN_3 OUTPUT_PIN_2
-#define NUMBER_OF_CHANNELS 3
+  #define DIMMER_ID 0
+  #define LED_PIN_1 OUTPUT_PIN_4
+  #define LED_PIN_2 OUTPUT_PIN_1
+  #define LED_PIN_3 OUTPUT_PIN_2
+  #define NUMBER_OF_CHANNELS 3
+  #define UI_OUTPUTS 0
 #endif
 
 #ifdef RGBW
@@ -194,6 +199,16 @@
   #define LED_PIN_3 OUTPUT_PIN_2
   #define LED_PIN_4 OUTPUT_PIN_3
   #define NUMBER_OF_CHANNELS 4
+  #define UI_OUTPUTS 0
+#endif
+
+#ifdef NUMBER_OF_RELAYS
+  #define FIRST_INPUT_ID NUMBER_OF_RELAYS
+#elif defined(NUMBER_OF_CHANNELS)
+  #define FIRST_INPUT_ID 1
+#else
+  #define UI_OUTPUTS 0
+  #define FIRST_INPUT_ID 0
 #endif
 
 /*  *******************************************************************************************
@@ -201,40 +216,35 @@
  *  *******************************************************************************************/
 // Digital input - define what inputs to use
 #ifdef INPUT_1
-  #define INPUT_ID_1 4
+  #define INPUT_ID_1 FIRST_INPUT_ID
   #define PIN_1 INPUT_PIN_3
   #define PULLUP_1
-  #define NUMBER_OF_INPUTS 1
+  #define UI_INPUTS 1
 #endif
 
 #ifdef INPUT_2
   #define INPUT_ID_2 INPUT_ID_1+1
   #define PIN_2 INPUT_PIN_4
   #define PULLUP_2
-  #define NUMBER_OF_INPUTS 2
+  #define UI_INPUTS 2
 #endif
 
 #ifdef INPUT_3
   #define INPUT_ID_3 INPUT_ID_2+1
   #define PIN_3 INPUT_PIN_5
   #define PULLUP_3
-  #define NUMBER_OF_INPUTS 3
+  #define UI_INPUTS 3
 #endif
 
 #ifdef INPUT_4
   #define INPUT_ID_4 INPUT_ID_3+1
   #define PIN_4 INPUT_PIN_6
   #define PULLUP_4
-  #define NUMBER_OF_INPUTS 4
+  #define UI_INPUTS 4
 #endif
 
-// Some automatic calculations
-#if defined(NUMBER_OF_RELAYS) && !defined(NUMBER_OF_INPUTS)
-  #define UI_SENSORS_NUMBER NUMBER_OF_RELAYS
-#elif defined(NUMBER_OF_RELAYS) && defined(NUMBER_OF_INPUTS)
-  #define UI_SENSORS_NUMBER NUMBER_OF_RELAYS+NUMBER_OF_INPUTS
-#elif !defined(NUMBER_OF_RELAYS) && defined(INPUT_1)
-  #define UI_SENSORS_NUMBER NUMBER_OF_INPUTS
+#ifndef UI_INPUTS
+  #define UI_INPUTS 0
 #endif
 
 // Special Button
@@ -321,7 +331,5 @@
 
 #endif
 /*
-
    EOF
-
 */
