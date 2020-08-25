@@ -74,8 +74,8 @@ bool InitConfirm = false;
                                         Constructors
  *  *******************************************************************************************/
 //Universal input constructor
-#if (UI_SENSORS_NUMBER > 0)
-  UniversalInput UI[UI_SENSORS_NUMBER];
+#if (UI_OUTPUTS + UI_INPUTS > 0)
+  UniversalInput UI[UI_OUTPUTS+UI_INPUTS];
   MyMessage msgUI(0, V_LIGHT);
 #endif
 
@@ -396,7 +396,7 @@ void InitConfirmation() {
   #endif
 
   #ifdef DIMMER
-    send(msgUI.setSensor(DIMMER_ID).set(DimmerStatus);
+    send(msgUI.setSensor(DIMMER_ID).set(DimmerStatus));
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
@@ -682,14 +682,12 @@ void ETUpdate()  {
 void UIUpdate() {
 
   int FirstSensor;
-  int Iterations;
+  int Iterations = UI_OUTPUTS+UI_INPUTS;
 
-  #ifdef DOUBLE_RELAY
+  #ifdef RELAY_ID_1
     FirstSensor = RELAY_ID_1;
-    Iterations = UI_SENSORS_NUMBER;
-  #elif !defined(DOUBLE_RELAY) && defined(INPUT_1)
+  #elif !defined(RELAY_ID_1) && defined(INPUT_1)
     FirstSensor = INPUT_ID_1;
-    Iterations = NUMBER_OF_INPUTS;
   #endif
 
   if (Iterations > 0)  {
@@ -1046,7 +1044,7 @@ void loop() {
     RSUpdate();
   #endif
 
-  if (UI_SENSORS_NUMBER > 0) {
+  if (UI_OUTPUTS + UI_INPUTS > 0) {
     UIUpdate();
   }
 
@@ -1113,9 +1111,9 @@ void loop() {
       }
     #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
       if (OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
-        bool NewStatus = false;
-        Dimmer.ChangeStatus(NewStatus);
-        send(msgUI.setSensor(DIMMER_ID).set(Dimmer.DimmerStatus));
+        bool NewState = false;
+        Dimmer.ChangeStatus(NewState);
+        send(msgUI.setSensor(DIMMER_ID).set(NewState));
         send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
         InformControllerES = true;
       }
