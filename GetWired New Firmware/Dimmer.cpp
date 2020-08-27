@@ -21,7 +21,7 @@ void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t Di
 	_DimmingInterval = DimmingInterval;
 	
 	_DimmerTime = 0;
-	DimmerStatus = false;
+	_DimmerState = false;
 	
 	if(_NumberOfChannels == 3)	{
 		_Channels[0] = Pin1;
@@ -39,11 +39,11 @@ void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t Di
 /*  *******************************************************************************************
  *                                      Change Level
  *  *******************************************************************************************/
-void Dimmer::ChangeLevel(uint8_t NewLevel)  {
+void Dimmer::ChangeLevel()  {
 
-  uint8_t Delta = (NewLevel - _DimmingLevel) < 0 ? -_DimmingStep : _DimmingStep;
+  uint8_t Delta = (NewDimmingLevel - _DimmingLevel) < 0 ? -_DimmingStep : _DimmingStep;
 
-  while(_DimmingLevel != NewLevel) {
+  while(_DimmingLevel != NewDimmingLevel) {
 		if(millis() > _DimmerTime + _DimmingInterval)	{
 			_DimmerTime = millis();
 			_DimmingLevel += Delta;
@@ -62,8 +62,8 @@ void Dimmer::ChangeColors() {
   uint8_t Delta;
 
   for(int i=0; i<_NumberOfChannels; i++) {
-    Delta = (_Values[i] - _NewValues[i]) > 0 ? -_DimmingStep : _DimmingStep;
-    while(_Values[i] != _NewValues[i]) {
+    Delta = (_Values[i] - NewValues[i]) > 0 ? -_DimmingStep : _DimmingStep;
+    while(_Values[i] != NewValues[i]) {
 		  if(millis() > _DimmerTime + _DimmingInterval)	{
 			  _Values[i] += Delta;
         analogWrite(_Channels[i], (int)(_DimmingLevel / 100.0 * _Values[i]));
@@ -76,25 +76,25 @@ void Dimmer::ChangeColors() {
 /*  *******************************************************************************************
  *                                      Change Status
  *  *******************************************************************************************/
-void Dimmer::ChangeStatus(bool NewStatus) {
+void Dimmer::ChangeState() {
 
-  uint8_t NewLevel;
+  //uint8_t NewLevel;
 
-  DimmerStatus = NewStatus;
+  _DimmerState = NewState;
   
-  if(!NewStatus) {
+  if(!NewState) {
     uint8_t TempLevel = _DimmingLevel;
-    NewLevel = 0;
+    NewDimmingLevel = 0;
 
-    ChangeLevel(NewLevel);
+    ChangeLevel();
 
     _DimmingLevel = TempLevel;
   }
   else  {
-    NewLevel = _DimmingLevel;
+    NewDimmingLevel = _DimmingLevel;
     _DimmingLevel = 0;
 
-    ChangeLevel(NewLevel);
+    ChangeLevel();
   }
 }
 
@@ -105,24 +105,24 @@ void Dimmer::NewColorValues(const char *input) {
   
   if (strlen(input) == 6) {
     //Serial.println("new rgb value");
-    _NewValues[0] = fromhex(&input[0]);
-    _NewValues[1] = fromhex(&input[2]);
-    _NewValues[2] = fromhex(&input[4]);
-    _NewValues[3] = 0;
+    NewValues[0] = fromhex(&input[0]);
+    NewValues[1] = fromhex(&input[2]);
+    NewValues[2] = fromhex(&input[4]);
+    NewValues[3] = 0;
   }
   else if (strlen(input) == 8) {
     //Serial.println("new rgbw value");
-    _NewValues[0] = fromhex(&input[0]);
-    _NewValues[1] = fromhex(&input[2]);
-    _NewValues[2] = fromhex(&input[4]);
-    _NewValues[3] = fromhex(&input[6]);
+    NewValues[0] = fromhex(&input[0]);
+    NewValues[1] = fromhex(&input[2]);
+    NewValues[2] = fromhex(&input[4]);
+    NewValues[3] = fromhex(&input[6]);
   }
   else if (strlen(input) == 9) {
     //Serial.println("new rgbw value");
-    _NewValues[0] = fromhex(&input[1]); // ignore # as first sign
-    _NewValues[1] = fromhex(&input[3]);
-    _NewValues[2] = fromhex(&input[5]);
-    _NewValues[3] = fromhex(&input[7]);
+    NewValues[0] = fromhex(&input[1]); // ignore # as first sign
+    NewValues[1] = fromhex(&input[3]);
+    NewValues[2] = fromhex(&input[5]);
+    NewValues[3] = fromhex(&input[7]);
   }
 }
 
