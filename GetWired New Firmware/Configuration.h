@@ -100,10 +100,10 @@
 #define MAX_TEMPERATURE 85                  // Maximum temperature the module can have before reporting error (default 85)
 
 // Power Sensor
-#define MAX_CURRENT 10                      // Maximum current the module can handle before reporting error (2SSR - 3; 4RelayDin - 10A or 16)
+#define MAX_CURRENT 3                      // Maximum current the module can handle before reporting error (2SSR - 3; 4RelayDin - 10A or 16)
 #define POWER_MEASURING_TIME 20             // Current measuring takes this long (default 20)
-#define MVPERAMP 100                       // mV per 1A (default: 2SSR 185 mV/A; 4RelayDin 73.3 mV/A, RGBW 100 mV/A)
-#define RECEIVER_VOLTAGE 12                // 230V, 24V, 12V - values for power usage calculation, depends on the receiver
+#define MVPERAMP 185                       // mV per 1A (default: 2SSR 185 mV/A; 4RelayDin 73.3 mV/A, RGBW 100 mV/A)
+#define RECEIVER_VOLTAGE 230                // 230V, 24V, 12V - values for power usage calculation, depends on the receiver
 #define COSFI 1                             // cos(fi) value for a given load: resistive load - 1, LED - 0.4 < cos(fi) < 0.99, fluorescent - 
 
 // Dimmer
