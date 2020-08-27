@@ -247,7 +247,7 @@
 #endif
 
 // Special Button
-#if defined(SINGLE_RELAY) || defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
+#ifdef BUTTON_1
   #define SPECIAL_BUTTON
   #define SPECIAL_BUTTON_ID 8
 #endif
