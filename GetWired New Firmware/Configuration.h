@@ -45,17 +45,17 @@
 
 // Input Config - define according to your needs
 // Digital Inputs
-//#define INPUT_1
-//#define INPUT_2
-//#define INPUT_3
-//#define INPUT_4
+#define INPUT_1
+#define INPUT_2
+#define INPUT_3
+#define INPUT_4
 
 // Board dependent
 #define POWER_SENSOR
 #define INTERNAL_TEMP
 
 // External temperature sensor
-#define EXTERNAL_TEMP
+//#define EXTERNAL_TEMP
 
 /*  *******************************************************************************************
                     MCU Pin Definitions
@@ -100,15 +100,16 @@
 #define MAX_TEMPERATURE 85                  // Maximum temperature the module can have before reporting error (default 85)
 
 // Power Sensor
-#define MAX_CURRENT 3                      // Maximum current the module can handle before reporting error (2SSR - 3; 4RelayDin - 10A or 16)
+#define MAX_CURRENT 10                      // Maximum current the module can handle before reporting error (2SSR - 3; 4RelayDin - 10A or 16)
 #define POWER_MEASURING_TIME 20             // Current measuring takes this long (default 20)
-#define MVPERAMP 185                        // mV per 1A (default: 2SSR 185 mV/A; 4RelayDin 73.3 mV/A, RGBW 100 mV/A)
-#define RECEIVER_VOLTAGE 230                // 230V, 24V, 12V - values for power usage calculation, depends on the receiver
+#define MVPERAMP 100                       // mV per 1A (default: 2SSR 185 mV/A; 4RelayDin 73.3 mV/A, RGBW 100 mV/A)
+#define RECEIVER_VOLTAGE 12                // 230V, 24V, 12V - values for power usage calculation, depends on the receiver
 #define COSFI 1                             // cos(fi) value for a given load: resistive load - 1, LED - 0.4 < cos(fi) < 0.99, fluorescent - 
 
 // Dimmer
 #define DIMMING_STEP 1                      // Size of dimming step, increase for faster, less smooth dimming (default 1)
 #define DIMMING_INTERVAL 1                  // Duration of dimming interval, increase for slower dimming (default 10)
+#define DIMMING_TOGGLE_STEP 20              // Value to increase dimming percentage when using wall switch
 
 // Roller Shutter
 #define RS_AUTO_CALIBRATION
@@ -176,15 +177,19 @@
   #define LED_PIN_2 OUTPUT_PIN_2
   #define LED_PIN_3 OUTPUT_PIN_3
   #define LED_PIN_4 OUTPUT_PIN_4
+  #define BUTTON_1 INPUT_PIN_1
+  #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_CHANNELS 4
 #endif
 
 #ifdef RGB
-#define DIMMER_ID 0
-#define LED_PIN_1 OUTPUT_PIN_4
-#define LED_PIN_2 OUTPUT_PIN_1
-#define LED_PIN_3 OUTPUT_PIN_2
-#define NUMBER_OF_CHANNELS 3
+  #define DIMMER_ID 0
+  #define LED_PIN_1 OUTPUT_PIN_4
+  #define LED_PIN_2 OUTPUT_PIN_1
+  #define LED_PIN_3 OUTPUT_PIN_2
+  #define BUTTON_1 INPUT_PIN_1
+  #define BUTTON_2 INPUT_PIN_2
+  #define NUMBER_OF_CHANNELS 3
 #endif
 
 #ifdef RGBW
@@ -193,7 +198,19 @@
   #define LED_PIN_2 OUTPUT_PIN_1
   #define LED_PIN_3 OUTPUT_PIN_2
   #define LED_PIN_4 OUTPUT_PIN_3
+  #define BUTTON_1 INPUT_PIN_1
+  #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_CHANNELS 4
+#endif
+
+#ifdef NUMBER_OF_RELAYS
+  #define FIRST_INPUT_ID NUMBER_OF_RELAYS
+#elif defined(NUMBER_OF_CHANNELS)
+  #define FIRST_INPUT_ID 2
+  #define NUMBER_OF_RELAYS 2
+#else
+  #define NUMBER_OF_RELAYS 0
+  #define FIRST_INPUT_ID 0
 #endif
 
 /*  *******************************************************************************************
@@ -201,7 +218,7 @@
  *  *******************************************************************************************/
 // Digital input - define what inputs to use
 #ifdef INPUT_1
-  #define INPUT_ID_1 4
+  #define INPUT_ID_1 FIRST_INPUT_ID
   #define PIN_1 INPUT_PIN_3
   #define PULLUP_1
   #define NUMBER_OF_INPUTS 1
@@ -228,13 +245,8 @@
   #define NUMBER_OF_INPUTS 4
 #endif
 
-// Some automatic calculations
-#if defined(NUMBER_OF_RELAYS) && !defined(NUMBER_OF_INPUTS)
-  #define UI_SENSORS_NUMBER NUMBER_OF_RELAYS
-#elif defined(NUMBER_OF_RELAYS) && defined(NUMBER_OF_INPUTS)
-  #define UI_SENSORS_NUMBER NUMBER_OF_RELAYS+NUMBER_OF_INPUTS
-#elif !defined(NUMBER_OF_RELAYS) && defined(INPUT_1)
-  #define UI_SENSORS_NUMBER NUMBER_OF_INPUTS
+#ifndef NUMBER_OF_INPUTS
+  #define NUMBER_OF_INPUTS 0
 #endif
 
 // Special Button
@@ -321,7 +333,5 @@
 
 #endif
 /*
-
    EOF
-
 */

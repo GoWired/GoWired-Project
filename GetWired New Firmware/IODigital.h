@@ -1,5 +1,5 @@
 /*
- * UniversalInput.h
+ * IODigital.h
  * 
  * SensorType:
  * 0 - INPUT_PULLUP sensor
@@ -10,16 +10,16 @@
  *
  */
 
-#ifndef UniversalInput_h
-#define UniversalInput_h
+#ifndef IODigital_h
+#define IODigital_h
 
 #include "Arduino.h"
 
 
-class UniversalInput
+class IODigital
 {
   public:
-    UniversalInput();       
+    IODigital();       
 
     uint8_t SensorType;
     uint8_t NewState;
