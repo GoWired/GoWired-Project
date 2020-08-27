@@ -37,7 +37,7 @@
  *  *******************************************************************************************/
 #include "PowerSensor.h"
 #include "InternalTemp.h"
-#include "UniversalInput.h"
+#include "IODigital.h"
 #include "Dimmer.h"
 #include "RShutterControl.h"
 #include "Configuration.h"
@@ -51,10 +51,6 @@
  *  *******************************************************************************************/
 // RShutter
 int NewPosition;
-
-// Dimmer
-int CurrentLevel = 0;
-bool DimmerStatus = false;
 
 // Timer
 unsigned long LastUpdate = 0;               // Time of last update of interval sensors
@@ -74,9 +70,9 @@ bool InitConfirm = false;
                                         Constructors
  *  *******************************************************************************************/
 //Universal input constructor
-#if (UI_OUTPUTS + UI_INPUTS > 0)
-  UniversalInput UI[UI_OUTPUTS+UI_INPUTS];
-  MyMessage msgUI(0, V_LIGHT);
+#if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0)
+  IODigital IOD[NUMBER_OF_RELAYS+NUMBER_OF_INPUTS];
+  MyMessage msgIOD(0, V_LIGHT);
 #endif
 
 // Dimmer
@@ -152,64 +148,70 @@ void setup() {
 
   // OUTPUT
   #ifdef DOUBLE_RELAY
-    UI[RELAY_ID_1].SetValues(RELAY_OFF, 4, BUTTON_1, RELAY_1);
-    UI[RELAY_ID_2].SetValues(RELAY_OFF, 4, BUTTON_2, RELAY_2);
+    IOD[RELAY_ID_1].SetValues(RELAY_OFF, 4, BUTTON_1, RELAY_1);
+    IOD[RELAY_ID_2].SetValues(RELAY_OFF, 4, BUTTON_2, RELAY_2);
   #endif
 
   #ifdef ROLLER_SHUTTER
-    UI[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
-    UI[RS_ID + 1].SetValues(RELAY_OFF, 3, BUTTON_2);
+    IOD[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
+    IOD[RS_ID + 1].SetValues(RELAY_OFF, 3, BUTTON_2);
   #endif
 
   #ifdef FOUR_RELAY
-    UI[RELAY_ID_1].SetValues(RELAY_OFF, 2, RELAY_1);
-    UI[RELAY_ID_2].SetValues(RELAY_OFF, 2, RELAY_2);
-    UI[RELAY_ID_3].SetValues(RELAY_OFF, 2, RELAY_3);
-    UI[RELAY_ID_4].SetValues(RELAY_OFF, 2, RELAY_4);
+    IOD[RELAY_ID_1].SetValues(RELAY_OFF, 2, RELAY_1);
+    IOD[RELAY_ID_2].SetValues(RELAY_OFF, 2, RELAY_2);
+    IOD[RELAY_ID_3].SetValues(RELAY_OFF, 2, RELAY_3);
+    IOD[RELAY_ID_4].SetValues(RELAY_OFF, 2, RELAY_4);
   #endif
 
   #ifdef DIMMER
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
+    IOD[0].SetValues(0, 3, BUTTON_1);
+    IOD[1].SetValues(0, 3, BUTTON_2);
   #endif
 
   #ifdef RGB
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3);
+    IOD[0].SetValues(0, 3, BUTTON_1);
+    IOD[1].SetValues(0, 3, BUTTON_2);
   #endif
 
   #ifdef RGBW
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
+    IOD[0].SetValues(0, 3, BUTTON_1);
+    IOD[1].SetValues(0, 3, BUTTON_2);
   #endif
 
   // INPUT
   #ifdef INPUT_1
     #ifdef PULLUP_1
-      UI[INPUT_ID_1].SetValues(RELAY_OFF, 0, PIN_1);
+      IOD[INPUT_ID_1].SetValues(RELAY_OFF, 0, PIN_1);
     #else
-      UI[INPUT_ID_1].SetValues(RELAY_OFF, 1, PIN_1);
+      IOD[INPUT_ID_1].SetValues(RELAY_OFF, 1, PIN_1);
     #endif
   #endif
 
   #ifdef INPUT_2
     #ifdef PULLUP_2
-      UI[INPUT_ID_2].SetValues(RELAY_OFF, 0, PIN_2);
+      IOD[INPUT_ID_2].SetValues(RELAY_OFF, 0, PIN_2);
     #else
-      UI[INPUT_ID_2].SetValues(RELAY_OFF, 1, PIN_2);
+      IOD[INPUT_ID_2].SetValues(RELAY_OFF, 1, PIN_2);
     #endif
   #endif
 
   #ifdef INPUT_3
     #ifdef PULLUP_3
-      UI[INPUT_ID_3].SetValues(RELAY_OFF, 0, PIN_3);
+      IOD[INPUT_ID_3].SetValues(RELAY_OFF, 0, PIN_3);
     #else
-      UI[INPUT_ID_3].SetValues(RELAY_OFF, 1, PIN_3);
+      IOD[INPUT_ID_3].SetValues(RELAY_OFF, 1, PIN_3);
     #endif
   #endif
 
   #ifdef INPUT_4
     #ifdef PULLUP_4
-      UI[INPUT_ID_4].SetValues(RELAY_OFF, 0, PIN_4);
+      IOD[INPUT_ID_4].SetValues(RELAY_OFF, 0, PIN_4);
     #else
-      UI[INPUT_ID_4].SetValues(RELAY_OFF, 1, PIN_4);
+      IOD[INPUT_ID_4].SetValues(RELAY_OFF, 1, PIN_4);
     #endif
   #endif
 
@@ -344,11 +346,11 @@ void InitConfirmation() {
 
   // OUTPUT
   #ifdef DOUBLE_RELAY
-    send(msgUI.setSensor(RELAY_ID_1).set(UI[RELAY_ID_1].NewState));
+    send(msgIOD.setSensor(RELAY_ID_1).set(IOD[RELAY_ID_1].NewState));
     request(RELAY_ID_1, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    send(msgUI.setSensor(RELAY_ID_2).set(UI[RELAY_ID_2].NewState));
+    send(msgIOD.setSensor(RELAY_ID_2).set(IOD[RELAY_ID_2].NewState));
     request(RELAY_ID_2, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
@@ -376,19 +378,19 @@ void InitConfirmation() {
   #endif
 
   #ifdef FOUR_RELAY
-    send(msgUI.setSensor(RELAY_ID_1).set(UI[RELAY_ID_1].NewState));
+    send(msgIOD.setSensor(RELAY_ID_1).set(IOD[RELAY_ID_1].NewState));
     request(RELAY_ID_1, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgUI.setSensor(RELAY_ID_2).set(UI[RELAY_ID_2].NewState));
+    send(msgIOD.setSensor(RELAY_ID_2).set(IOD[RELAY_ID_2].NewState));
     request(RELAY_ID_2, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgUI.setSensor(RELAY_ID_3).set(UI[RELAY_ID_3].NewState));
+    send(msgIOD.setSensor(RELAY_ID_3).set(IOD[RELAY_ID_3].NewState));
     request(RELAY_ID_3, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgUI.setSensor(RELAY_ID_4).set(UI[RELAY_ID_4].NewState));
+    send(msgIOD.setSensor(RELAY_ID_4).set(IOD[RELAY_ID_4].NewState));
     request(RELAY_ID_4, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
@@ -396,11 +398,11 @@ void InitConfirmation() {
   #endif
 
   #ifdef DIMMER
-    send(msgUI.setSensor(DIMMER_ID).set(DimmerStatus));
+    send(msgIOD.setSensor(DIMMER_ID).set(false));
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgDIM.set(CurrentLevel));
+    send(msgDIM.set(0));
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
@@ -408,11 +410,11 @@ void InitConfirmation() {
   #endif
 
   #ifdef RGB
-    send(msgUI.setSensor(DIMMER_ID).set(DimmerStatus));
+    send(msgIOD.setSensor(DIMMER_ID).set(false));
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    send(msgDIM.set(CurrentLevel));
+    send(msgDIM.set(0));
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
@@ -424,11 +426,11 @@ void InitConfirmation() {
   #endif
 
   #ifdef RGBW
-    send(msgUI.setSensor(DIMMER_ID).set(DimmerStatus));
+    send(msgIOD.setSensor(DIMMER_ID).set(false));
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    send(msgDIM.set(CurrentLevel));
+    send(msgDIM.set(0));
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
@@ -441,23 +443,23 @@ void InitConfirmation() {
 
   // DIGITAL INPUT
   #ifdef INPUT_1
-    send(msgUI.setSensor(INPUT_ID_1).set(UI[INPUT_ID_1].NewState));
+    send(msgIOD.setSensor(INPUT_ID_1).set(IOD[INPUT_ID_1].NewState));
   #endif
 
   #ifdef INPUT_2
-    send(msgUI.setSensor(INPUT_ID_2).set(UI[INPUT_ID_2].NewState));
+    send(msgIOD.setSensor(INPUT_ID_2).set(IOD[INPUT_ID_2].NewState));
   #endif
 
   #ifdef INPUT_3
-    send(msgUI.setSensor(INPUT_ID_3).set(UI[INPUT_ID_3].NewState));
+    send(msgIOD.setSensor(INPUT_ID_3).set(IOD[INPUT_ID_3].NewState));
   #endif
 
   #ifdef INPUT_4
-    send(msgUI.setSensor(INPUT_ID_4).set(UI[INPUT_ID_4].NewState));
+    send(msgIOD.setSensor(INPUT_ID_4).set(IOD[INPUT_ID_4].NewState));
   #endif
 
   #ifdef SPECIAL_BUTTON
-    send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(0));
+    send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(0));
   #endif
 
   // Built-in sensors
@@ -530,23 +532,24 @@ void receive(const MyMessage &message)  {
     #ifdef ROLLER_SHUTTER
       if (message.sensor == RS_ID)  {
         if (message.getBool() == true) {
-          UI[RS_ID + 1].NewState = message.getBool();
+          IOD[RS_ID + 1].NewState = message.getBool();
         }
         else  {
-          UI[RS_ID].NewState = message.getBool();
+          IOD[RS_ID].NewState = message.getBool();
         }
       }
     #endif
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
       if (message.sensor == DIMMER_ID) {
-        Dimmer.ChangeStatus(message.getBool());
+        Dimmer.NewState = message.getBool();
+        Dimmer.ChangeState();
       }
     #endif
     #if defined(DOUBLE_RELAY)
       if (message.sensor >= RELAY_ID_1 && message.sensor < NUMBER_OF_RELAYS)  {
         if (!OVERCURRENT_ERROR[0] && !THERMAL_ERROR) {
-          UI[message.sensor].NewState = message.getBool();
-          UI[message.sensor].SetRelay();
+          IOD[message.sensor].NewState = message.getBool();
+          IOD[message.sensor].SetRelay();
         }
       }
     #endif
@@ -555,8 +558,8 @@ void receive(const MyMessage &message)  {
         for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++) {
           if (message.sensor == i) {
             if (!OVERCURRENT_ERROR[i] && !THERMAL_ERROR) {
-              UI[message.sensor].NewState = message.getBool();
-              UI[message.sensor].SetRelay();
+              IOD[message.sensor].NewState = message.getBool();
+              IOD[message.sensor].SetRelay();
             }
           }
         }
@@ -573,12 +576,12 @@ void receive(const MyMessage &message)  {
     #endif
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
       if(message.sensor == DIMMER_ID) {
-        int NewLevel = atoi(message.data);
-        NewLevel = NewLevel > 100 ? 100 : NewLevel;
-        NewLevel = NewLevel < 0 ? 0 : NewLevel;
+        Dimmer.NewDimmingLevel = atoi(message.data);
+        Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel > 100 ? 100 : Dimmer.NewDimmingLevel;
+        Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel < 0 ? 0 : Dimmer.NewDimmingLevel;
 
-        Dimmer.DimmerStatus = true;
-        Dimmer.ChangeLevel(NewLevel);
+        Dimmer.NewState = true;
+        Dimmer.ChangeLevel();
       }
     #endif
   }
@@ -587,7 +590,7 @@ void receive(const MyMessage &message)  {
       if(message.sensor == DIMMER_ID) {
         const char *rgbvalues = message.getString();
 
-        Dimmer.DimmerStatus = true;
+        Dimmer.NewState = true;
         Dimmer.NewColorValues(rgbvalues);
         Dimmer.ChangeColors();
       }
@@ -596,22 +599,22 @@ void receive(const MyMessage &message)  {
   else if(message.type == V_DOWN) {
     #ifdef ROLLER_SHUTTER
       if(message.sensor == RS_ID) {
-        UI[RS_ID + 1].NewState = 1;
+        IOD[RS_ID + 1].NewState = 1;
       }
     #endif
   }
   else if(message.type == V_UP) {
     #ifdef ROLLER_SHUTTER
       if(message.sensor == RS_ID) {
-        UI[RS_ID].NewState = 1;
+        IOD[RS_ID].NewState = 1;
       }
     #endif
   }
   else if(message.type == V_STOP) {
     #ifdef ROLLER_SHUTTER
       if(message.sensor == RS_ID) {
-        UI[RS_ID].NewState = 0;
-        UI[RS_ID + 1].NewState = 0;
+        IOD[RS_ID].NewState = 0;
+        IOD[RS_ID + 1].NewState = 0;
       }
     #endif
   }
@@ -679,44 +682,84 @@ void ETUpdate()  {
 /*  *******************************************************************************************
                                         Universal Input
  *  *******************************************************************************************/
-void UIUpdate() {
+void IODUpdate() {
 
-  int FirstSensor;
-  int Iterations = UI_OUTPUTS+UI_INPUTS;
+  int FirstSensor = 0;
+  int Iterations = NUMBER_OF_RELAYS+NUMBER_OF_INPUTS;
 
-  #ifdef RELAY_ID_1
+  /*#ifdef RELAY_ID_1
     FirstSensor = RELAY_ID_1;
   #elif !defined(RELAY_ID_1) && defined(INPUT_1)
     FirstSensor = INPUT_ID_1;
-  #endif
+  #endif*/
 
   if (Iterations > 0)  {
     for (int i = FirstSensor; i < FirstSensor + Iterations; i++)  {
-      UI[i].CheckInput();
-      if (UI[i].NewState != UI[i].OldState)  {
-        // Door/window/button/motion sensor
-        if (UI[i].SensorType == 0 || UI[i].SensorType == 1)  {
-          send(msgUI.setSensor(i).set(UI[i].NewState));
-          UI[i].OldState = UI[i].NewState;
-        }
-        // Relay output
-        //
-        // Button input
-        //
-        // Button input + Relay output
-        else if (UI[i].SensorType == 4)  {
-          if (UI[i].NewState != 2)  {
+      IOD[i].CheckInput();
+      if (IOD[i].NewState != IOD[i].OldState)  {
+        switch(IOD[i].SensorType)  {
+          case 0:
+            // Door/window/button
+          case 1:
+            // Motion sensor
+            send(msgIOD.setSensor(i).set(IOD[i].NewState));
+            IOD[i].OldState = IOD[i].NewState;
+            break;
+          case 2:
+            // Relay output
+            // Nothing to do here
+            break;
+          case 3:
+            // Button input
+            #ifdef DIMMER_ID
+              if(i == 0)  {
+                if(IOD[i].NewState != 2) {
+                  // Change dimmer status
+                  Dimmer.NewState = !Dimmer.NewState;
+                  send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
+                  Dimmer.ChangeState();
+                  IOD[i].OldState = IOD[i].NewState;
+                }
+                #ifdef SPECIAL_BUTTON
+                  if(IOD[i].NewState == 2) {
+                    send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
+                    IOD[i].NewState = IOD[i].OldState;
+                  }
+                #endif  
+              }
+              else if(i == 1) {
+                if(IOD[i].NewState != 2)  {
+                  if(Dimmer.NewState) {
+                    // Toggle dimming level by DIMMING_TOGGLE_STEP
+                    Dimmer.NewDimmingLevel += DIMMING_TOGGLE_STEP;
+
+                    Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel > 100 ? DIMMING_TOGGLE_STEP : Dimmer.NewDimmingLevel;
+                    send(msgDIM.set(Dimmer.NewDimmingLevel));
+                    Dimmer.ChangeLevel();
+                    IOD[i].OldState = IOD[i].NewState;
+                  }
+                }
+              }
+            #endif
+            break;
+          case 4:
+          // Button input + Relay output
+          if (IOD[i].NewState != 2)  {
             if (!OVERCURRENT_ERROR[0] && !THERMAL_ERROR)  {
-              UI[i].SetRelay();
-              send(msgUI.setSensor(i).set(UI[i].NewState));
+              IOD[i].SetRelay();
+              send(msgIOD.setSensor(i).set(IOD[i].NewState));
             }
           }
           #ifdef SPECIAL_BUTTON
-            else if (UI[i].NewState == 2)  {
-              send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
-              UI[i].NewState = UI[i].OldState;
+            else if (IOD[i].NewState == 2)  {
+              send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
+              IOD[i].NewState = IOD[i].OldState;
             }
           #endif
+          break;
+        default:
+          // Nothing to do here
+          break;
         }
       }
     }
@@ -816,20 +859,20 @@ void RSUpdate() {
   // If no new position set by percentage, check buttons
     else  {
       for (int i = RS_ID; i < RS_ID + 2; i++)  {
-        UI[i].CheckInput();
-        if (UI[i].NewState != UI[i].OldState)  {
+        IOD[i].CheckInput();
+        if (IOD[i].NewState != IOD[i].OldState)  {
         // Handling regular upwards/downwards movement of the roller shutter
-          if (UI[i].NewState == 1) {
+          if (IOD[i].NewState == 1) {
             int Time = RS.Move(i);
-            UI[i].OldState = UI[i].NewState;
+            IOD[i].OldState = IOD[i].NewState;
 
             unsigned long TIME_1 = millis();
             unsigned long TIME_2 = 0;
             unsigned long TIME_3 = 0;
 
-            while (UI[RS_ID].NewState == UI[RS_ID].OldState && UI[RS_ID + 1].NewState == UI[RS_ID + 1].OldState) {
-              UI[RS_ID].CheckInput();
-              UI[RS_ID + 1].CheckInput();
+            while (IOD[RS_ID].NewState == IOD[RS_ID].OldState && IOD[RS_ID + 1].NewState == IOD[RS_ID + 1].OldState) {
+              IOD[RS_ID].CheckInput();
+              IOD[RS_ID + 1].CheckInput();
               wait(100);
 
               TIME_2 = millis();
@@ -839,42 +882,42 @@ void RSUpdate() {
               if (TIME_3 > Time) {
                 RS.Stop();
                 RS.Position = (i == 1 ? 100 : 0);
-                UI[RS_ID].NewState = 0; UI[RS_ID + 1].NewState = 0;
+                IOD[RS_ID].NewState = 0; IOD[RS_ID + 1].NewState = 0;
                 break;
               }
             }
             if (TIME_3 < Time)  {
               RS.Stop();
-              UI[RS_ID].NewState = 0; UI[RS_ID + 1].NewState = 0;
+              IOD[RS_ID].NewState = 0; IOD[RS_ID + 1].NewState = 0;
               int PositionChange = (float) TIME_3 / (float) Time * 100;
               RS.Position += (i == 1 ? PositionChange : -PositionChange);
               RS.Position = RS.Position > 100 ? 100 : RS.Position;
               RS.Position = RS.Position < 0 ? 0 : RS.Position;
             }
             
-            UI[RS_ID].OldState = UI[RS_ID].NewState;
-            UI[RS_ID + 1].OldState = UI[RS_ID + 1].NewState;
+            IOD[RS_ID].OldState = IOD[RS_ID].NewState;
+            IOD[RS_ID + 1].OldState = IOD[RS_ID + 1].NewState;
             NewPosition = RS.Position;
             EEPROM.put(EEA_RS_POSITION, RS.Position);
             send(msgRS4.set(RS.Position));
           }
           // Procedure to call out calibration process
-          else if (UI[i].NewState == 2)  {
+          else if (IOD[i].NewState == 2)  {
             int SecondButton = (i == RS_ID ? RS_ID + 1 : RS_ID);
             for (int j = 0; j < 10; j++) {
-              UI[SecondButton].CheckInput();
+              IOD[SecondButton].CheckInput();
               wait(100);
             }
-            if (UI[SecondButton].NewState == 2)  {
-              UI[SecondButton].NewState = UI[SecondButton].OldState;
+            if (IOD[SecondButton].NewState == 2)  {
+              IOD[SecondButton].NewState = IOD[SecondButton].OldState;
               #ifdef RS_AUTO_CALIBRATION
                 float Vcc = ReadVcc();
                 RSCalibration(Vcc);
               #endif
             }
             else  {
-              send(msgUI.setSensor(SPECIAL_BUTTON_ID).set(true));
-              UI[i].NewState = UI[i].OldState;
+              send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
+              IOD[i].NewState = IOD[i].OldState;
             }
           }
         }
@@ -981,7 +1024,7 @@ void loop() {
         }
       }
     #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-      if (Dimmer.DimmerStatus)  {
+      if (Dimmer.NewState)  {
         Current = PS.MeasureDC(Vcc);
       }
       else  {
@@ -1044,8 +1087,8 @@ void loop() {
     RSUpdate();
   #endif
 
-  if (UI_OUTPUTS + UI_INPUTS > 0) {
-    UIUpdate();
+  if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0) {
+    IODUpdate();
   }
 
   if ((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {
@@ -1064,11 +1107,11 @@ void loop() {
     if (THERMAL_ERROR == true && InformControllerTS == false) {
     // Board temperature to hot
     // Turn off relays
-      #ifdef NUMBER_OF_RELAYS
+      #ifdef RELAY_ID_1
         for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
-          UI[i].NewState = RELAY_OFF;
-          UI[i].SetRelay();
-          send(msgUI.setSensor(i).set(UI[i].NewState));
+          IOD[i].NewState = RELAY_OFF;
+          IOD[i].SetRelay();
+          send(msgIOD.setSensor(i).set(IOD[i].NewState));
         }
       #endif
       send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
@@ -1086,9 +1129,9 @@ void loop() {
     #ifdef FOUR_RELAY
       for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
         if (OVERCURRENT_ERROR[i] == true && InformControllerES == false) {
-          UI[i].NewState = RELAY_OFF;
-          UI[i].SetRelay();
-          send(msgUI.setSensor(i).set(UI[i].NewState));
+          IOD[i].NewState = RELAY_OFF;
+          IOD[i].SetRelay();
+          send(msgUI.setSensor(i).set(IOD[i].NewState));
           send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
           InformControllerES = true;
         }
@@ -1099,9 +1142,9 @@ void loop() {
     #elif defined(DOUBLE_RELAY)
       if (OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
         for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
-          UI[i].NewState = RELAY_OFF;
-          UI[i].SetRelay();
-          send(msgUI.setSensor(i).set(UI[i].NewState));
+          IOD[i].NewState = RELAY_OFF;
+          IOD[i].SetRelay();
+          send(msgIOD.setSensor(i).set(IOD[i].NewState));
           send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
           InformControllerES = true;
         }
@@ -1111,9 +1154,9 @@ void loop() {
       }
     #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
       if (OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
-        bool NewState = false;
-        Dimmer.ChangeStatus(NewState);
-        send(msgUI.setSensor(DIMMER_ID).set(NewState));
+        Dimmer.NewState = false;
+        Dimmer.ChangeState();
+        send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
         send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
         InformControllerES = true;
       }
