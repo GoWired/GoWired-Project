@@ -36,11 +36,11 @@
                     Quick config
  *  *******************************************************************************************/
 // Output Config - one of these has to be defined
-//#define DOUBLE_RELAY              // Define this node as a double relay node, setting below
+#define DOUBLE_RELAY              // Define this node as a double relay node, setting below
 //#define ROLLER_SHUTTER            // Define this node as a roller shutter node, setting below
 //#define FOUR_RELAY                // Define this node as a four relay node, setting below
 //#define DIMMER                    // Define this node as a 1-channel dimmer node, setting below
-#define RGB                       // Define this node as a RGB dimmer node, setting below
+//#define RGB                       // Define this node as a RGB dimmer node, setting below
 //#define RGBW                      // Define this node as a RGBW dimmer node, setting below
 
 // Input Config - define according to your needs
