@@ -1107,6 +1107,10 @@ void loop() {
           IOD[i].SetRelay();
           send(msgIOD.setSensor(i).set(IOD[i].NewState));
         }
+      #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
+        Dimmer.NewState = false;
+        Dimmer.ChangeState();
+        send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
       #endif
       send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
       InformControllerTS = true;
