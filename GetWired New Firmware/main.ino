@@ -313,8 +313,8 @@ void presentation() {
 
   // External Thermometer
   #ifdef EXTERNAL_TEMP
-    present(ETT_ID, S_TEMP, "External Termometer"); wait(PRESENTATION_DELAY);
-    present(ETH_ID, S_HUM, "External Termometer");  wait(PRESENTATION_DELAY);
+    present(ETT_ID, S_TEMP, "External Thermometer"); wait(PRESENTATION_DELAY);
+    present(ETH_ID, S_HUM, "External Hygrometer");  wait(PRESENTATION_DELAY);
   #endif
 
   // I2C
