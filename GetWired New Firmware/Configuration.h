@@ -51,8 +51,12 @@
 #define POWER_SENSOR
 #define INTERNAL_TEMP
 
-// External temperature sensor
+// External temperature sensor - define DHT22 or SHT30
 //#define EXTERNAL_TEMP
+#ifdef EXTERNAL_TEMP
+    //#define DHT22
+    #define SHT30
+#endif
 
 /*  *******************************************************************************************
                     MCU Pin Definitions
@@ -287,17 +291,10 @@
 #ifdef EXTERNAL_TEMP
   #define ETT_ID 11
   #define ETH_ID 12
-  // DHT22
-  //#define DHT22
   #ifdef DHT22
     #define ET_PIN ONE_WIRE_PIN
   #endif
-  // SHT30
-  #define SHT30
 #endif
-
-// I2C
-
 
 /*  *******************************************************************************************
                       ERROR REPORTING
