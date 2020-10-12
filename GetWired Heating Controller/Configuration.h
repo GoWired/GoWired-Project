@@ -5,8 +5,8 @@
  */
 
 
-#ifndef NodeDefinitions_h
-#define NodeDefinitions_h
+#ifndef Configuration_h
+#define Configuration_h
 
 /*  *******************************************************************************************
  *                            MySensors Definitions
