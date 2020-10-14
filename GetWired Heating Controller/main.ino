@@ -73,6 +73,16 @@ MyMessage msgH5(0, V_HVAC_FLOW_STATE);
 MyMessage msgSI(0, V_STATUS);
 
 /*  *******************************************************************************************
+                                            Before
+ *  *******************************************************************************************/
+void before() {
+
+  uint32_t InitDelay = MY_NODE_ID * INIT_DELAY;
+  
+  wait(InitDelay);
+}
+
+/*  *******************************************************************************************
  *                                          Setup
  *  *******************************************************************************************/
 void setup() {
@@ -130,22 +140,17 @@ void presentation() {
 
   for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {
     present(i, S_HVAC, "Heating Section");
-    wait(10);
+    wait(PRESENTATION_DELAY);
   }
 
-  /*for(int i=FIRST_TSP_ID; i<FIRST_TSP_ID+HEATING_SECTIONS; i++) {
-    present(i, S_TEMP, "Section Thermometer");
-  }*/
-
-  //present(MASTER_SWITCH_ID, S_BINARY, "Heating Master Switch");
-  present(SELECTOR_SWITCH_ID, S_DIMMER, "Heating Mode");
-  present(SPN_ID, S_HVAC, "SetPoint Night");
-  present(SPH_ID, S_HVAC, "SetPoint Holidays");
-  present(HYSTERESIS_ID, S_HVAC, "SetPoint Hysteresis");
+  present(SELECTOR_SWITCH_ID, S_DIMMER, "Heating Mode");  wait(PRESENTATION_DELAY);
+  present(SPN_ID, S_HVAC, "SetPoint Night");  wait(PRESENTATION_DELAY);
+  present(SPH_ID, S_HVAC, "SetPoint Holidays"); wait(PRESENTATION_DELAY);
+  present(HYSTERESIS_ID, S_HVAC, "SetPoint Hysteresis");  wait(PRESENTATION_DELAY);
 
   #ifdef INTERNAL_TEMP
-    present(ITT_ID, S_TEMP, "Onboard SHT30 temperature");
-    present(ITH_ID, S_HUM, "Onboard SHT30 humidity");
+    present(ITT_ID, S_TEMP, "Onboard SHT30 temperature"); wait(PRESENTATION_DELAY);
+    present(ITH_ID, S_HUM, "Onboard SHT30 humidity"); wait(PRESENTATION_DELAY);
   #endif
   
 }
@@ -230,7 +235,7 @@ void receive(const MyMessage &message)  {
         }        
         if(NewValue == 10)  {
           send(msgH5.setSensor(SPN_ID).set("Off"));
-          send(msgH5.setSensor(SPH_ID).set("Off"));
+          send(msgH5.setSensor(SPH_ID).set("Off")); 
         }
         else if(NewValue == 20)  {
           send(msgH5.setSensor(SPN_ID).set("HeatOn"));
@@ -352,11 +357,22 @@ void HeatingUpdate()  {
         digitalWrite(OutputPins[i], NewState);
       #endif
       Section[i].RelayState = NewState;
+      uint8_t counter = 0;
       if(NewState == RELAY_ON)  {
-        send(msgH5.setSensor(i).set("HeatOn"));
+        do  {
+          bool MessageDelivered = send(msgH5.setSensor(i).set("HeatOn"));
+          counter++;
+          wait(10);
+        } while (!MessageDelivered || counter < 3);
+        counter = 0;
       }
       else  {
-        send(msgH5.setSensor(i).set("Off"));
+        do  {
+          bool MessageDelivered = send(msgH5.setSensor(i).set("Off"));
+          counter++;
+          wait(10);
+        } while (!MessageDelivered || counter < 3);
+        
       }
     }
   }
