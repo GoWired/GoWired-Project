@@ -12,14 +12,14 @@
  *                            MySensors Definitions
  *  *******************************************************************************************/
 // Identification
-#define MY_NODE_ID 101
-#define SN "GetWired HC2"
+#define MY_NODE_ID 100
+#define SN "GetWired HC"
 #define SV "1.0"
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
 #define MY_RS485_DE_PIN 7                     // DE Pin definition
-#define MY_RS485_BAUD_RATE 250000              // Set RS485 baud rate to use
+#define MY_RS485_BAUD_RATE 57600              // Set RS485 baud rate to use
 #define MY_RS485_HWSERIAL Serial              // Enable for Hardware Serial
 #define MY_RS485_SOH_COUNT 3                  // Collision avoidance
 
@@ -44,7 +44,7 @@
 #define RELAY_OFF LOW
 
 // Sections and setpoints
-#define HEATING_SECTIONS 5                              // Number of heating sections (default 8, available 1-8)
+#define HEATING_SECTIONS 8                              // Number of heating sections (default 8, available 1-8)
 #define DEFAULT_DAY_SP 20                               // Default day setpoint temperature (default 20)
 #define DEFAULT_NIGHT_SP 18                           // Default night setpoint (default 18)
 #define DEFAULT_HOLIDAY_SP 10                         // Default holiday setpoint (default 10)
