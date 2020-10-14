@@ -52,9 +52,6 @@
    
 // IDs
 #define FIRST_SECTION_ID 0                              // Sensor ID of first section
-//#define FIRST_SPD_ID FIRST_SECTION_ID+HEATING_SECTIONS    // Sensor ID of first Thermostat 
-//#define FIRST_TSP_ID FIRST_SECTION_ID+HEATING_SECTIONS      // Sensor ID for the first 'Temperature Sensor Passthrough'
-//#define MASTER_SWITCH_ID FIRST_TSP_ID+HEATING_SECTIONS  // Sensor ID for Heating Master Switch
 #define SELECTOR_SWITCH_ID FIRST_SECTION_ID+HEATING_SECTIONS           // Selector switch ID: ON/OFF / Day/Night/Holiday
 #define SPN_ID SELECTOR_SWITCH_ID+1                     // Night set point ID (one for all sections)
 #define SPH_ID SPN_ID+1                                 // Holiday set point ID (one for all sections)
