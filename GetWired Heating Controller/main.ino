@@ -375,7 +375,6 @@ void HeatingUpdate()  {
           counter++;
           wait(10);
         } while (!MessageDelivered || counter < 3);
-        
       }
     }
   }
