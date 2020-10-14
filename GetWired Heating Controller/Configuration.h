@@ -79,8 +79,10 @@
 #endif
 
 // Main loop definitions
-#define INTERVAL 300000                        // Time between readings of certain sensors
-#define LOOP_TIME 5000                         // Main loop wait time
+#define INTERVAL 300000                    // Interval value for reporting readings of the sensors: temperature, power usage (default 300000)
+#define INIT_DELAY 200                       // A value to be multiplied by node ID value to obtain the time to wait during the initialization process
+#define PRESENTATION_DELAY 10       // Time (ms) to wait between subsequent presentation messages (default 10)
+#define LOOP_TIME 5000                       // Main loop wait time (default 100)        
 
 /*  *******************************************************************************************
  *                                   MCU Pin Definitions
