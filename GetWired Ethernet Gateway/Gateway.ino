@@ -83,7 +83,6 @@ void before() {
   pinMode(5, OUTPUT);
   pinMode(6, OUTPUT);
 
-  delay(100);
   digitalWrite(BUS_RELAY, 0);
   digitalWrite(CONF_LED, 0);
   ButtonState = 0;
