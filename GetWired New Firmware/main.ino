@@ -354,7 +354,6 @@ void InitConfirmation() {
     request(RELAY_ID_2, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    InitConfirm = true;
   #endif
 
   #ifdef ROLLER_SHUTTER
@@ -374,7 +373,6 @@ void InitConfirmation() {
     request(RS_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
-    InitConfirm = true;
   #endif
 
   #ifdef FOUR_RELAY
@@ -394,7 +392,6 @@ void InitConfirmation() {
     request(RELAY_ID_4, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    InitConfirm = true;
   #endif
 
   #ifdef DIMMER
@@ -406,7 +403,6 @@ void InitConfirmation() {
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
-    InitConfirm = true;
   #endif
 
   #ifdef RGB
@@ -422,7 +418,6 @@ void InitConfirmation() {
     request(DIMMER_ID, V_RGB);
     wait(2000, C_SET, V_RGB);
 
-    InitConfirm = true;
   #endif
 
   #ifdef RGBW
@@ -438,7 +433,6 @@ void InitConfirmation() {
     request(DIMMER_ID, V_RGBW);
     wait(2000, C_SET, V_RGBW);
 
-    InitConfirm = true;
   #endif
 
   // DIGITAL INPUT
@@ -498,6 +492,8 @@ void InitConfirmation() {
   #ifdef RS485_DEBUG
     send(msgDEBUG.setSensor(DEBUG_ID).set("DEBUG MESSAGE"));
   #endif
+
+  InitConfirm = true;
 
 }
 
