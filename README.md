@@ -14,15 +14,13 @@ This is a repository for **GetWired**, RS485 & MySensors based, open source home
 ## Wiki
 To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWired-Project/wiki).
 
-## 2020-08-12 Changelog (master):
-- Support for Home Assistant
-- DC current measurement
-- Improved analog sensors accuracy
-- New, more advanced procedure of updating current values to the controller
-- Support for defining cos(fi) value of the load for current sensor
-- New "Quick config" section in Configuration.h
-- Roller shutter autocalibration
-- SHT30 temp&hum sensor support
+## 2020-10-22 Changelog
+- Important changes to Heating Controller software, including improved coopeation with Home Assistant; Heating Controller software can now be used with any GetWired shield
+- Thermal protection for dimmers
+- PRESENTATION_DELAY to improve presentation accuracy
+- Some minor improvements
+- Fixed a bug causing repetitive calling of InitConfirmation() function in case when no output was configured
+- Using restart button on a gateway now does not restart modules connected to it
 
 ##
-**Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Developement branch may not be tested, use on your own responsibility.
+**Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Dev branch may not be tested, use on your own responsibility.
