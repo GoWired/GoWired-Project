@@ -5,8 +5,8 @@
  * 
  */
 
-#ifndef NodeDefinitions_h
-#define NodeDefinitions_h
+#ifndef Configuration_h
+#define Configuration_h
 
 /*  *******************************************************************************************
                     MySensors Definitions
@@ -16,15 +16,12 @@
 #define SN "GetWired Module"               // Set node name to present to a controller
 #define SV "1.0"                                // Set sensor version
 
-// Selecting radio type and transmission settings
-#define RS485_NODE
-#ifdef RS485_NODE
-  #define MY_RS485                              // Enable RS485 transport layer
-  #define MY_RS485_DE_PIN 7                     // DE Pin definition
-  #define MY_RS485_BAUD_RATE 57600              // Set RS485 baud rate
-  #define MY_RS485_HWSERIAL Serial              // Enable Hardware Serial
-  #define MY_RS485_SOH_COUNT 3                  // Collision avoidance
-#endif
+// Selecting transmission settings
+#define MY_RS485                              // Enable RS485 transport layer
+#define MY_RS485_DE_PIN 7                     // DE Pin definition
+#define MY_RS485_BAUD_RATE 57600              // Set RS485 baud rate
+#define MY_RS485_HWSERIAL Serial              // Enable Hardware Serial
+#define MY_RS485_SOH_COUNT 3                  // Collision avoidance
 
 // FOTA Feature
 #define MY_OTA_FIRMWARE_FEATURE                 // Enable OTA feature
@@ -54,8 +51,12 @@
 #define POWER_SENSOR
 #define INTERNAL_TEMP
 
-// External temperature sensor
+// External temperature sensor - define DHT22 or SHT30
 //#define EXTERNAL_TEMP
+#ifdef EXTERNAL_TEMP
+    //#define DHT22
+    #define SHT30
+#endif
 
 /*  *******************************************************************************************
                     MCU Pin Definitions
@@ -102,13 +103,14 @@
 // Power Sensor
 #define MAX_CURRENT 3                      // Maximum current the module can handle before reporting error (2SSR - 3; 4RelayDin - 10A or 16)
 #define POWER_MEASURING_TIME 20             // Current measuring takes this long (default 20)
-#define MVPERAMP 185                        // mV per 1A (default: 2SSR 185 mV/A; 4RelayDin 73.3 mV/A, RGBW 100 mV/A)
+#define MVPERAMP 185                       // mV per 1A (default: 2SSR 185 mV/A; 4RelayDin 73.3 mV/A, RGBW 100 mV/A)
 #define RECEIVER_VOLTAGE 230                // 230V, 24V, 12V - values for power usage calculation, depends on the receiver
 #define COSFI 1                             // cos(fi) value for a given load: resistive load - 1, LED - 0.4 < cos(fi) < 0.99, fluorescent - 
 
 // Dimmer
 #define DIMMING_STEP 1                      // Size of dimming step, increase for faster, less smooth dimming (default 1)
 #define DIMMING_INTERVAL 1                  // Duration of dimming interval, increase for slower dimming (default 10)
+#define DIMMING_TOGGLE_STEP 20              // Value to increase dimming percentage when using wall switch
 
 // Roller Shutter
 #define RS_AUTO_CALIBRATION
@@ -127,8 +129,9 @@
 #endif
 
 // Other
-#define INTERVAL 300000                     // Interval value for reporting readings of the sensors: temperature, power usage (default 300000)
-#define INIT_DELAY 200                      // A value to be multiplied by node ID value to obtain the time to wait during the initialization process
+#define INTERVAL 300000                    // Interval value for reporting readings of the sensors: temperature, power usage (default 300000)
+#define INIT_DELAY 200                       // A value to be multiplied by node ID value to obtain the time to wait during the initialization process
+#define PRESENTATION_DELAY 10       // Time (ms) to wait between subsequent presentation messages (default 10)
 #define LOOP_TIME 100                       // Main loop wait time (default 100)        
 
 /*  *******************************************************************************************
@@ -179,6 +182,8 @@
   #define LED_PIN_2 OUTPUT_PIN_2
   #define LED_PIN_3 OUTPUT_PIN_3
   #define LED_PIN_4 OUTPUT_PIN_4
+  #define BUTTON_1 INPUT_PIN_1
+  #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_CHANNELS 4
   #define UI_OUTPUTS 0
 #endif
@@ -188,8 +193,9 @@
   #define LED_PIN_1 OUTPUT_PIN_4
   #define LED_PIN_2 OUTPUT_PIN_1
   #define LED_PIN_3 OUTPUT_PIN_2
+  #define BUTTON_1 INPUT_PIN_1
+  #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_CHANNELS 3
-  #define UI_OUTPUTS 0
 #endif
 
 #ifdef RGBW
@@ -198,6 +204,8 @@
   #define LED_PIN_2 OUTPUT_PIN_1
   #define LED_PIN_3 OUTPUT_PIN_2
   #define LED_PIN_4 OUTPUT_PIN_3
+  #define BUTTON_1 INPUT_PIN_1
+  #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_CHANNELS 4
   #define UI_OUTPUTS 0
 #endif
@@ -206,8 +214,9 @@
   #define FIRST_INPUT_ID NUMBER_OF_RELAYS
 #elif defined(NUMBER_OF_CHANNELS)
   #define FIRST_INPUT_ID 1
+  #define NUMBER_OF_RELAYS 0
 #else
-  #define UI_OUTPUTS 0
+  #define NUMBER_OF_RELAYS 0
   #define FIRST_INPUT_ID 0
 #endif
 
@@ -243,12 +252,12 @@
   #define UI_INPUTS 4
 #endif
 
-#ifndef UI_INPUTS
-  #define UI_INPUTS 0
+#ifndef NUMBER_OF_INPUTS
+  #define NUMBER_OF_INPUTS 0
 #endif
 
 // Special Button
-#if defined(SINGLE_RELAY) || defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
+#ifdef BUTTON_1
   #define SPECIAL_BUTTON
   #define SPECIAL_BUTTON_ID 8
 #endif
@@ -287,17 +296,10 @@
 #ifdef EXTERNAL_TEMP
   #define ETT_ID 11
   #define ETH_ID 12
-  // DHT22
-  //#define DHT22
   #ifdef DHT22
     #define ET_PIN ONE_WIRE_PIN
   #endif
-  // SHT30
-  #define SHT30
 #endif
-
-// I2C
-
 
 /*  *******************************************************************************************
                       ERROR REPORTING

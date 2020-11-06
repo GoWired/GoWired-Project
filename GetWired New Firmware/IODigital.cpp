@@ -1,13 +1,13 @@
 /*
- * UniversalInput.cpp
+ * IODigital.cpp
  */
 
-#include "UniversalInput.h"
+#include "IODigital.h"
 
 /*  *******************************************************************************************
  *                                      Constructor
  *  *******************************************************************************************/
-UniversalInput::UniversalInput()  {
+IODigital::IODigital()  {
   
   NewState = 0;
   OldState = 0;
@@ -16,7 +16,7 @@ UniversalInput::UniversalInput()  {
 /*  *******************************************************************************************
  *                                    Set Values
  *  *******************************************************************************************/
-void UniversalInput::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2) {
+void IODigital::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2) {
 	
 	_RelayOFF = RelayOFF;
 
@@ -59,7 +59,7 @@ void UniversalInput::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_
 /*  *******************************************************************************************
  *                                      Input Check
  *  *******************************************************************************************/
-void UniversalInput::CheckInput() {
+void IODigital::CheckInput() {
 
   if(SensorType == 0 || SensorType == 1) {
     if(digitalRead(_SensorPin) == LOW)  {
@@ -104,10 +104,13 @@ void UniversalInput::CheckInput() {
 /*  *******************************************************************************************
  *                                      Set Relay
  *  *******************************************************************************************/
-void UniversalInput::SetRelay() {
+void IODigital::SetRelay() {
 
   digitalWrite(_RelayPin, NewState);
   OldState = NewState;
 }
-
-
+/*
+ * 
+ * EOF
+ * 
+ */
