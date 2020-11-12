@@ -146,7 +146,6 @@
   #define BUTTON_1 INPUT_PIN_1
   #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_RELAYS 2
-  #define UI_OUTPUTS 2
 #endif
 
 // Roller Shutter
@@ -158,7 +157,6 @@
   #define BUTTON_1 INPUT_PIN_1
   #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_RELAYS 2
-  #define UI_OUTPUTS 2
 #endif
 
 // 4RelayDin 4 Relay Output
@@ -172,7 +170,6 @@
   #define RELAY_3 OUTPUT_PIN_1
   #define RELAY_4 OUTPUT_PIN_4
   #define NUMBER_OF_RELAYS 4
-  #define UI_OUTPUTS 0
 #endif
 
 // Dimmer / RGB / RGBW
@@ -185,7 +182,6 @@
   #define BUTTON_1 INPUT_PIN_1
   #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_CHANNELS 4
-  #define UI_OUTPUTS 0
 #endif
 
 #ifdef RGB
@@ -207,14 +203,13 @@
   #define BUTTON_1 INPUT_PIN_1
   #define BUTTON_2 INPUT_PIN_2
   #define NUMBER_OF_CHANNELS 4
-  #define UI_OUTPUTS 0
 #endif
 
 #ifdef NUMBER_OF_RELAYS
   #define FIRST_INPUT_ID NUMBER_OF_RELAYS
 #elif defined(NUMBER_OF_CHANNELS)
-  #define FIRST_INPUT_ID 1
-  #define NUMBER_OF_RELAYS 0
+  #define FIRST_INPUT_ID 2
+  #define NUMBER_OF_RELAYS 2
 #else
   #define NUMBER_OF_RELAYS 0
   #define FIRST_INPUT_ID 0
@@ -228,28 +223,28 @@
   #define INPUT_ID_1 FIRST_INPUT_ID
   #define PIN_1 INPUT_PIN_3
   #define PULLUP_1
-  #define UI_INPUTS 1
+  #define NUMBER_OF_INPUTS 1
 #endif
 
 #ifdef INPUT_2
   #define INPUT_ID_2 INPUT_ID_1+1
   #define PIN_2 INPUT_PIN_4
   #define PULLUP_2
-  #define UI_INPUTS 2
+  #define NUMBER_OF_INPUTS 2
 #endif
 
 #ifdef INPUT_3
   #define INPUT_ID_3 INPUT_ID_2+1
   #define PIN_3 INPUT_PIN_5
   #define PULLUP_3
-  #define UI_INPUTS 3
+  #define NUMBER_OF_INPUTS 3
 #endif
 
 #ifdef INPUT_4
   #define INPUT_ID_4 INPUT_ID_3+1
   #define PIN_4 INPUT_PIN_6
   #define PULLUP_4
-  #define UI_INPUTS 4
+  #define NUMBER_OF_INPUTS 4
 #endif
 
 #ifndef NUMBER_OF_INPUTS
