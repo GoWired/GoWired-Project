@@ -22,5 +22,8 @@ To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWir
 - Fixed a bug causing repetitive calling of InitConfirmation() function in case when no output was configured
 - Using restart button on a gateway now does not restart modules connected to it
 
+## 2020-11-13 Changelog
+- Important changes to Ethernet Gateway firmware: added AVR Watchdog and controller uplink testing; minor improvements
+
 ##
 **Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Dev branch may not be tested, use on your own responsibility.
