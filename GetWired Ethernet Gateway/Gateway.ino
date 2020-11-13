@@ -59,9 +59,18 @@
 
 //#define MY_DEBUG                                        // Enable debug prints to serial monitor
 
-#define ENABLE_WATCHDOG
-#define ENABLE_UPLINK_CHECK
-#define CONNECTION_CHECK_INTERVAL 60000
+/* 
+ * WATCHDOG & CONTROLLER UPLINK CHECK
+ * Watchdog resets the gateway in case of any software hang. Enabling it should result in
+ * more robustness and long term reliability.
+ * Uplink Check tests the connection between the Gateway and the Controller.
+ * In case of connection loss, gateway will be reset be watchdog. 
+ * Time interval between tests can be customized.
+ * Use CONTROLLER UPLINK CHECK only together with WATCHDOG.
+ */
+#define ENABLE_WATCHDOG                                   // Resets the Gateway in case of any software hang
+#define ENABLE_UPLINK_CHECK                               // Resets the Gateway in case of connection loss with the controller
+#define UPLINK_CHECK_INTERVAL 60000                       // Time interval for the uplink check (default 60000)
 
 // Includes
 #include <UIPEthernet.h>
@@ -117,15 +126,17 @@ void before() {
 void setup()  {
 
   #ifdef ENABLE_WATCHDOG
-    wdt_enable(WDTO_2S);
+    wdt_enable(WDTO_4S);
   #endif
   
 }
 
 void loop() {
 
+  wait(500);
+
   #ifdef ENABLE_UPLINK_CHECK
-    if((millis() > LastUpdate + CONNECTION_CHECK_INTERVAL) && CheckControllerUplink) {
+    if((millis() > LastUpdate + UPLINK_CHECK_INTERVAL) && CheckControllerUplink) {
       if(!requestTime())  {
         delay(10000);
       }
@@ -156,8 +167,6 @@ void loop() {
       }
     }
   }
-  
-  wait(100);
 }
 /*
  * End of file
