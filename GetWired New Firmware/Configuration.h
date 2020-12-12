@@ -51,11 +51,12 @@
 #define POWER_SENSOR
 #define INTERNAL_TEMP
 
-// External temperature sensor - define DHT22 or SHT30
+// External temperature sensor - define exactly one from: DHT22, SHT30 or DS18B20
 //#define EXTERNAL_TEMP
 #ifdef EXTERNAL_TEMP
     //#define DHT22
     #define SHT30
+    //#define DS18B20    
 #endif
 
 /*  *******************************************************************************************
@@ -289,9 +290,9 @@
 
 // 1wire external thermometer (e.g. DHT22)
 #ifdef EXTERNAL_TEMP
-  #define ETT_ID 11
-  #define ETH_ID 12
-  #ifdef DHT22
+  #define ETH_ID 11
+  #define ETT_ID 12
+  #if defined(DHT22) || defined(DS18B20)
     #define ET_PIN ONE_WIRE_PIN
   #endif
 #endif
@@ -302,19 +303,19 @@
 #define ERROR_REPORTING
 #ifdef ERROR_REPORTING
   #ifdef POWER_SENSOR
-    #define ES_ID 13
+    #define ES_ID 23
   #endif
   #ifdef INTERNAL_TEMP
-    #define TS_ID 14
+    #define TS_ID 24
   #endif
   #ifdef EXTERNAL_TEMP
-    #define ETS_ID 15
+    #define ETS_ID 25
   #endif
 #endif
 
 //#define RS485_DEBUG
 #ifdef RS485_DEBUG
-  #define DEBUG_ID 16
+  #define DEBUG_ID 26
 #endif
 
 /*  *******************************************************************************************

@@ -37,14 +37,12 @@
  *  *******************************************************************************************/
 #include "PowerSensor.h"
 #include "InternalTemp.h"
+#include "ExternalTemp.h"
 #include "IODigital.h"
 #include "Dimmer.h"
 #include "RShutterControl.h"
 #include "Configuration.h"
 #include <MySensors.h>
-#include <dht.h>
-#include <Wire.h>
-#include "SHTSensor.h"
 
 /*  *******************************************************************************************
                                         Globals
@@ -109,14 +107,13 @@ bool InitConfirm = false;
 
 // External thermometer constructor
 #ifdef EXTERNAL_TEMP
-  #ifdef DHT22
-    dht DHT;
+  #if defined(DHT22)
+    ExternalTemp * externalTemp = new ExternalTemp_DHT22(ET_PIN);
+  #elif defined(SHT30)
+    ExternalTemp * externalTemp = new ExternalTemp_SHT30();
+  #elif defined(DS18B20)
+    ExternalTemp * externalTemp = new ExternalTemp_DS18B20(ET_PIN);
   #endif
-  #ifdef SHT30
-    SHTSensor sht;
-  #endif
-  MyMessage msgETT(ETT_ID, V_TEMP);
-  MyMessage msgETH(ETH_ID, V_HUM);
 #endif
 
 // Error Reporting
@@ -227,14 +224,7 @@ void setup() {
 
   // EXTERNAL THERMOMETER
   #ifdef EXTERNAL_TEMP
-    #ifdef DHT22
-      pinMode(ET_PIN, INPUT);
-    #endif
-    #ifdef SHT30
-      Wire.begin();
-      sht.init();
-      sht.setAccuracy(SHTSensor::SHT_ACCURACY_MEDIUM);
-    #endif
+    externalTemp->setup();
   #endif
 
 }
@@ -313,8 +303,20 @@ void presentation() {
 
   // External Thermometer
   #ifdef EXTERNAL_TEMP
-    present(ETT_ID, S_TEMP, "External Thermometer"); wait(PRESENTATION_DELAY);
-    present(ETH_ID, S_HUM, "External Hygrometer");  wait(PRESENTATION_DELAY);
+    if (externalTemp->isHumiditySupported()) {
+      present(ETH_ID, S_HUM, "External Hygrometer");  wait(PRESENTATION_DELAY);
+    }
+    
+    char cstr[25];
+    for (uint8_t i=0; i<externalTemp->getLastSensorCount(); i++) {
+      if (i==0) {
+        sprintf(cstr, "External Thermometer");
+      }
+      else {
+        sprintf(cstr, "External Thermometer %d", i);
+      }
+      present(ETT_ID+i, S_TEMP, cstr); wait(PRESENTATION_DELAY);
+    }
   #endif
 
   // I2C
@@ -619,61 +621,30 @@ void receive(const MyMessage &message)  {
 /*  *******************************************************************************************
                                       External Thermometer
  *  *******************************************************************************************/
+#ifdef EXTERNAL_TEMP
 void ETUpdate()  {
-
-  #ifdef EXTERNAL_TEMP
-    #ifdef DHT22
-      int chk = DHT.read22(ET_PIN);
-      switch (chk)  {
-        case DHTLIB_OK:
-          send(msgETT.setDestination(0).set(DHT.temperature, 1));
-          send(msgETH.set(DHT.humidity, 1));
-          #ifdef HEATING_SECTION_SENSOR
-            send(msgETT.setDestination(MY_HEATING_CONTROLLER).set(DHT.temperature, 1));
-          #endif
-          #ifdef ERROR_REPORTING
-            if (ET_ERROR != 0) {
-              ET_ERROR = 0;
-              send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
-            }
-          #endif
-        break;
-        case DHTLIB_ERROR_CHECKSUM:
-          #ifdef ERROR_REPORTING
-            ET_ERROR = 1;
-            send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
-          #endif
-        break;
-        case DHTLIB_ERROR_TIMEOUT:
-          #ifdef ERROR_REPORTING
-            ET_ERROR = 2;
-            send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
-          #endif
-        break;
-        default:
-          #ifdef ERROR_REPORTING
-            ET_ERROR = 3;
-            send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
-          #endif
-        break;
-      }
-    #elif defined(SHT30)
-      if(sht.readSample())  {
-        send(msgETT.setDestination(0).set(sht.getTemperature(), 1));
-        send(msgETH.set(sht.getHumidity(), 1));
-        #ifdef HEATING_SECTION_SENSOR
-          send(msgETT.setDestination(MY_HEATING_CONTROLLER).set(sht.getTemperature(), 1));
-        #endif
-      }
-      else  {
-        #ifdef ERROR_REPORTING
-          ET_ERROR = 1;
-          send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
-        #endif
-      }
-    #endif
+  int error = externalTemp->readValues();
+  if (!error) {
+    if(externalTemp->isHumiditySupported()) {
+      MyMessage msgETH(ETH_ID, V_HUM);
+      send(msgETH.set(externalTemp->getHumidity(), 1));
+    }
+    for (uint8_t i=0; i<externalTemp->getLastSensorCount(); i++) {
+      MyMessage msgETT(ETT_ID+i, V_TEMP);
+      send(msgETT.set(externalTemp->getTemperature(i), 1));
+      #ifdef HEATING_SECTION_SENSOR
+        if (i==0) send(msgETT.setDestination(MY_HEATING_CONTROLLER).set(externalTemp->getTemperature(i), 1));
+      #endif      
+    }
+  }
+  #ifdef ERROR_REPORTING
+    if (error || (error != ET_ERROR)) {
+      ET_ERROR = error;
+      send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+    }
   #endif
 }
+#endif
 
 /*  *******************************************************************************************
                                         Universal Input
