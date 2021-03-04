@@ -14,16 +14,5 @@ This is a repository for **GetWired**, RS485 & MySensors based, open source home
 ## Wiki
 To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWired-Project/wiki).
 
-## 2020-10-22 Changelog
-- Important changes to Heating Controller software, including improved coopeation with Home Assistant; Heating Controller software can now be used with any GetWired shield
-- Thermal protection for dimmers
-- PRESENTATION_DELAY to improve presentation accuracy
-- Some minor improvements
-- Fixed a bug causing repetitive calling of InitConfirmation() function in case when no output was configured
-- Using restart button on a gateway now does not restart modules connected to it
-
-## 2020-11-13 Changelog
-- Important changes to Ethernet Gateway firmware: added AVR Watchdog and controller uplink testing; minor improvements
-
 ##
 **Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Dev branch may not be tested, use on your own responsibility.
