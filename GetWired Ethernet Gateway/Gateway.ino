@@ -14,7 +14,7 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
- * version 3 as published by the Free Software Foundation. *
+ * version 3 as published by the Free Software Foundation.
  *
  * DESCRIPTION
  * The Ethernet Gateway sends data received from sensors to the ethernet link.
@@ -42,7 +42,7 @@
 #define MY_RS485_SOH_COUNT 3                              // Use this in case of collisions on the bus
 
 #define MY_GATEWAY_ENC28J60                               // Enable gateway ethernet module type 
-#define MY_IP_ADDRESS 192,168,8,7                        // Gateway IP address
+#define MY_IP_ADDRESS 192,168,8,70                        // Gateway IP address
 #define MY_PORT 5003                                      // The port to keep open on node server mode / or port to contact in client mode
 #define MY_MAC_ADDRESS 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEB // Gateway MAC address
 
@@ -59,9 +59,23 @@
 
 //#define MY_DEBUG                                        // Enable debug prints to serial monitor
 
+/* 
+ * WATCHDOG & CONTROLLER UPLINK CHECK
+ * Watchdog resets the gateway in case of any software hang. Enabling it should result in
+ * more robustness and long term reliability.
+ * Uplink Check tests the connection between the Gateway and the Controller.
+ * In case of connection loss, gateway will be reset be watchdog. 
+ * Time interval between tests can be customized.
+ * Use CONTROLLER UPLINK CHECK only together with WATCHDOG.
+ */
+#define ENABLE_WATCHDOG                                   // Resets the Gateway in case of any software hang
+#define ENABLE_UPLINK_CHECK                               // Resets the Gateway in case of connection loss with the controller
+#define UPLINK_CHECK_INTERVAL 60000                       // Time interval for the uplink check (default 60000)
+
 // Includes
 #include <UIPEthernet.h>
 #include <MySensors.h>
+#include <avr/wdt.h>
 
 // Definitions
 #define CONF_BUTTON A0
@@ -71,52 +85,64 @@
 // Globals
 bool ButtonState = false;
 bool ButtonHigh = false;
-unsigned long TIME_1;
+bool CheckControllerUplink = true;
+uint32_t TIME_1 = 0;
+uint32_t LastUpdate = 0;
 
 void before() {
 
-  pinMode(CONF_BUTTON, INPUT_PULLUP);
-  pinMode(BUS_RELAY, OUTPUT);
-  pinMode(CONF_LED, OUTPUT);
+  #ifdef ENABLE_WATCHDOG
+    wdt_reset();
+    MCUSR = 0;
+    wdt_disable();
+  #endif
+  
+  pinMode(CONF_BUTTON, INPUT_PULLUP); 
+  pinMode(BUS_RELAY, OUTPUT); digitalWrite(BUS_RELAY, 0);
 
-  pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
-  pinMode(6, OUTPUT);
+  uint8_t TEMP[4] = {MY_DEFAULT_ERR_LED_PIN, MY_DEFAULT_RX_LED_PIN, MY_DEFAULT_TX_LED_PIN, CONF_LED};
 
-  delay(100);
-  digitalWrite(BUS_RELAY, 0);
-  digitalWrite(CONF_LED, 0);
-  ButtonState = 0;
+  for(int i=0; i<4; i++)  {
+    pinMode(TEMP[i], OUTPUT); digitalWrite(TEMP[i], HIGH);
+  }
 
-  digitalWrite(4, 1);
-  digitalWrite(5, 1);
-  digitalWrite(6, 1);
-  digitalWrite(CONF_LED, 1);
   delay(500);
-  digitalWrite(4, 0);
+
+  for(int i=0; i<4; i++)  {
+    digitalWrite(TEMP[i], LOW); delay(500);
+  }
+
+  for(int i=0; i<4; i++)  {
+    digitalWrite(TEMP[i], HIGH);
+  }
+
   delay(500);
-  digitalWrite(5, 0);
-  delay(500);
-  digitalWrite(6, 0);
-  delay(500);
-  digitalWrite(CONF_LED, 0);
-  delay(500);
-  digitalWrite(4, 1);
-  digitalWrite(5, 1);
-  digitalWrite(6, 1);
-  digitalWrite(CONF_LED, 1);
-  delay(500);
-  digitalWrite(4, 0);
-  digitalWrite(5, 0);
-  digitalWrite(6, 0);
-  digitalWrite(CONF_LED, 0);
+
+  for(int i=0; i<4; i++)  {
+    digitalWrite(TEMP[i], LOW);
+  }
 }
 
 void setup()  {
 
+  #ifdef ENABLE_WATCHDOG
+    wdt_enable(WDTO_4S);
+  #endif
+  
 }
 
 void loop() {
+
+  wait(500);
+
+  #ifdef ENABLE_UPLINK_CHECK
+    if((millis() > LastUpdate + UPLINK_CHECK_INTERVAL) && CheckControllerUplink) {
+      if(!requestTime())  {
+        delay(10000);
+      }
+      LastUpdate = millis();
+    }
+  #endif
 
   if(!ButtonHigh)  {
     if(digitalRead(CONF_BUTTON))  {
@@ -131,14 +157,16 @@ void loop() {
       wait(251);
       if(millis() - TIME_1 > 500) {
         ButtonState = !ButtonState;
+        
         digitalWrite(BUS_RELAY, ButtonState);
         digitalWrite(CONF_LED, ButtonState);
+        
+        CheckControllerUplink = ButtonState == 1 ? false : true;
+        
         break;
       }
     }
   }
-  
-  wait(100);
 }
 /*
  * End of file

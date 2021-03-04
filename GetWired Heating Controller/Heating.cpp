@@ -16,35 +16,20 @@ Heating::Heating()  {
  *  *******************************************************************************************/
 uint16_t Heating::SetSectionValues(uint8_t T_ID, uint8_t DefaultSetPoint, uint16_t EEPROM_ADDRESS, bool RelayOn, bool RelayOff) {
 
-  float TemperatureSet;
-
   _RelayOn = RelayOn;
   _RelayOff = RelayOff;
   _T_ID = T_ID;
   _TemperatureSensor = -100;
-
+  RelayState = 0;
   _EEPROM_ADDRESS = EEPROM_ADDRESS;
-  EEPROM.get(_EEPROM_ADDRESS, TemperatureSet);
-  if(TemperatureSet < 100)  {
-    _TemperatureSet = TemperatureSet;
-  }
-  else  {
-    _TemperatureSet = DefaultSetPoint;
-  }
+  
+  EEPROM.get(EEPROM_ADDRESS, SetPointDay);
+
+  SetPointDay = SetPointDay < 100 ? SetPointDay : DefaultSetPoint;
+  
   EEPROM_ADDRESS += sizeof(float);
 
   return EEPROM_ADDRESS;
-}
-
-/*  *******************************************************************************************
- *                                    Changing Relay State
- *  *******************************************************************************************/
-/*void Heating::SetRelay(bool NewState) {
-  // Debug info
-  //Serial.print("Relay pin: ");  Serial.println(_RelayPin);
-  //Serial.print("New State: ");  Serial.println(NewState);
-  digitalWrite(_RelayPin, NewState);
-  RelayState = NewState;
 }
 
 /*  *******************************************************************************************
@@ -52,17 +37,9 @@ uint16_t Heating::SetSectionValues(uint8_t T_ID, uint8_t DefaultSetPoint, uint16
  *  *******************************************************************************************/
 void Heating::SetTemperature(float Temperature)  {
 
-  _TemperatureSet = Temperature;
-  EEPROM.put(_EEPROM_ADDRESS, _TemperatureSet);
+  SetPointDay = Temperature;
+  EEPROM.put(_EEPROM_ADDRESS, SetPointDay);
 
-}
-
-/*  *******************************************************************************************
- *                                  Get SetPoint Temperature
- *  *******************************************************************************************/
-float Heating::GetSetTemp() {
-  
-  return _TemperatureSet;
 }
 
 /*  *******************************************************************************************
@@ -84,13 +61,13 @@ void Heating::ReadTemperature(float Temperature) {
 /*  *******************************************************************************************
  *                                 Comparing Temperature Values
  *  *******************************************************************************************/
-bool Heating::TemperatureCompare(float TemperatureSet, float Hysteresis) {
+bool Heating::TemperatureCompare(float SetPoint, float Hysteresis) {
 
   if(_TemperatureSensor != -100)  {
-    if(_TemperatureSensor < TemperatureSet) {
+    if(_TemperatureSensor < SetPoint) {
       return _RelayOn;
     }
-    else if(_TemperatureSensor >= TemperatureSet+Hysteresis)  {
+    else if(_TemperatureSensor >= SetPoint+Hysteresis)  {
       return _RelayOff;
     }
   }

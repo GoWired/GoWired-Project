@@ -248,73 +248,73 @@ void presentation() {
 
   // OUTPUT
   #ifdef DOUBLE_RELAY
-    present(RELAY_ID_1, S_BINARY, "Relay 1");
-    present(RELAY_ID_2, S_BINARY, "Relay 2");
+    present(RELAY_ID_1, S_BINARY, "Relay 1");   wait(PRESENTATION_DELAY);
+    present(RELAY_ID_2, S_BINARY, "Relay 2");   wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef ROLLER_SHUTTER
-    present(RS_ID, S_COVER, "Roller Shutter");
+    present(RS_ID, S_COVER, "Roller Shutter");  wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef FOUR_RELAY
-    present(RELAY_ID_1, S_BINARY, "Relay 1"); Serial.flush();
-    present(RELAY_ID_2, S_BINARY, "Relay 2"); Serial.flush();
-    present(RELAY_ID_3, S_BINARY, "Relay 3"); Serial.flush();
-    present(RELAY_ID_4, S_BINARY, "Relay 4"); Serial.flush();
+    present(RELAY_ID_1, S_BINARY, "Relay 1");   wait(PRESENTATION_DELAY);
+    present(RELAY_ID_2, S_BINARY, "Relay 2");   wait(PRESENTATION_DELAY);
+    present(RELAY_ID_3, S_BINARY, "Relay 3");   wait(PRESENTATION_DELAY);
+    present(RELAY_ID_4, S_BINARY, "Relay 4");   wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef DIMMER
-    present(DIMMER_ID, S_DIMMER, "Dimmer");
+    present(DIMMER_ID, S_DIMMER, "Dimmer"); wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef RGB
-    present(DIMMER_ID, S_RGB_LIGHT, "RGB");
+    present(DIMMER_ID, S_RGB_LIGHT, "RGB"); wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef RGBW
-    present(DIMMER_ID, S_RGBW_LIGHT, "RGBW");
+    present(DIMMER_ID, S_RGBW_LIGHT, "RGBW");   wait(PRESENTATION_DELAY);
   #endif
 
   // DIGITAL INPUT
   #ifdef INPUT_1
-    present(INPUT_ID_1, S_BINARY, "Input 1");
+    present(INPUT_ID_1, S_BINARY, "Input 1");   wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef INPUT_2
-    present(INPUT_ID_2, S_BINARY, "Input 2");
+    present(INPUT_ID_2, S_BINARY, "Input 2");   wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef INPUT_3
-    present(INPUT_ID_3, S_BINARY, "Input 3");
+    present(INPUT_ID_3, S_BINARY, "Input 3");   wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef INPUT_4
-    present(INPUT_ID_4, S_BINARY, "Input 4");
+    present(INPUT_ID_4, S_BINARY, "Input 4");   wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef SPECIAL_BUTTON
-    present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button");
+    present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button"); wait(PRESENTATION_DELAY);
   #endif
 
   // POWER SENSOR
   #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
-    present(PS_ID, S_POWER, "Power Sensor");
+    present(PS_ID, S_POWER, "Power Sensor");    wait(PRESENTATION_DELAY);
   #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
-    present(PS_ID_1, S_POWER, "Power Sensor 1");
-    present(PS_ID_2, S_POWER, "Power Sensor 2");
-    present(PS_ID_3, S_POWER, "Power Sensor 3");
-    present(PS_ID_4, S_POWER, "Power Sensor 4");
+    present(PS_ID_1, S_POWER, "Power Sensor 1");    wait(PRESENTATION_DELAY);
+    present(PS_ID_2, S_POWER, "Power Sensor 2");    wait(PRESENTATION_DELAY);
+    present(PS_ID_3, S_POWER, "Power Sensor 3");    wait(PRESENTATION_DELAY);
+    present(PS_ID_4, S_POWER, "Power Sensor 4");    wait(PRESENTATION_DELAY);
   #endif
 
   // Internal Thermometer
   #ifdef INTERNAL_TEMP
-    present(IT_ID, S_TEMP, "Internal Thermometer");
+    present(IT_ID, S_TEMP, "Internal Thermometer"); wait(PRESENTATION_DELAY);
   #endif
 
   // External Thermometer
   #ifdef EXTERNAL_TEMP
-    present(ETT_ID, S_TEMP, "External Termometer");
-    present(ETH_ID, S_HUM, "External Termometer");
+    present(ETT_ID, S_TEMP, "External Thermometer"); wait(PRESENTATION_DELAY);
+    present(ETH_ID, S_HUM, "External Hygrometer");  wait(PRESENTATION_DELAY);
   #endif
 
   // I2C
@@ -323,13 +323,13 @@ void presentation() {
   // Error Reporting
   #ifdef ERROR_REPORTING
     #ifdef POWER_SENSOR
-      present(ES_ID, S_BINARY, "OVERCURRENT ERROR");
+      present(ES_ID, S_BINARY, "OVERCURRENT ERROR");    wait(PRESENTATION_DELAY);
     #endif
     #ifdef INTERNAL_TEMP
-      present(TS_ID, S_BINARY, "THERMAL ERROR");
+      present(TS_ID, S_BINARY, "THERMAL ERROR");    wait(PRESENTATION_DELAY);
     #endif
     #ifdef EXTERNAL_TEMP
-      present(ETS_ID, S_BINARY, "ET STATUS");
+      present(ETS_ID, S_BINARY, "ET STATUS");   wait(PRESENTATION_DELAY);
     #endif
   #endif
 
@@ -354,7 +354,6 @@ void InitConfirmation() {
     request(RELAY_ID_2, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    InitConfirm = true;
   #endif
 
   #ifdef ROLLER_SHUTTER
@@ -374,7 +373,6 @@ void InitConfirmation() {
     request(RS_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
-    InitConfirm = true;
   #endif
 
   #ifdef FOUR_RELAY
@@ -394,7 +392,6 @@ void InitConfirmation() {
     request(RELAY_ID_4, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    InitConfirm = true;
   #endif
 
   #ifdef DIMMER
@@ -406,7 +403,6 @@ void InitConfirmation() {
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
-    InitConfirm = true;
   #endif
 
   #ifdef RGB
@@ -422,7 +418,6 @@ void InitConfirmation() {
     request(DIMMER_ID, V_RGB);
     wait(2000, C_SET, V_RGB);
 
-    InitConfirm = true;
   #endif
 
   #ifdef RGBW
@@ -438,7 +433,6 @@ void InitConfirmation() {
     request(DIMMER_ID, V_RGBW);
     wait(2000, C_SET, V_RGBW);
 
-    InitConfirm = true;
   #endif
 
   // DIGITAL INPUT
@@ -498,6 +492,8 @@ void InitConfirmation() {
   #ifdef RS485_DEBUG
     send(msgDEBUG.setSensor(DEBUG_ID).set("DEBUG MESSAGE"));
   #endif
+
+  InitConfirm = true;
 
 }
 
@@ -686,12 +682,6 @@ void IODUpdate() {
 
   int FirstSensor = 0;
   int Iterations = NUMBER_OF_RELAYS+NUMBER_OF_INPUTS;
-
-  /*#ifdef RELAY_ID_1
-    FirstSensor = RELAY_ID_1;
-  #elif !defined(RELAY_ID_1) && defined(INPUT_1)
-    FirstSensor = INPUT_ID_1;
-  #endif*/
 
   if (Iterations > 0)  {
     for (int i = FirstSensor; i < FirstSensor + Iterations; i++)  {
@@ -1113,6 +1103,10 @@ void loop() {
           IOD[i].SetRelay();
           send(msgIOD.setSensor(i).set(IOD[i].NewState));
         }
+      #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
+        Dimmer.NewState = false;
+        Dimmer.ChangeState();
+        send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
       #endif
       send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
       InformControllerTS = true;

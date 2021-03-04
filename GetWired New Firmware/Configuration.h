@@ -51,8 +51,12 @@
 #define POWER_SENSOR
 #define INTERNAL_TEMP
 
-// External temperature sensor
+// External temperature sensor - define DHT22 or SHT30
 //#define EXTERNAL_TEMP
+#ifdef EXTERNAL_TEMP
+    //#define DHT22
+    #define SHT30
+#endif
 
 /*  *******************************************************************************************
                     MCU Pin Definitions
@@ -125,8 +129,9 @@
 #endif
 
 // Other
-#define INTERVAL 300000                     // Interval value for reporting readings of the sensors: temperature, power usage (default 300000)
-#define INIT_DELAY 200                      // A value to be multiplied by node ID value to obtain the time to wait during the initialization process
+#define INTERVAL 300000                    // Interval value for reporting readings of the sensors: temperature, power usage (default 300000)
+#define INIT_DELAY 200                       // A value to be multiplied by node ID value to obtain the time to wait during the initialization process
+#define PRESENTATION_DELAY 10       // Time (ms) to wait between subsequent presentation messages (default 10)
 #define LOOP_TIME 100                       // Main loop wait time (default 100)        
 
 /*  *******************************************************************************************
@@ -247,7 +252,7 @@
 #endif
 
 // Special Button
-#if defined(SINGLE_RELAY) || defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
+#ifdef BUTTON_1
   #define SPECIAL_BUTTON
   #define SPECIAL_BUTTON_ID 8
 #endif
@@ -286,17 +291,10 @@
 #ifdef EXTERNAL_TEMP
   #define ETT_ID 11
   #define ETH_ID 12
-  // DHT22
-  //#define DHT22
   #ifdef DHT22
     #define ET_PIN ONE_WIRE_PIN
   #endif
-  // SHT30
-  #define SHT30
 #endif
-
-// I2C
-
 
 /*  *******************************************************************************************
                       ERROR REPORTING
