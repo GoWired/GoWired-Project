@@ -297,8 +297,10 @@
 #endif
 
 /*  *******************************************************************************************
-                      ERROR REPORTING
+                      ERROR REPORTING & PREVENTION
  *  *******************************************************************************************/
+#define ENABLE_WATCHDOG 
+
 #define ERROR_REPORTING
 #ifdef ERROR_REPORTING
   #ifdef POWER_SENSOR

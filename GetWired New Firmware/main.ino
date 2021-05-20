@@ -44,6 +44,7 @@
 #include <MySensors.h>
 #include <dht.h>
 #include <Wire.h>
+#include <avr/wdt.h>
 #include "SHTSensor.h"
 
 /*  *******************************************************************************************
@@ -134,6 +135,12 @@ bool InitConfirm = false;
  *  *******************************************************************************************/
 void before() {
 
+  #ifdef ENABLE_WATCHDOG
+    wdt_reset();
+    MCUSR = 0;
+    wdt_disable();
+  #endif
+
   uint32_t InitDelay = MY_NODE_ID * INIT_DELAY;
   
   wait(InitDelay);
@@ -143,6 +150,10 @@ void before() {
                                             Setup
  *  *******************************************************************************************/
 void setup() {
+
+  #ifdef ENABLE_WATCHDOG
+    wdt_enable(WDTO_4S);
+  #endif
 
   float Vcc = ReadVcc();  // mV
 
@@ -155,6 +166,7 @@ void setup() {
   #ifdef ROLLER_SHUTTER
     IOD[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
     IOD[RS_ID + 1].SetValues(RELAY_OFF, 3, BUTTON_2);
+    NewPosition = RS.Position;
   #endif
 
   #ifdef FOUR_RELAY
@@ -776,7 +788,8 @@ void RSCalibration(float Vcc)  {
 
   do  {
     Current = PS.MeasureAC(Vcc);
-    delay(80);
+    delay(100);
+    wdt_reset();
   } while(Current > PS_OFFSET);
 
   RS.Stop();
@@ -789,7 +802,8 @@ void RSCalibration(float Vcc)  {
     do  {
       Current = PS.MeasureAC(Vcc);
       TIME_2 = millis();
-      delay(80);
+      delay(100);
+      wdt_reset();
     } while(Current > PS_OFFSET);
     
     RS.Stop();
@@ -806,7 +820,8 @@ void RSCalibration(float Vcc)  {
     do  {
       Current = PS.MeasureAC(Vcc);
       TIME_2 = millis();
-      delay(80);
+      delay(100);
+      wdt_reset();
     } while(Current > PS_OFFSET);
     
     RS.Stop();
