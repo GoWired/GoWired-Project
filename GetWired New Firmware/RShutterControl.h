@@ -9,7 +9,6 @@
 #include "Arduino.h"
 #include <EEPROM.h>
 #include "Configuration.h"
-#include "PowerSensor.h"
 
 class RShutterControl
 {
@@ -30,8 +29,6 @@ class RShutterControl
     uint8_t _DownTime;
     bool _RelayOn;
     bool _RelayOff;
-
-    PowerSensor PS;
         
 };
 
