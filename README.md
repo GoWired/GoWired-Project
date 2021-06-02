@@ -14,5 +14,10 @@ This is a repository for **GetWired**, RS485 & MySensors based, open source home
 ## Wiki
 To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWired-Project/wiki).
 
+## 2021-05 Changelog
+- Added AVR watchdog to GetWired New Firmware
+- Fixed a bug in which roller shutter modules set open position of a roller shutter after reboot; now the position is recovered from EEPROM
+- Minor improvements.
+
 ##
-**Be careful!** This is still work in progress and can have some bugs. The code in master branch should always be usable. Dev branch may not be tested, use on your own responsibility.
+The code in master branch should always be tested & working. Dev branch may not be tested, use on your own responsibility.
