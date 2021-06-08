@@ -49,9 +49,7 @@ void RShutterControl::Calibration(uint8_t UpTime, uint8_t DownTime)  {
   EEPROM.put(EEA_RS_TIME_UP, _UpTime);
   EEPROM.put(EEA_RS_POSITION, Position);
 
-  Calibrated = true;
-  NewState = 2;
-  
+  Calibrated = true;  
 }
 
 // Read Message
