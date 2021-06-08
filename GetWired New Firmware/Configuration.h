@@ -113,13 +113,13 @@
 #define DIMMING_TOGGLE_STEP 20              // Value to increase dimming percentage when using wall switch
 
 // Roller Shutter
-#define RS_AUTO_CALIBRATION
+#define RS_AUTO_CALIBRATION                 // Roller shutter auto-calibration. Leave it defined or comment it out and define movement times manually
 #ifdef RS_AUTO_CALIBRATION
   #define PS_OFFSET 0.2                     // Power sensor offset for roller shutter calibration (default 0.2)
   #define CALIBRATION_SAMPLES 2             // Number of calibration samples for roller shutter calibration (default 2)
 #else
-  #define UP_TIME 21                        // Define roller shutter movement durations manually
-  #define DOWN_TIME 20
+  #define UP_TIME 21                        // Manually defined upward movement time in seconds (0-255)
+  #define DOWN_TIME 20                      // Manually defined downward movement time in seconds (0-255)
 #endif
 
 // Heating system section thermometer
@@ -132,7 +132,7 @@
 #define INTERVAL 300000                    // Interval value for reporting readings of the sensors: temperature, power usage (default 300000)
 #define INIT_DELAY 200                       // A value to be multiplied by node ID value to obtain the time to wait during the initialization process
 #define PRESENTATION_DELAY 10       // Time (ms) to wait between subsequent presentation messages (default 10)
-#define LOOP_TIME 100                       // Main loop wait time (default 100)        
+#define LOOP_TIME 80                       // Main loop wait time (default 100)        
 
 /*  *******************************************************************************************
                     OUTPUT Config
