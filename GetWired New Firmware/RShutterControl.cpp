@@ -17,6 +17,9 @@ RShutterControl::RShutterControl(uint8_t UpPin, uint8_t DownPin, bool RelayOn, b
   pinMode(_UpPin, OUTPUT);  digitalWrite(_UpPin, RelayOff);
   pinMode(_DownPin, OUTPUT);  digitalWrite(_DownPin, RelayOff);
 
+  NewState = 2;
+  State = 2;
+
   uint8_t DownTime;
   uint8_t UpTime;
 
@@ -49,9 +52,7 @@ void RShutterControl::Calibration(uint8_t UpTime, uint8_t DownTime)  {
   EEPROM.put(EEA_RS_TIME_UP, _UpTime);
   EEPROM.put(EEA_RS_POSITION, Position);
 
-  Calibrated = true;
-  NewState = 2;
-  
+  Calibrated = true;  
 }
 
 // Read Message
