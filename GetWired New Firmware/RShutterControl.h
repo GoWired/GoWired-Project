@@ -21,11 +21,11 @@ class RShutterControl
     bool Calibrated;
 
     void Calibration(uint8_t UpTime=0, uint8_t DownTime=0);     // Finds up and down time by measuring current, save values to eeprom for use after power failure
-    uint8_t ReadMessage(uint8_t Order);
-    uint8_t ReadButtons(uint8_t Button);
-    uint8_t ReadNewPosition(uint8_t NewPosition);
+    uint32_t ReadMessage(uint8_t Order);
+    uint32_t ReadButtons(uint8_t Button);
+    uint32_t ReadNewPosition(int NewPosition);
     uint8_t Movement();
-    void CalculatePosition(bool Direction, unsigned long MeasuredTime);
+    void CalculatePosition(bool Direction, uint32_t MeasuredTime);
 
   private:
     uint8_t _UpPin;

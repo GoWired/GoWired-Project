@@ -52,55 +52,63 @@ void RShutterControl::Calibration(uint8_t UpTime, uint8_t DownTime)  {
   EEPROM.put(EEA_RS_TIME_UP, _UpTime);
   EEPROM.put(EEA_RS_POSITION, Position);
 
-  Calibrated = true;  
+  Calibrated = true;
 }
 
 // Read Message
-uint8_t RShutterControl::ReadMessage(uint8_t Order) {
+uint32_t RShutterControl::ReadMessage(uint8_t Order) {
+
+  uint32_t MovementTime;
 
   if(State == 2)  {
     NewState = Order;
 
     if(Order == 0) {
-      return _UpTime;
+      MovementTime = _UpTime * 1000;
     }
     else if(Order == 1)  {
-      return _DownTime;
+      MovementTime = _DownTime * 1000;
     }
     else if(Order == 2) {
-      return 0;
+      MovementTime = 0;
     }
   }
   else  {
     NewState = 2;
-    return 0;
+    MovementTime = 0;
   }
+
+  return MovementTime;
 }
 
 // Read Buttons
-uint8_t RShutterControl::ReadButtons(uint8_t Button)  {
+uint32_t RShutterControl::ReadButtons(uint8_t Button)  {
+
+  uint32_t MovementTime;
 
   // Roller shutter is stopped -> start moving
   if(State == 2)  {
     NewState = Button;
     if(Button == 0) {
-      return _UpTime;
+      MovementTime = _UpTime * 1000;
     }
     else if(Button == 1)  {
-      return _DownTime;
+      MovementTime = _DownTime * 1000;
     }
   }
   // Roller shutter is moving -> stop
   else  {
     NewState = 2;
-    return 0;
+    MovementTime = 0;
   }
+
+  return MovementTime;
 }
 
 // Read New Position
-uint8_t RShutterControl::ReadNewPosition(uint8_t NewPosition) {
+uint32_t RShutterControl::ReadNewPosition(int NewPosition) {
 
-  uint8_t MovementRange = NewPosition - Position;             // Downward => MR > 0; Upward MR < 0
+  int MovementRange = NewPosition - Position;             // Downward => MR > 0; Upward MR < 0
   bool MovementDirection = MovementRange > 0 ? 1 : 0;         // MovementDirection: 1 -> Down; 0 -> Up
   uint32_t MovementTime;
 
@@ -123,43 +131,43 @@ uint8_t RShutterControl::Movement()  {
   if(NewState == 2) {
     digitalWrite(_UpPin, _RelayOff);
     digitalWrite(_DownPin, _RelayOff);
-    State = NewState;
-    return State;
   }
   // Move upward
   else if(NewState == 0)  {
     digitalWrite(_DownPin, _RelayOff);
     digitalWrite(_UpPin, _RelayOn);
-    State = NewState;
-    return State;
   }
   // Move downward
   else if(NewState == 1) {
     digitalWrite(_UpPin, _RelayOff);
     digitalWrite(_DownPin, _RelayOn);
-    State = NewState;
-    return State;
   }
+
+  State = NewState;
+  return State;  
 }
 
 // Calculate new position
-void RShutterControl::CalculatePosition(bool Direction, unsigned long MeasuredTime)  {
+void RShutterControl::CalculatePosition(bool Direction, uint32_t MeasuredTime)  {
 
   uint8_t DirectionTime;
+  int NewPosition = Position;
 
   if(Direction) {
-    DirectionTime = _DownTime * 1000;
+    DirectionTime = _DownTime;
   }
   else  {
-    DirectionTime = _UpTime * 1000;
+    DirectionTime = _UpTime;
   }
 
-  uint8_t PositionChange = (float) MeasuredTime / (float) DirectionTime;
-  PositionChange = PositionChange * 100;
+  float PositionChange = (float) MeasuredTime / (float) DirectionTime;
+  PositionChange = PositionChange / 10;
 
-  Position += Direction == 1 ? PositionChange : -PositionChange;
-  Position = Position > 100 ? 100 : Position;
-  Position = Position < 0 ? 0 : Position;
+  NewPosition += Direction == 1 ? PositionChange : -PositionChange;
+  NewPosition = NewPosition > 100 ? 100 : NewPosition;
+  NewPosition = NewPosition < 0 ? 0 : NewPosition;
+
+  Position = (uint8_t)NewPosition;
 
   EEPROM.put(EEA_RS_POSITION, Position);
 }
