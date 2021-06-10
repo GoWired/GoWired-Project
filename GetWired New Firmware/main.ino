@@ -1107,6 +1107,11 @@ void loop() {
       InformControllerTS = false;
     }
   #endif
+
+  // Reset LastUpdate if millis() has overflowed
+  if(LastUpdate > millis()) {
+    LastUpdate = millis();
+  }
   
   // Checking out sensors which report at a defined interval
   if ((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {

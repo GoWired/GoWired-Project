@@ -53,6 +53,9 @@ float PowerSensor::MeasureAC(float Vcc)  {
     if(ReadValue < MinValue)  {
       MinValue = ReadValue;
     }
+    if(millis() < StartTime)  {
+      StartTime = millis();
+    }
   }
 
   uint16_t MaxMinValue = (MaxValue - MinValue);
@@ -81,9 +84,12 @@ float PowerSensor::MeasureDC(float Vcc)  {
     ReadValue = abs(ReadValue);
     AverageSum += ReadValue;
     N++;
+    if(millis() < StartTime)  {
+      StartTime = millis();
+    }
   }
 
-  float Result = AverageSum / N;
+  float Result = (float)AverageSum / N;
   Result = (Result * Vcc) / (_mVperAmp * 1024.0);
 
   return Result;

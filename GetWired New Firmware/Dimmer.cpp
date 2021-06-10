@@ -23,7 +23,7 @@ void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t Di
 	_DimmingStep = DimmingStep;
 	_DimmingInterval = DimmingInterval;
 	
-	_DimmerTime = 0;
+	//_DimmerTime = 0;
 	_DimmerState = false;
 	
 	if(_NumberOfChannels == 3)	{
@@ -45,15 +45,19 @@ void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t Di
 void Dimmer::ChangeLevel()  {
 
   uint8_t Delta = (NewDimmingLevel - _DimmingLevel) < 0 ? -_DimmingStep : _DimmingStep;
+  uint32_t Time = millis();
 
   while(_DimmingLevel != NewDimmingLevel) {
-		if(millis() > _DimmerTime + _DimmingInterval)	{
-			_DimmerTime = millis();
+		if(millis() > Time + _DimmingInterval)	{
+			Time = millis();
 			_DimmingLevel += Delta;
 			for(int i=0; i<_NumberOfChannels; i++)	{
 				analogWrite(_Channels[i], (int)(_DimmingLevel / 100.0 * _Values[i]));
 			}
 		}
+    if(millis() < Time)  {
+      Time = millis();
+    }
   }
 }
 
@@ -63,15 +67,19 @@ void Dimmer::ChangeLevel()  {
 void Dimmer::ChangeColors() {
 
   uint8_t Delta;
+  uint32_t Time = millis();
 
   for(int i=0; i<_NumberOfChannels; i++) {
     Delta = (_Values[i] - NewValues[i]) > 0 ? -_DimmingStep : _DimmingStep;
     while(_Values[i] != NewValues[i]) {
-		  if(millis() > _DimmerTime + _DimmingInterval)	{
+		  if(millis() > Time + _DimmingInterval)	{
 			  _Values[i] += Delta;
         analogWrite(_Channels[i], (int)(_DimmingLevel / 100.0 * _Values[i]));
-			  _DimmerTime = millis();
+			  Time = millis();
 		  }
+      if(millis() < Time)  {
+        Time = millis();
+      }
     }
   }
 }

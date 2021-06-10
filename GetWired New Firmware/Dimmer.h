@@ -31,7 +31,7 @@ class Dimmer
   uint8_t _Values[4] = {255, 255, 255, 255};
   uint8_t _DimmingLevel;
   
-  uint32_t _DimmerTime;
+  //uint32_t _DimmerTime;
 
   byte fromhex(const char *str);
   
