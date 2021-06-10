@@ -52,8 +52,7 @@
  *  *******************************************************************************************/
 // RShutter
 #ifdef ROLLER_SHUTTER
-  bool Direction;
-  uint32_t MovementTime = 0;
+  uint32_t MovementTime;
   uint32_t StartTime;
 #endif
 
@@ -587,7 +586,7 @@ void receive(const MyMessage &message)  {
   else if (message.type == V_PERCENTAGE) {
     #ifdef ROLLER_SHUTTER
       if(message.sensor == RS_ID) {
-        uint8_t NewPosition = atoi(message.data);
+        int NewPosition = atoi(message.data);
         NewPosition = NewPosition > 100 ? 100 : NewPosition;
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
         MovementTime = RS.ReadNewPosition(NewPosition);
@@ -898,6 +897,14 @@ void RSUpdate() {
       StopTime = millis();
       send(msgRS3);
     }
+    if(millis() < StartTime)  {
+      uint32_t Temp = 4294967295 - StartTime + millis();
+      wait(MovementTime - Temp);
+      RS.NewState = 2;
+      RS.Movement();
+      send(msgRS3);
+      StopTime = MovementTime;
+    }
   }
 
   if(StopTime > 0)  {
@@ -1111,7 +1118,7 @@ void loop() {
   // Reset LastUpdate if millis() has overflowed
   if(LastUpdate > millis()) {
     LastUpdate = millis();
-  }
+  }  
   
   // Checking out sensors which report at a defined interval
   if ((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {
