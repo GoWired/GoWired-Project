@@ -25,7 +25,7 @@
  * This is code for GetWired MCU Module which is designed to work with many different inputs 
  * (buttons, digital and analog sensors) and a certain kind of output (depending on what shield is 
  * used). For the list of available shields have a look here: 
- * https://github.com/feanor-anglin/GetWired-Project/wiki/GetWired-Hardware.
+ * https://github.com/feanor-anglin/GetWired-Project/wiki.
  * 
  * Hardware serial is used with baud rate of 57600 by default.
  * 
@@ -44,16 +44,20 @@
 #include <MySensors.h>
 #include <dht.h>
 #include <Wire.h>
+#include <avr/wdt.h>
 #include "SHTSensor.h"
 
 /*  *******************************************************************************************
                                         Globals
  *  *******************************************************************************************/
 // RShutter
-int NewPosition;
+#ifdef ROLLER_SHUTTER
+  uint32_t MovementTime;
+  uint32_t StartTime;
+#endif
 
 // Timer
-unsigned long LastUpdate = 0;               // Time of last update of interval sensors
+uint32_t LastUpdate = 0;               // Time of last update of interval sensors
 bool CheckNow = false;
 
 // Module Safety Indicators
@@ -61,7 +65,7 @@ bool THERMAL_ERROR = false;                 // Thermal error status
 bool InformControllerTS = false;            // Was controller informed about error?
 bool OVERCURRENT_ERROR[4] = {false, false, false, false};             // Overcurrent error status
 bool InformControllerES = false;            // Was controller informed about error?
-int ET_ERROR = 3;                           // External thermometer status (0 - ok, 1 - checksum error, 2 - timeout error, 3 - default/initialization)
+uint8_t ET_ERROR = 3;                       // External thermometer status (0 - ok, 1 - checksum error, 2 - timeout error, 3 - default/initialization)
 
 // Initialization
 bool InitConfirm = false;
@@ -73,6 +77,15 @@ bool InitConfirm = false;
 #if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0)
   IODigital IOD[NUMBER_OF_RELAYS+NUMBER_OF_INPUTS];
   MyMessage msgIOD(0, V_LIGHT);
+#endif
+
+// RShutter Control Constructor
+#ifdef ROLLER_SHUTTER
+  RShutterControl RS(RELAY_1, RELAY_2, RELAY_ON, RELAY_OFF);
+  MyMessage msgRS1(RS_ID, V_UP);
+  MyMessage msgRS2(RS_ID, V_DOWN);
+  MyMessage msgRS3(RS_ID, V_STOP);
+  MyMessage msgRS4(RS_ID, V_PERCENTAGE);
 #endif
 
 // Dimmer
@@ -90,15 +103,6 @@ bool InitConfirm = false;
 #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
   PowerSensor PS[NUMBER_OF_RELAYS];
   MyMessage msgPS(0, V_WATT);
-#endif
-
-// RShutter Control Constructor
-#ifdef ROLLER_SHUTTER
-  RShutterControl RS(RELAY_1, RELAY_2, RELAY_ON, RELAY_OFF);
-  MyMessage msgRS1(RS_ID, V_UP);
-  MyMessage msgRS2(RS_ID, V_DOWN);
-  MyMessage msgRS3(RS_ID, V_STOP);
-  MyMessage msgRS4(RS_ID, V_PERCENTAGE);
 #endif
 
 // Internal thermometer constructor
@@ -134,6 +138,12 @@ bool InitConfirm = false;
  *  *******************************************************************************************/
 void before() {
 
+  #ifdef ENABLE_WATCHDOG
+    wdt_reset();
+    MCUSR = 0;
+    wdt_disable();
+  #endif
+
   uint32_t InitDelay = MY_NODE_ID * INIT_DELAY;
   
   wait(InitDelay);
@@ -143,6 +153,10 @@ void before() {
                                             Setup
  *  *******************************************************************************************/
 void setup() {
+
+  #ifdef ENABLE_WATCHDOG
+    wdt_enable(WDTO_2S);
+  #endif
 
   float Vcc = ReadVcc();  // mV
 
@@ -155,6 +169,13 @@ void setup() {
   #ifdef ROLLER_SHUTTER
     IOD[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
     IOD[RS_ID + 1].SetValues(RELAY_OFF, 3, BUTTON_2);
+    if(!RS.Calibrated)  {
+    #ifdef RS_AUTO_CALIBRATION
+      RSCalibration(Vcc);
+    #else
+      RS.Calibration(UP_TIME, DOWN_TIME);
+    #endif
+    }
   #endif
 
   #ifdef FOUR_RELAY
@@ -525,7 +546,7 @@ void receive(const MyMessage &message)  {
         // Ignore this message
       }
     #endif
-    #ifdef ROLLER_SHUTTER
+    /*#ifdef ROLLER_SHUTTER
       if (message.sensor == RS_ID)  {
         if (message.getBool() == true) {
           IOD[RS_ID + 1].NewState = message.getBool();
@@ -534,7 +555,7 @@ void receive(const MyMessage &message)  {
           IOD[RS_ID].NewState = message.getBool();
         }
       }
-    #endif
+    #endif*/
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
       if (message.sensor == DIMMER_ID) {
         Dimmer.NewState = message.getBool();
@@ -565,9 +586,10 @@ void receive(const MyMessage &message)  {
   else if (message.type == V_PERCENTAGE) {
     #ifdef ROLLER_SHUTTER
       if(message.sensor == RS_ID) {
-        NewPosition = atoi(message.data);
+        int NewPosition = atoi(message.data);
         NewPosition = NewPosition > 100 ? 100 : NewPosition;
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
+        MovementTime = RS.ReadNewPosition(NewPosition);
       }
     #endif
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
@@ -592,25 +614,24 @@ void receive(const MyMessage &message)  {
       }
     #endif
   }
-  else if(message.type == V_DOWN) {
-    #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
-        IOD[RS_ID + 1].NewState = 1;
-      }
-    #endif
-  }
   else if(message.type == V_UP) {
     #ifdef ROLLER_SHUTTER
       if(message.sensor == RS_ID) {
-        IOD[RS_ID].NewState = 1;
+        MovementTime = RS.ReadMessage(0);
+      }
+    #endif
+  }
+  else if(message.type == V_DOWN) {
+    #ifdef ROLLER_SHUTTER
+      if(message.sensor == RS_ID) {
+        MovementTime = RS.ReadMessage(1);
       }
     #endif
   }
   else if(message.type == V_STOP) {
     #ifdef ROLLER_SHUTTER
       if(message.sensor == RS_ID) {
-        IOD[RS_ID].NewState = 0;
-        IOD[RS_ID + 1].NewState = 0;
+        MovementTime = RS.ReadMessage(2);
       }
     #endif
   }
@@ -731,6 +752,18 @@ void IODUpdate() {
                 }
               }
             #endif
+            #ifdef ROLLER_SHUTTER
+              if(IOD[i].NewState != 2)  {
+                MovementTime = RS.ReadButtons(i);
+                IOD[i].OldState = IOD[i].NewState;
+              }
+              else  {
+                #ifdef SPECIAL_BUTTON
+                  send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
+                  IOD[i].NewState = IOD[i].OldState;
+                #endif
+              }
+            #endif
             break;
           case 4:
           // Button input + Relay output
@@ -763,63 +796,62 @@ void RSCalibration(float Vcc)  {
 
   #if defined(ROLLER_SHUTTER) && defined(RS_AUTO_CALIBRATION)
 
+  float Current = 0;
   uint16_t DownTimeCumulated = 0;
   uint16_t UpTimeCumulated = 0;
-  float Current = 0;
-  unsigned long TIME_1 = 0;
-  unsigned long TIME_2 = 0;
-  unsigned long TIME_3 = 0;
+  uint32_t StartTime = 0;
+  uint32_t StopTime = 0;
+  uint32_t MeasuredTime = 0;
 
-  RS.Move(0);
+  // Opening the shutter  
+  RS.NewState = 0;
+  RS.Movement();
+
+  do  {
+    delay(100);
+    wdt_reset();
+    Current = PS.MeasureAC(Vcc);
+  } while(Current > PS_OFFSET);
+
+  RS.NewState = 2;
+  RS.Movement();
 
   delay(1000);
 
-  do  {
-    Current = PS.MeasureAC(Vcc);
-    delay(80);
-  } while(Current > PS_OFFSET);
-
-  RS.Stop();
-
+  // Calibrating
   for(int i=0; i<CALIBRATION_SAMPLES; i++) {
-    TIME_1 = millis();
-    RS.Move(1);
-    delay(1000);
+    for(int j=1; j>=0; j--)  {
+      RS.NewState = j;
+      RS.Movement();
+      StartTime = millis();
 
-    do  {
-      Current = PS.MeasureAC(Vcc);
-      TIME_2 = millis();
-      delay(80);
-    } while(Current > PS_OFFSET);
-    
-    RS.Stop();
+      do  {
+        delay(100);
+        Current = PS.MeasureAC(Vcc);
+        StopTime = millis();
+        wdt_reset();
+      } while(Current > PS_OFFSET);
 
-    TIME_3 = TIME_2 - TIME_1;
-    DownTimeCumulated += (int)(TIME_3 / 1000);
+      RS.NewState = 2;
+      RS.Movement();
 
-    delay(1000);
+      MeasuredTime = StopTime - StartTime;
 
-    TIME_1 = millis();
-    RS.Move(0);
-    delay(1000);
-      
-    do  {
-      Current = PS.MeasureAC(Vcc);
-      TIME_2 = millis();
-      delay(80);
-    } while(Current > PS_OFFSET);
-    
-    RS.Stop();
+      if(j) {
+        DownTimeCumulated += (int)(MeasuredTime / 1000);
+      }
+      else  {
+        UpTimeCumulated += (int)(MeasuredTime / 1000);
+      }
 
-    TIME_3 = TIME_2 - TIME_1;
-    UpTimeCumulated += (int)(TIME_3 / 1000);
-    delay(1000);
+      delay(1000);
     }
+  }
 
   RS.Position = 0;
 
-  int DownTime = (int)(DownTimeCumulated / CALIBRATION_SAMPLES);
-  int UpTime = (int)(UpTimeCumulated / CALIBRATION_SAMPLES);
+  uint8_t DownTime = (int)(DownTimeCumulated / CALIBRATION_SAMPLES);
+  uint8_t UpTime = (int)(UpTimeCumulated / CALIBRATION_SAMPLES);
 
   RS.Calibration(UpTime, DownTime);
 
@@ -833,86 +865,55 @@ void RSCalibration(float Vcc)  {
 void RSUpdate() {
 
   #ifdef ROLLER_SHUTTER
-  // Handling movement ordered by controller (new position percentage)
-    if (NewPosition != RS.Position)  {
-      float MovementRange = ((float)NewPosition - (float)RS.Position) / 100;       // Downward => MR > 0; Upward MR < 0
-      int MovementDirection = MovementRange > 0 ? 1 : 0;                           // MovementDirection: 1 -> Down; 0 -> Up
 
-      int MovementTime = RS.Move(MovementDirection) * (abs(MovementRange) * 1000);
-      wait(MovementTime);
-      RS.Stop();
+  uint32_t StopTime = 0;
+  uint32_t MeasuredTime;
+  bool Direction;
 
-      RS.Position = NewPosition;
-      EEPROM.put(EEA_RS_POSITION, RS.Position);
-      send(msgRS4.set(RS.Position));
-    }
-  // If no new position set by percentage, check buttons
-    else  {
-      for (int i = RS_ID; i < RS_ID + 2; i++)  {
-        IOD[i].CheckInput();
-        if (IOD[i].NewState != IOD[i].OldState)  {
-        // Handling regular upwards/downwards movement of the roller shutter
-          if (IOD[i].NewState == 1) {
-            int Time = RS.Move(i);
-            IOD[i].OldState = IOD[i].NewState;
-
-            unsigned long TIME_1 = millis();
-            unsigned long TIME_2 = 0;
-            unsigned long TIME_3 = 0;
-
-            while (IOD[RS_ID].NewState == IOD[RS_ID].OldState && IOD[RS_ID + 1].NewState == IOD[RS_ID + 1].OldState) {
-              IOD[RS_ID].CheckInput();
-              IOD[RS_ID + 1].CheckInput();
-              wait(100);
-
-              TIME_2 = millis();
-              TIME_3 = TIME_2 - TIME_1;
-              TIME_3 = TIME_3 / 1000;
-
-              if (TIME_3 > Time) {
-                RS.Stop();
-                RS.Position = (i == 1 ? 100 : 0);
-                IOD[RS_ID].NewState = 0; IOD[RS_ID + 1].NewState = 0;
-                break;
-              }
-            }
-            if (TIME_3 < Time)  {
-              RS.Stop();
-              IOD[RS_ID].NewState = 0; IOD[RS_ID + 1].NewState = 0;
-              int PositionChange = (float) TIME_3 / (float) Time * 100;
-              RS.Position += (i == 1 ? PositionChange : -PositionChange);
-              RS.Position = RS.Position > 100 ? 100 : RS.Position;
-              RS.Position = RS.Position < 0 ? 0 : RS.Position;
-            }
-            
-            IOD[RS_ID].OldState = IOD[RS_ID].NewState;
-            IOD[RS_ID + 1].OldState = IOD[RS_ID + 1].NewState;
-            NewPosition = RS.Position;
-            EEPROM.put(EEA_RS_POSITION, RS.Position);
-            send(msgRS4.set(RS.Position));
-          }
-          // Procedure to call out calibration process
-          else if (IOD[i].NewState == 2)  {
-            int SecondButton = (i == RS_ID ? RS_ID + 1 : RS_ID);
-            for (int j = 0; j < 10; j++) {
-              IOD[SecondButton].CheckInput();
-              wait(100);
-            }
-            if (IOD[SecondButton].NewState == 2)  {
-              IOD[SecondButton].NewState = IOD[SecondButton].OldState;
-              #ifdef RS_AUTO_CALIBRATION
-                float Vcc = ReadVcc();
-                RSCalibration(Vcc);
-              #endif
-            }
-            else  {
-              send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
-              IOD[i].NewState = IOD[i].OldState;
-            }
-          }
-        }
+  if(RS.State != RS.NewState) {
+    if(RS.NewState != 2)  {
+      RS.Movement();
+      StartTime = millis();
+      if(RS.NewState == 0)  {
+        send(msgRS1);
+      }
+      else if(RS.NewState == 1) {
+        send(msgRS2);
       }
     }
+    else  {
+      Direction = RS.State;
+      RS.Movement();
+      StopTime = millis();
+      send(msgRS3);
+    }
+  }
+
+  if(RS.State != 2) {
+    if(millis() >= StartTime + MovementTime) {
+      Direction = RS.State;
+      RS.NewState = 2;
+      RS.Movement();
+      StopTime = millis();
+      send(msgRS3);
+    }
+    if(millis() < StartTime)  {
+      uint32_t Temp = 4294967295 - StartTime + millis();
+      wait(MovementTime - Temp);
+      RS.NewState = 2;
+      RS.Movement();
+      send(msgRS3);
+      StopTime = MovementTime;
+    }
+  }
+
+  if(StopTime > 0)  {
+    MeasuredTime = StopTime - StartTime;
+    RS.CalculatePosition(Direction, MeasuredTime);
+  
+    send(msgRS4.set(RS.Position));
+  }
+
   #endif
 }
 
@@ -929,16 +930,6 @@ void PSUpdate(float Current, uint8_t Sensor = 0)  {
     PS[Sensor].OldValue = Current;
   #endif
 
-}
-
-/*  *******************************************************************************************
-                                     Internal Thermometer
- *  *******************************************************************************************/
-void ITUpdate(float Vcc) {
-
-  #ifdef INTERNAL_TEMP
-    send(msgIT.set((int)IT.MeasureT(Vcc)));
-  #endif
 }
 
 /*  *******************************************************************************************
@@ -971,138 +962,144 @@ long ReadVcc() {
 void loop() {
 
   float Vcc = ReadVcc(); // mV
-  float Current;
+  float Current = 0;
 
+  // Sending out states for the first time (as required by Home Assistant)
   if (!InitConfirm)  {
     InitConfirmation();
   }
 
+  // Reading inputs / activating outputs
+  if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0) {
+    IODUpdate();
+  }
+
+  // Updating roller shutter
   #ifdef ROLLER_SHUTTER
-    if(!RS.Calibrated)  {
-    #ifdef RS_AUTO_CALIBRATION
-      RSCalibration(Vcc);
-    #else
-      RS.Calibration(UP_TIME, DOWN_TIME);
-    #endif
-    }
+    RSUpdate();
   #endif
 
-  #ifdef POWER_SENSOR
-    #ifdef DOUBLE_RELAY
+  // Reading power sensor(s)
+  #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
+    #if defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
       if (digitalRead(RELAY_1) == RELAY_ON || digitalRead(RELAY_2) == RELAY_ON)  {
         Current = PS.MeasureAC(Vcc);
-      }
-      else  {
-        Current = 0;
-      }
-      #ifdef ERROR_REPORTING
-        if (!OVERCURRENT_ERROR[0]) {
-          OVERCURRENT_ERROR[0] = PS.ElectricalStatus(Current);
-        }
-      #endif
-      if (Current < 0.5) {
-        if (Current == 0 && PS.OldValue != 0)  {
-          PSUpdate(Current);
-        }
-        else if (abs(PS.OldValue - Current) > 0.05) {
-          PSUpdate(Current);
-        }
-      }
-      else  {
-        if(abs(PS.OldValue - Current) > (0.1 * PS.OldValue))  {
-          PSUpdate(Current);
-        }
       }
     #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
       if (Dimmer.NewState)  {
         Current = PS.MeasureDC(Vcc);
       }
+    #endif
+      
+    #ifdef ERROR_REPORTING
+      OVERCURRENT_ERROR[0] = PS.ElectricalStatus(Current);
+    #endif
+    
+    if (Current < 0.5) {
+      if (Current == 0 && PS.OldValue != 0)  {
+        PSUpdate(Current);
+      }
+      else if (abs(PS.OldValue - Current) > 0.05) {
+        PSUpdate(Current);
+      }
+    }
+    else  {
+      if(abs(PS.OldValue - Current) > (0.1 * PS.OldValue))  {
+        PSUpdate(Current);
+      }
+    }
+  #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
+    for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++) {
+      if (IOD[i].OldState == RELAY_ON)  {
+        Current = PS[i].MeasureAC(Vcc);
+      }
       else  {
         Current = 0;
       }
       #ifdef ERROR_REPORTING
-        if (!OVERCURRENT_ERROR[0]) {
-          OVERCURRENT_ERROR[0] = PS.ElectricalStatus(Current);
-        }
+        OVERCURRENT_ERROR[i] = PS[i].ElectricalStatus(Current);
       #endif
-      if (Current < 0.5) {
-        if (Current == 0 && PS.OldValue != 0)  {
-          PSUpdate(Current);
+      if (Current < 0.5)  {
+        if (Current == 0 && PS[i].OldValue != 0)  {
+          PSUpdate(Current, i);
         }
-        else if (abs(PS.OldValue - Current) > 0.05) {
-          PSUpdate(Current);
+        else if (abs(PS[i].OldValue - Current) > 0.05)  {
+          PSUpdate(Current, i);
         }
       }
       else  {
-        if(abs(PS.OldValue - Current) > (0.1 * PS.OldValue))  {
-          PSUpdate(Current);
+        if (abs(PS[i].OldValue - Current) > (0.1 * PS[i].OldValue)) {
+          PSUpdate(Current, i);
         }
       }
-    #elif defined(FOUR_RELAY)
-      for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++) {
-        if (UI[i].OldState == RELAY_ON)  {
-          Current = PS[i].MeasureAC(Vcc);
+    }
+  #endif
+
+  // Current safety
+  #if defined(ERROR_REPORTING) && defined(POWER_SENSOR)
+    #ifdef FOUR_RELAY
+      for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
+        if (OVERCURRENT_ERROR[i]) {
+          // Current to high
+          IOD[i].NewState = RELAY_OFF;
+          IOD[i].SetRelay();
+          send(msgIOD.setSensor(i).set(IOD[i].NewState));
+          send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
+          InformControllerES = true;
         }
-        else  {
-          Current = 0;
+        else if(!OVERCURRENT_ERROR[i] && InformControllerES) {
+          // Current normal (only after reporting error)
+          send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
+          InformControllerES = false;
         }
-        #ifdef ERROR_REPORTING
-          if (!OVERCURRENT_ERROR[i])  {
-          OVERCURRENT_ERROR[i] = PS[i].ElectricalStatus(Current);
+      }
+    #else
+      if(OVERCURRENT_ERROR[0])  {
+        // Current to high
+        #ifdef DOUBLE_RELAY
+          for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
+            IOD[i].NewState = RELAY_OFF;
+            IOD[i].SetRelay();
+            send(msgIOD.setSensor(i).set(IOD[i].NewState));
           }
+        #elif defined(ROLLER_SHUTTER)
+          RS.NewState = 2;
+          RSUpdate();
+        #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
+          Dimmer.NewState = false;
+          Dimmer.ChangeState();
+          send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
         #endif
-        if (Current < 0.5)  {
-          if (Current == 0 && PS[i].OldValue != 0)  {
-            PSUpdate(Current, i);
-          }
-          else if (abs(PS[i].OldValue - Current) > 0.05)  {
-            PSUpdate(Current, i);
-          }
-        }
-        else  {
-          if (abs(PS[i].OldValue - Current) > (0.1 * PS[i].OldValue)) {
-            PSUpdate(Current, i);
-          }
-        }
+
+        send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
+        InformControllerES = true;
+      }
+      else if(!OVERCURRENT_ERROR[0] && InformControllerES)  {
+        // Current normal (only after reporting error)
+        send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
+        InformControllerES = false;
       }
     #endif
   #endif
 
+  // Reading internal temperature sensor
   #if defined(ERROR_REPORTING) && defined(INTERNAL_TEMP)
     THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT(Vcc));
   #endif
 
-  // Regular main loop
-  #ifdef ROLLER_SHUTTER
-    RSUpdate();
-  #endif
-
-  if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0) {
-    IODUpdate();
-  }
-
-  if ((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {
-    #ifdef INTERNAL_TEMP
-      ITUpdate(Vcc);
-    #endif
-    #ifdef EXTERNAL_TEMP
-      ETUpdate();
-    #endif
-    LastUpdate = millis();
-    CheckNow = false;
-  }
-
-  // Handling safety procedures
+  // Thermal safety
   #if defined(ERROR_REPORTING) && defined(INTERNAL_TEMP)
-    if (THERMAL_ERROR == true && InformControllerTS == false) {
-    // Board temperature to hot
-    // Turn off relays
-      #ifdef RELAY_ID_1
+    if (THERMAL_ERROR && !InformControllerTS) {
+    // Board temperature to high
+      #ifdef DOUBLE_RELAY
         for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
           IOD[i].NewState = RELAY_OFF;
           IOD[i].SetRelay();
           send(msgIOD.setSensor(i).set(IOD[i].NewState));
         }
+      #elif defined(ROLLER_SHUTTER)
+        RS.NewState = 2;
+        RSUpdate();
       #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
         Dimmer.NewState = false;
         Dimmer.ChangeState();
@@ -1112,53 +1109,28 @@ void loop() {
       InformControllerTS = true;
       CheckNow = true;
     }
-    else if (THERMAL_ERROR == false && InformControllerTS == true) {
+    else if (!THERMAL_ERROR && InformControllerTS) {
       send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
       InformControllerTS = false;
     }
   #endif
-  #if defined(ERROR_REPORTING) && defined(POWER_SENSOR)
-  // AC current to big
-  // Turn off relays
-    #ifdef FOUR_RELAY
-      for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
-        if (OVERCURRENT_ERROR[i] == true && InformControllerES == false) {
-          IOD[i].NewState = RELAY_OFF;
-          IOD[i].SetRelay();
-          send(msgUI.setSensor(i).set(IOD[i].NewState));
-          send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
-          InformControllerES = true;
-        }
-      }
-      if (OVERCURRENT_ERROR[0] == false && OVERCURRENT_ERROR[1] == false && OVERCURRENT_ERROR[2] == false && OVERCURRENT_ERROR[3] == false && InformControllerES == true) {
-        InformControllerES = false;
-      }
-    #elif defined(DOUBLE_RELAY)
-      if (OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
-        for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
-          IOD[i].NewState = RELAY_OFF;
-          IOD[i].SetRelay();
-          send(msgIOD.setSensor(i).set(IOD[i].NewState));
-          send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
-          InformControllerES = true;
-        }
-      }
-      if (OVERCURRENT_ERROR[0] == false && InformControllerES == true) {
-        InformControllerES = false;
-      }
-    #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-      if (OVERCURRENT_ERROR[0] == true && InformControllerES == false) {
-        Dimmer.NewState = false;
-        Dimmer.ChangeState();
-        send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
-        send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
-        InformControllerES = true;
-      }
-      if (OVERCURRENT_ERROR[0] == false && InformControllerES == true) {
-        InformControllerES = false;
-      }
+
+  // Reset LastUpdate if millis() has overflowed
+  if(LastUpdate > millis()) {
+    LastUpdate = millis();
+  }  
+  
+  // Checking out sensors which report at a defined interval
+  if ((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {
+    #ifdef INTERNAL_TEMP
+      send(msgIT.set((int)IT.MeasureT(Vcc)));
     #endif
-  #endif
+    #ifdef EXTERNAL_TEMP
+      ETUpdate();
+    #endif
+    LastUpdate = millis();
+    CheckNow = false;
+  }
 
   wait(LOOP_TIME);
 }
