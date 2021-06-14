@@ -903,6 +903,7 @@ void RSUpdate() {
       RS.NewState = 2;
       RS.Movement();
       send(msgRS3);
+      StartTime = 0;
       StopTime = MovementTime;
     }
   }
