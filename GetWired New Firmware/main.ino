@@ -160,6 +160,16 @@ void setup() {
 
   float Vcc = ReadVcc();  // mV
 
+  // POWER SENSOR
+  #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
+    PS.SetValues(PS_PIN, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
+  #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
+    PS[RELAY_ID_1].SetValues(PS_PIN_1, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
+    PS[RELAY_ID_2].SetValues(PS_PIN_2, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
+    PS[RELAY_ID_3].SetValues(PS_PIN_3, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
+    PS[RELAY_ID_4].SetValues(PS_PIN_4, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
+  #endif
+
   // OUTPUT
   #ifdef DOUBLE_RELAY
     IOD[RELAY_ID_1].SetValues(RELAY_OFF, 4, BUTTON_1, RELAY_1);
@@ -234,16 +244,6 @@ void setup() {
     #else
       IOD[INPUT_ID_4].SetValues(RELAY_OFF, 1, PIN_4);
     #endif
-  #endif
-
-  // POWER SENSOR
-  #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
-    PS.SetValues(PS_PIN, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
-  #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
-    PS[RELAY_ID_1].SetValues(PS_PIN_1, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
-    PS[RELAY_ID_2].SetValues(PS_PIN_2, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
-    PS[RELAY_ID_3].SetValues(PS_PIN_3, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
-    PS[RELAY_ID_4].SetValues(PS_PIN_4, MVPERAMP, RECEIVER_VOLTAGE, MAX_CURRENT, POWER_MEASURING_TIME, Vcc);
   #endif
 
   // EXTERNAL THERMOMETER
@@ -589,6 +589,8 @@ void receive(const MyMessage &message)  {
         int NewPosition = atoi(message.data);
         NewPosition = NewPosition > 100 ? 100 : NewPosition;
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
+        RS.NewState = 2;
+        RSUpdate();
         MovementTime = RS.ReadNewPosition(NewPosition);
       }
     #endif
@@ -903,6 +905,7 @@ void RSUpdate() {
       RS.NewState = 2;
       RS.Movement();
       send(msgRS3);
+      StartTime = 0;
       StopTime = MovementTime;
     }
   }
