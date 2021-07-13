@@ -1,1 +1,1 @@
-**GetWired** hardware schematics will be released here.
+All hardware schematics will be released here.
