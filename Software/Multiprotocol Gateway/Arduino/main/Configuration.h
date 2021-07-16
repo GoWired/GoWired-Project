@@ -10,7 +10,8 @@
 #define SV "0.1"
 
 // Web frontend
-#define WEBFRONTEND                                       // provide a webfrontend at port 80 that shows gateway config
+#define WEBFRONTEND                                       // provide a webfrontend that shows gateway config
+#define HTTP_PORT 80                                      // Port for http frontend
 
 /*
  * MySensors definitions
@@ -47,14 +48,16 @@
 #endif
 
 // LEDs
-#define MY_WITH_LEDS_BLINKING_INVERSE                     // Define to inverse LED behaviour
+#define MY_INDICATION_HANDLER                             // LEDs are connected through an expander, so they cannot be handled by functions implementes in MySensors library
+//#define MY_WITH_LEDS_BLINKING_INVERSE                     // Define to inverse LED behaviour
 #define MY_DEFAULT_LED_BLINK_PERIOD 10                    // Set blinking period
-#define MY_DEFAULT_ERR_LED_PIN 4                          // Error led pin
-#define MY_DEFAULT_RX_LED_PIN  5                          // Receive led pin
-#define MY_DEFAULT_TX_LED_PIN  6                          // Transmit led pin
+//#define MY_DEFAULT_ERR_LED_PIN 4                          // Error led pin
+//#define MY_DEFAULT_RX_LED_PIN  5                          // Receive led pin
+//#define MY_DEFAULT_TX_LED_PIN  6                          // Transmit led pin
 
 // Debug prints
 //#define MY_DEBUG                                        // Enable debug prints to serial monitor
+#define MY_DEBUGDEVICE Serial2                            // Redirects debug prints to Serial2 (USB)
 
 /* 
  * MODBUS
@@ -100,6 +103,10 @@
 
 #define RELAY_BUTTON BUTTON_1
 #define RELAY_LED LED4
+
+#define MY_DEFAULT_ERR_LED_PIN LED1                       // Error led pin
+#define MY_DEFAULT_RX_LED_PIN  LED2                       // Receive led pin
+#define MY_DEFAULT_TX_LED_PIN  LED3                       // Transmit led pin
 
 /* 
  * WATCHDOG & CONTROLLER UPLINK CHECK

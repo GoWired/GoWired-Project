@@ -25,7 +25,7 @@
 // Includes
 #include "Configuration.h"
 #include <SPI.h>
-#include <Ethernet.h>
+#include <Ethernet2.h>
 #include <Wire.h>
 #include <INA219_WE.h>
 #include <MCP23S17.h>
@@ -37,17 +37,18 @@
 #include <MySensors.h>
 
 // Globals
-uint8_t HARD_MAC_ADDRESS[6];
+//uint8_t HARD_MAC_ADDRESS[6];
 bool ButtonState = false;
 bool ButtonHigh = false;
 bool CheckControllerUplink = true;
 uint32_t TIME_1 = 0;
 uint32_t LastUpdate = 0;
+uint32_t LEDsLastUpdate = 0;
 
 // Constructors
 // WEB Frontend
 #ifdef WEBFRONTEND
-  EthernetServer server(80);
+  EthernetServer server(HTTP_PORT);
 #endif
 
 // SPI Expander
@@ -64,11 +65,6 @@ INA219_WE ina219 = INA219_WE(INA219_ADDRESS);
 // Before
 void before() {
 
-  // Enable SAMD watchdog
-  #ifdef ENABLE_WATCHDOG
-    WDT.setup(WDT_HARDCYCLE2S);
-  #endif
-
   // Start USB serial
   Serial2.begin(115200);
 
@@ -83,7 +79,10 @@ void before() {
   digitalWrite(SD_CS_PIN, HIGH);
   digitalWrite(EXPANDER_CS_PIN, HIGH);
 
-  // Start SPI2
+  // Enable SPI1 (MCP25625)
+  SPI1.begin();
+
+  // Start SPI2 (SD card, 25AA02E48, MCP23S17, display)
   SPI2.begin();
 
   // Start MCP23S17 expander
@@ -125,29 +124,15 @@ void before() {
     }
   }
   //Serial2.println();*/
-
-  
-
 }
 
 void setup()  {
 
-  #ifdef ENABLE_WATCHDOG
-    WDT.clear();
-  #endif
-
-  // Enable SPI1 (MCP25625)
-  SPI1.begin();
-
-  // Launch LED sequence on enclosure panel
   uint8_t TEMP[5] = {LED1, LED2, LED3, LED4, LED5};
 
   Expander.pinMode(RELAY_BUTTON, INPUT_PULLUP);
-  
-  for(int i=0; i<5; i++)  {
-    Expander.pinMode(TEMP[i], OUTPUT);
-  }
 
+  // Launch LED sequence on enclosure panel
   for(int i=0; i<5; i++)  {
     Expander.pinMode(TEMP[i], OUTPUT); Expander.digitalWrite(TEMP[i], HIGH);  delay(500);
   }
@@ -179,7 +164,17 @@ void setup()  {
   //ina219.setBusRange(BRNG_32); // choose range and uncomment for change of default
   //ina219.setCorrectionFactor(0.98); // insert your correction factor if necessary
 
+  // Initialize webserver
+  #ifdef WEBFRONTEND
+    server.begin();
+  #endif
+
   // Initialize e-ink display
+
+  // Enable SAMD watchdog
+  #ifdef ENABLE_WATCHDOG
+    WDT.setup(WDT_HARDCYCLE2S);
+  #endif
 
 }
 
@@ -189,13 +184,16 @@ void loop() {
 
   #ifdef ENABLE_UPLINK_CHECK
     if((millis() > LastUpdate + UPLINK_CHECK_INTERVAL) && CheckControllerUplink) {
-      if(!requestTime())  {
+      if(!Ethernet.linkStatus())  {
         digitalWrite(LAN_RESET, HIGH); wait(100);
-        digitalWrite(LAN_RESET, LOW); wait(500);
-        if(!requestTime())  {
+        digitalWrite(LAN_RESET, LOW); wait(1000);
+        #ifdef ENABLE_WATCHDOG
+          WDT.clear();
+        #endif
+        if(!Ethernet.linkStatus())  {
           delay(10000);
-        }      
-      }  
+        }
+      }
       LastUpdate = millis();
     }
   #endif
@@ -379,6 +377,34 @@ void PrintConfig(Stream &s, char *lineBreak)  {
     s.print(F("Undefined"));
   #endif  
   s.print ( lineBreak );
+}
+
+/*
+ * LEDs handler
+ */
+void indication(const indication_t ind)  {
+
+  #if defined(MY_DEFAULT_TX_LED_PIN)
+	  if ((INDICATION_TX == ind) || (INDICATION_GW_TX == ind)) {
+		  Expander.digitalWrite(MY_DEFAULT_TX_LED_PIN, LOW);
+      wait(MY_DEFAULT_LED_BLINK_PERIOD);
+      Expander.digitalWrite(MY_DEFAULT_TX_LED_PIN, HIGH);
+	  } 
+  #endif
+  #if defined(MY_DEFAULT_RX_LED_PIN)
+		if ((INDICATION_RX == ind) || (INDICATION_GW_RX == ind)) {
+			Expander.digitalWrite(MY_DEFAULT_RX_LED_PIN, LOW);
+      wait(MY_DEFAULT_LED_BLINK_PERIOD);
+      Expander.digitalWrite(MY_DEFAULT_RX_LED_PIN, HIGH);
+		}
+  #endif
+  #if defined(MY_DEFAULT_ERR_LED_PIN)
+		if (ind > INDICATION_ERR_START) {
+			Expander.digitalWrite(MY_DEFAULT_RX_LED_PIN, LOW);
+      wait(MY_DEFAULT_LED_BLINK_PERIOD);
+      Expander.digitalWrite(MY_DEFAULT_RX_LED_PIN, HIGH);
+		}
+  #endif
 }
 
 /*
