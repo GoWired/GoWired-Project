@@ -37,7 +37,6 @@
 #include <MySensors.h>
 
 // Globals
-//uint8_t HARD_MAC_ADDRESS[6];
 bool ButtonState = false;
 bool ButtonHigh = false;
 bool CheckControllerUplink = true;
@@ -184,13 +183,13 @@ void loop() {
 
   #ifdef ENABLE_UPLINK_CHECK
     if((millis() > LastUpdate + UPLINK_CHECK_INTERVAL) && CheckControllerUplink) {
-      if(!Ethernet.linkStatus())  {
+      if(Ethernet.linkStatus() != LinkON)  {
         digitalWrite(LAN_RESET, HIGH); wait(100);
         digitalWrite(LAN_RESET, LOW); wait(1000);
         #ifdef ENABLE_WATCHDOG
           WDT.clear();
         #endif
-        if(!Ethernet.linkStatus())  {
+        if(Ethernet.linkStatus() != LinkON)  {
           delay(10000);
         }
       }
@@ -321,6 +320,7 @@ void PrintMacAddress(Stream &s, uint8_t *MACAddr)  {
   }
 }
 
+// Print configuration
 void PrintConfig(Stream &s, char *lineBreak)  {
 
   s.print(F("***********************************************"));
