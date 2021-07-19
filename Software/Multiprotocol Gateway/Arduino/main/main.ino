@@ -25,7 +25,7 @@
 // Includes
 #include "Configuration.h"
 #include <SPI.h>
-#include <Ethernet2.h>
+#include <Ethernet.h>
 #include <Wire.h>
 #include <INA219_WE.h>
 #include <MCP23S17.h>
@@ -85,31 +85,33 @@ void before() {
   SPI2.begin();
 
   // Start MCP23S17 expander
-  Expander.begin();
-  // Set EEPROM_CS_PIN to output
-  Expander.pinMode(EEPROM_CS_PIN, OUTPUT);
+  //Expander.begin();
 
-  uint8_t result = 0;
+  #ifdef EUI48_EEPROM
+    // Set EEPROM_CS_PIN to output
+    Expander.pinMode(EEPROM_CS_PIN, OUTPUT);
+
+    uint8_t result = 0;
   
-  // Take the chip select low to select the device
-  Expander.digitalWrite(EEPROM_CS_PIN, LOW);
-  // Read status
-  SPI2.transfer(READ_STATUS_INSTRUCTION);
-  result = SPI2.transfer(0x00);
+    // Take the chip select low to select the device
+    Expander.digitalWrite(EEPROM_CS_PIN, LOW);
+    // Read status
+    SPI2.transfer(READ_STATUS_INSTRUCTION);
+    result = SPI2.transfer(0x00);
   
-  if(result != 0) {
-    SPI2.transfer(READ_INSTRUCTION);
-	  // Send the device the register you want to read
-	  SPI2.transfer(0xFA);
-	  for(uint8_t i = 0; i < 6; i++)  {
-      #ifdef MQTT_GATEWAY
-        _MQTT_clientMAC[i] = SPI2.transfer(0x00);
-      #else
-        _ethernetGatewayMAC[i] = SPI2.transfer(0x00);
-      #endif
-  	}
-  }
-  else  { }
+    if(result != 0) {
+      SPI2.transfer(READ_INSTRUCTION);
+	    // Send the device the register you want to read
+	    SPI2.transfer(0xFA);
+	    for(uint8_t i = 0; i < 6; i++)  {
+        #ifdef MQTT_GATEWAY
+          _MQTT_clientMAC[i] = SPI2.transfer(0x00);
+        #else
+          _ethernetGatewayMAC[i] = SPI2.transfer(0x00);
+        #endif
+  	  }
+    }
+  #endif /* EUI48_EEPROM */
 
   Expander.digitalWrite(EEPROM_CS_PIN, HIGH);
 
@@ -190,7 +192,7 @@ void loop() {
           WDT.clear();
         #endif
         if(Ethernet.linkStatus() != LinkON)  {
-          delay(10000);
+          NVIC_SystemReset();
         }
       }
       LastUpdate = millis();

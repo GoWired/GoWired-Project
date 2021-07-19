@@ -71,6 +71,7 @@
  * Other peripherals
  */
 // 25AA02E48
+#define EUI48_EEPROM
 #define EEPROM_CS_PIN 15                // Adjust correct pin number (expander)
 #define READ_INSTRUCTION 0b00000011     // 25AA02A's read command
 #define WRITE_INSTRUCTION 0b00000010    // 25AA02A's write command
@@ -113,13 +114,12 @@
  * Watchdog resets the gateway in case of any software hang. Enabling it should result in
  * more robustness and long term reliability.
  * Uplink Check tests the connection between the Gateway and the Controller.
- * In case of connection loss, gateway will be reset be watchdog. 
+ * In case of connection loss, gateway will be reset. 
  * Time interval between tests can be customized.
- * Use CONTROLLER UPLINK CHECK only together with WATCHDOG.
  */
 //#define ENABLE_WATCHDOG                                   // Resets the Gateway in case of any software hang
-//#define ENABLE_UPLINK_CHECK                               // Resets the Gateway in case of connection loss with the controller
-//#define UPLINK_CHECK_INTERVAL 60000                       // Time interval for the uplink check (default 60000)
+#define ENABLE_UPLINK_CHECK                               // Resets the Gateway in case of connection loss with the controller
+#define UPLINK_CHECK_INTERVAL 60000                       // Time interval for the uplink check (default 60000)
 
 
 
