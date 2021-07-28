@@ -1,4 +1,4 @@
-![Logo](https://github.com/feanor-anglin/GetWired-Project/blob/master/Images/GetWired_small.png)
+![Logo](https://github.com/GoWired/GoWired-Project/blob/master/Images/Gowired-no-home-50dpi.png)
 
 This is a repository for **GoWired**, RS485 & MySensors based, open source home automation hardware previously released at [openhardware.io](https://www.openhardware.io/user/2098#view=projects). Lately it took part in a successful **[crowdfunding campaign](https://www.crowdsupply.com/domatic/getwired)**. It is now available to buy at [Mouser](https://www2.mouser.com/Search/Refine?Keyword=getwired).
 
