@@ -39,6 +39,60 @@ void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t Di
 	}
 }
 
+// Update Dimmer: New, experimental function which adjust colors and dimming level at the same time
+void Dimmer::UpdateDimmer()	{
+	
+	bool AdjustDimming = true;
+	bool AdjustColors = true;
+	bool ColorStates[4] = {false, false, false, false};
+	uint8_t DeltaDimming = 0;
+	uint8_t DeltaColors = 0;
+	uint32_t Time = millis() - _DimmingInterval;
+	
+	do	{
+    if(millis() > Time + _DimmingInterval)	{
+		  if(_DimmingLevel != NewDimmingLevel)	{
+			  AdjustDimming = true;
+			  DeltaDimming = (NewDimmingLevel - _DimmingLevel) < 0 ? -_DimmingStep : _DimmingStep;
+			  _DimmingLevel += DeltaDimming;
+		  }
+		  else	{
+			  AdjustDimming = false;
+		  }
+	
+		  for(int i=0; i<_NumberOfChannels; i++) {
+			  if(_Values[i] != NewValues[i])	{
+				  ColorStates[i] = true;
+				  DeltaColors = (_Values[i] - NewValues[i]) > 0 ? -_DimmingStep : _DimmingStep;
+				  _Values[i] += DeltaColors;
+			  }
+			  else	{
+				  ColorStates[i] = false;
+			  }
+		  }
+		
+		  for(int i=0; i<_NumberOfChannels; i++) {
+			  if(ColorStates[i] == true)	{
+				  AdjustColors = true;
+				  break;
+			  }
+        else  {
+          AdjustColors = false;
+        }
+		  }
+		
+		  for(int i=0; i<_NumberOfChannels; i++) {
+			  analogWrite(_Channels[i], (int)(_DimmingLevel / 100.0 * _Values[i]));
+		  }
+
+      Time = millis();
+    }
+    else if(millis() < Time) {
+      Time = millis();
+    }
+	} while(AdjustColors || AdjustDimming);
+}
+
 /*  *******************************************************************************************
  *                                      Change Level
  *  *******************************************************************************************/

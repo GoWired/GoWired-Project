@@ -13,6 +13,7 @@ class Dimmer
   Dimmer();      
 
   void SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t DimmingInterval, uint8_t Pin1, uint8_t Pin2, uint8_t Pin3, uint8_t Pin4=0);
+  void UpdateDimmer();
   void ChangeLevel();
   void ChangeColors();
   void ChangeState();
