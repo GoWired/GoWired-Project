@@ -61,44 +61,82 @@ void IODigital::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin
  *  *******************************************************************************************/
 void IODigital::CheckInput() {
 
-  if(SensorType == 0 || SensorType == 1) {
-    if(digitalRead(_SensorPin) == LOW)  {
-      NewState = 0;
+  bool Reading;
+  bool Shortpress = false;
+  uint32_t StartTime = millis();
+
+  do  {
+    if(SensorType == 0 || SensorType == 3 || SensorType == 4) {
+      // Hardcoded DebounceValue = 50
+      Reading = ReadDigital(50, false);
     }
-    else if(digitalRead(_SensorPin) != LOW)  {
-      NewState = 1;
+    else  {
+      Reading = ReadDigital(50, true);
     }
-  }
-  else if(SensorType == 3 || SensorType == 4)  {
-    
-    if(digitalRead(_SensorPin) != LOW)  {
-      _HighStateDetection = true;
-      _LowStateDetection = false;
-      _Condition = false;
-    }
-    if(_HighStateDetection == true) {
-      unsigned long StartTime = millis();
-      while(digitalRead(_SensorPin) == LOW)  {
-        _LowStateDetection = true;
-        _HighStateDetection = false;
-        if(millis() - StartTime > 1000) {
-          _Condition = true;
-          break; 
-        }
-      }
-      if(_Condition == false && _LowStateDetection == true) {
-        if(OldState == 0) {
+
+    switch(SensorType)  {
+      case 0:
+      case 1:
+        if(Reading == true) {
           NewState = 1;
         }
-        else if(OldState == 1)  {
+        else  {
           NewState = 0;
         }
-      }
-      else if(_Condition == true) {
-        NewState = 2;
+        break;
+      case 3:
+      case 4:
+        if(!Shortpress && Reading)  {
+          NewState = !OldState;
+          Shortpress = true;
+        }
+
+        // Hardcoded LongpressDuration = 1000
+        if(millis() - StartTime > 1000) {
+          NewState = 2;
+          break;
+        }
+
+        if(millis() < StartTime)  {
+          StartTime = millis();
+        }
+        break;
+      default:
+        break;
+    }
+  } while(Reading);
+}
+
+// Read digital input
+bool IODigital::ReadDigital(uint8_t DebounceValue, bool Invert) {
+
+  bool DigitalReading;
+  bool PreviousReading = false;
+  bool InputState = false;
+  uint32_t Timeout = millis();
+  uint32_t StartTime = Timeout;
+
+  do {
+    DigitalReading = (Invert ? digitalRead(_SensorPin) : !digitalRead(_SensorPin));
+
+    if(DigitalReading && !PreviousReading)  {
+      StartTime = millis();
+    }
+
+    if(millis() - StartTime > DebounceValue)  {
+      if(DigitalReading) {
+        InputState = true;
       }
     }
-  }
+    
+    if(millis() - Timeout > 255 || millis() < StartTime) {
+      break;
+    }
+
+    PreviousReading = DigitalReading;
+  } while(DigitalReading);
+
+  return InputState;
 }
 
 /*  *******************************************************************************************

@@ -28,6 +28,7 @@ class IODigital
     void SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0);
     void CheckInput();
     void SetRelay();
+    bool ReadDigital(uint8_t DebounceValue, bool Invert);
   
   private:
     uint8_t _RelayPin;
