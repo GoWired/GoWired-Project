@@ -14,7 +14,7 @@
 // Identification
 #define MY_NODE_ID 1                            // Set node ID
 #define SN "GetWired Module"               // Set node name to present to a controller
-#define SV "1.0"                                // Set sensor version
+#define SV "1.2"                                // Set sensor version
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
