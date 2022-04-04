@@ -155,7 +155,7 @@ void before() {
 void setup() {
 
   #ifdef ENABLE_WATCHDOG
-    wdt_enable(WDTO_2S);
+    wdt_enable(WDTO_8S);
   #endif
 
   float Vcc = ReadVcc();  // mV
@@ -420,7 +420,7 @@ void InitConfirmation() {
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgDIM.set(0));
+    send(msgDIM.set(Dimmer.NewDimmingLevel));
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
@@ -431,11 +431,11 @@ void InitConfirmation() {
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    send(msgDIM.set(0));
+    send(msgDIM.set(Dimmer.NewDimmingLevel));
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
-    send(msgDIM2.set("000000"));
+    send(msgDIM2.set("ffffff"));
     request(DIMMER_ID, V_RGB);
     wait(2000, C_SET, V_RGB);
 
@@ -446,11 +446,11 @@ void InitConfirmation() {
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    send(msgDIM.set(0));
+    send(msgDIM.set(Dimmer.NewDimmingLevel));
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
 
-    send(msgDIM3.set("00000000"));
+    send(msgDIM3.set("ffffffff"));
     request(DIMMER_ID, V_RGBW);
     wait(2000, C_SET, V_RGBW);
 
@@ -558,8 +558,8 @@ void receive(const MyMessage &message)  {
     #endif*/
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
       if (message.sensor == DIMMER_ID) {
-        Dimmer.NewState = message.getBool();
-        Dimmer.ChangeState();
+        //Dimmer.NewState = message.getBool();
+        Dimmer.ChangeState(message.getBool());
       }
     #endif
     #if defined(DOUBLE_RELAY)
@@ -599,9 +599,6 @@ void receive(const MyMessage &message)  {
         Dimmer.NewDimmingLevel = atoi(message.data);
         Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel > 100 ? 100 : Dimmer.NewDimmingLevel;
         Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel < 0 ? 0 : Dimmer.NewDimmingLevel;
-
-        Dimmer.NewState = true;
-        Dimmer.ChangeLevel();
       }
     #endif
   }
@@ -610,9 +607,7 @@ void receive(const MyMessage &message)  {
       if(message.sensor == DIMMER_ID) {
         const char *rgbvalues = message.getString();
 
-        Dimmer.NewState = true;
         Dimmer.NewColorValues(rgbvalues);
-        Dimmer.ChangeColors();
       }
     #endif
   }
@@ -727,10 +722,9 @@ void IODUpdate() {
             #ifdef DIMMER_ID
               if(i == 0)  {
                 if(IOD[i].NewState != 2) {
-                  // Change dimmer status
-                  Dimmer.NewState = !Dimmer.NewState;
-                  send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
-                  Dimmer.ChangeState();
+                  // Change dimmer state
+                  Dimmer.ChangeState(!Dimmer.CurrentState);
+                  send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
                   IOD[i].OldState = IOD[i].NewState;
                 }
                 #ifdef SPECIAL_BUTTON
@@ -742,15 +736,13 @@ void IODUpdate() {
               }
               else if(i == 1) {
                 if(IOD[i].NewState != 2)  {
-                  if(Dimmer.NewState) {
+                  if(Dimmer.CurrentState) {
                     // Toggle dimming level by DIMMING_TOGGLE_STEP
                     Dimmer.NewDimmingLevel += DIMMING_TOGGLE_STEP;
-
                     Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel > 100 ? DIMMING_TOGGLE_STEP : Dimmer.NewDimmingLevel;
                     send(msgDIM.set(Dimmer.NewDimmingLevel));
-                    Dimmer.ChangeLevel();
-                    IOD[i].OldState = IOD[i].NewState;
                   }
+                  IOD[i].NewState = IOD[i].OldState;
                 }
               }
             #endif
@@ -810,7 +802,7 @@ void RSCalibration(float Vcc)  {
   RS.Movement();
 
   do  {
-    delay(100);
+    delay(250);
     wdt_reset();
     Current = PS.MeasureAC(Vcc);
   } while(Current > PS_OFFSET);
@@ -828,7 +820,7 @@ void RSCalibration(float Vcc)  {
       StartTime = millis();
 
       do  {
-        delay(100);
+        delay(250);
         Current = PS.MeasureAC(Vcc);
         StopTime = millis();
         wdt_reset();
@@ -982,6 +974,10 @@ void loop() {
     RSUpdate();
   #endif
 
+  #if defined(DIMMER) || defined(RGB) || defined(RGBW)
+    Dimmer.UpdateDimmer();
+  #endif
+
   // Reading power sensor(s)
   #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
     #if defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
@@ -989,7 +985,7 @@ void loop() {
         Current = PS.MeasureAC(Vcc);
       }
     #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-      if (Dimmer.NewState)  {
+      if (Dimmer.CurrentState)  {
         Current = PS.MeasureDC(Vcc);
       }
     #endif
@@ -1069,9 +1065,9 @@ void loop() {
           RS.NewState = 2;
           RSUpdate();
         #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-          Dimmer.NewState = false;
-          Dimmer.ChangeState();
-          send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
+          //Dimmer.NewState = false;
+          Dimmer.ChangeState(false);
+          send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
         #endif
 
         send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
@@ -1104,9 +1100,9 @@ void loop() {
         RS.NewState = 2;
         RSUpdate();
       #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-        Dimmer.NewState = false;
-        Dimmer.ChangeState();
-        send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.NewState));
+        //Dimmer.NewState = false;
+        Dimmer.ChangeState(false);
+        send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
       #endif
       send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
       InformControllerTS = true;
