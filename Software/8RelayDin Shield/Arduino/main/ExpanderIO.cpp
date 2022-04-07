@@ -81,18 +81,16 @@ void ExpanderIO::CheckInput() {
       // Hardcoded DebounceValue = 50
       Reading = ReadDigital(50, false);
     }
-    else  {
+    else if(SensorType == 1)  {
       Reading = ReadDigital(50, true);
     }
 
     switch(SensorType)  {
       case 0:
       case 1:
-        if(Reading == true) {
-          NewState = 1;
-        }
-        else  {
-          NewState = 0;
+        if(!Shortpress && Reading)  {
+          NewState = !State;
+          Shortpress = true;
         }
         break;
       case 3:

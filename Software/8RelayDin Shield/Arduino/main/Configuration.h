@@ -12,9 +12,9 @@
  *                            MySensors Definitions
  *  *******************************************************************************************/
 // Identification
-#define MY_NODE_ID 1
-#define SN "RS485 8RelayDin 1"
-#define SV "1.0"
+#define MY_NODE_ID 5
+#define MN "GW-8RD"
+#define FV "1.3"
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
@@ -36,6 +36,8 @@
 #define RELAY_ON  LOW
 #define RELAY_OFF HIGH
 
+#define ENABLE_WATCHDOG
+
 #define INTERVAL 300000                       // Interval value (ms) for reporting readings of the sensors: temperature, power usage (default 300000)
 #define INIT_DELAY 200                        // A value (ms) to be multiplied by node ID value to obtain the time to wait during the initialization process
 #define PRESENTATION_DELAY 10                 // Time (ms) to wait between subsequent presentation messages (default 10)
@@ -45,11 +47,11 @@
  *                                   IO Config
  *  *******************************************************************************************/
 #define FIRST_OUTPUT_ID 0                     // default 0; should not be altered (expander pins for outputs: 0-7)
-#define TOTAL_NUMBER_OF_OUTPUTS 8             // Total number of outputs; value from 0-8 (default 8)
+#define TOTAL_NUMBER_OF_OUTPUTS 8             // Total number of outputs; value from 0-8 (default for 8RelayDin Shield 8; do not change it with this shield)
 
 // Inputs not bound to any outputs (expander pins for inputs: 8-15)
-#define INDEPENDENT_IO 0                      // Number of independent inputs and outputs; value from 0 to 8 (default 0)
-#define INPUT_TYPE 0                          // Define input type: 0 - INPUT_PULLUP, 1 - INPUT, 3 - Button
+#define INDEPENDENT_IO 4                      // Number of independent inputs and outputs; value from 0 to 8 (default 0)
+#define INPUT_TYPE 0                          // Define input type for independent inputs: 0 - INPUT_PULLUP, 1 - INPUT, 3 - Button
 
 #define NUMBER_OF_OUTPUTS TOTAL_NUMBER_OF_OUTPUTS-INDEPENDENT_IO
 
