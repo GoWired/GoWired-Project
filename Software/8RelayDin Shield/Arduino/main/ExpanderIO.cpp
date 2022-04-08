@@ -85,33 +85,21 @@ void ExpanderIO::CheckInput() {
       Reading = ReadDigital(50, true);
     }
 
-    switch(SensorType)  {
-      case 0:
-      case 1:
-        if(!Shortpress && Reading)  {
-          NewState = !State;
-          Shortpress = true;
-        }
-        break;
-      case 3:
-      case 4:
-        if(!Shortpress && Reading)  {
-          NewState = !State;
-          Shortpress = true;
-        }
+    if(!Shortpress && Reading)  {
+      NewState = !State;
+      Shortpress = true;
+    }
 
-        // Hardcoded LongpressDuration = 1000
-        if(millis() - StartTime > 1000) {
-          NewState = 2;
-          break;
-        }
+    if(SensorType == 3 || SensorType == 4)  {
+      // Hardcoded LongpressDuration = 1000
+      if(millis() - StartTime > 1000) {
+        NewState = 2;
+        break;
+      }
 
-        if(millis() < StartTime)  {
-          StartTime = millis();
-        }
-        break;
-      default:
-        break;
+      if(millis() < StartTime)  {
+        StartTime = millis();
+      }
     }
   } while(Reading);
 }

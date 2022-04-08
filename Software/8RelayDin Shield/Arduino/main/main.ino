@@ -1,13 +1,11 @@
 /*
- * GetWired is an open source project for WIRED home automation. It aims at making wired
- * home automation easy and affordable for every home automation enthusiast. GetWired provides:
- * - hardware (https://www.crowdsupply.com/domatic/getwired),
- * - software (https://github.com/feanor-anglin/GetWired-Project), 
- * - 3D printable enclosures (https://github.com/feanor-anglin/GetWired-Project/tree/master/Enclosures),
- * - instructions (both campaign page / campaign updates and our GitHub wiki).
+ * GoWired is an open source project for WIRED home automation. It aims at making wired
+ * home automation easy and affordable for every home automation enthusiast. GoWired provides
+ * hardware, software, enclosures and instructions necessary to build your own bus communicating
+ * smart home installation.
  * 
- * GetWired is based on RS485 industrial communication standard. The software is an implementation
- * of MySensors communication protocol (http://www.mysensors.org). 
+ * GoWired is based on RS485 industrial communication standard. The software uses MySensors
+ * communication protocol (http://www.mysensors.org).
  *
  * Created by feanor-anglin
  * Copyright (C) 2018-2022 feanor-anglin
@@ -18,11 +16,7 @@
  *
  *******************************
  *
- * DESCRIPTION
- * This software is designed for GoWired MCU working with GoWired 8RelayDin board with 8 relays
- * and 8 digital inputs.
- * 
- * To define some important variables, look at Configuration.h
+ * This is source code for GoWired MCU working with 8RelayDin Shield.
  * 
  */
 
@@ -39,6 +33,7 @@
  *  *******************************************************************************************/
 // Additional presentation status required by Home Assistant
 bool InitConfirm = false;
+uint8_t NumberOfLongpresses = NUMBER_OF_OUTPUTS;
 
 // Module Safety Indicators
 bool THERMAL_ERROR = false;                        // Thermal error status
@@ -50,7 +45,6 @@ bool THERMAL_ERROR = false;                        // Thermal error status
 ExpanderIO EIO[TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO];
 MyMessage msgSTATUS(0, V_STATUS);
 
-
 /*  *******************************************************************************************
                                             Before
  *  *******************************************************************************************/
@@ -61,6 +55,7 @@ void before() {
     MCUSR = 0;
     wdt_disable();
   #endif
+  
 }
 
 /*  *******************************************************************************************
@@ -107,13 +102,12 @@ void presentation() {
     present(i, S_BINARY, "8RD B+R");  wait(PRESENTATION_DELAY);
   }
 
-  uint8_t NumberOfLongpresses = NUMBER_OF_OUTPUTS;
-
   if(INPUT_TYPE == 3) {
     NumberOfLongpresses += INDEPENDENT_IO;
   }
 
-  Current_ID = 16;
+  Current_ID = TOTAL_NUMBER_OF_OUTPUTS + INDEPENDENT_IO;
+
   for(int i=Current_ID; i<Current_ID+NumberOfLongpresses; i++)  {
     present(i, S_BINARY, "Longpress"); wait(PRESENTATION_DELAY);
   }    
@@ -124,7 +118,9 @@ void presentation() {
  *  *******************************************************************************************/
 void InitConfirmation() {
 
-  for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO; i++)  {
+  uint8_t SensorsToConfirm = TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO+NumberOfLongpresses;
+
+  for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+SensorsToConfirm; i++)  {
     send(msgSTATUS.setSensor(i).set(EIO[i].NewState));
     request(i, V_STATUS);
     wait(1000, C_SET, V_STATUS);
@@ -154,9 +150,6 @@ void receive(const MyMessage &message)  {
  *  *******************************************************************************************/
 void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
 
-  uint8_t FirstSpecialButtonID = TOTAL_NUMBER_OF_OUTPUTS + INDEPENDENT_IO;
-  char topicBuffer[20];
-
   for(int i=FirstSensor; i<FirstSensor+NumberOfSensors; i++)  {
     EIO[i].CheckInput();
     if(EIO[i].NewState != EIO[i].State)  {
@@ -180,7 +173,7 @@ void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
           }
           #ifdef SPECIAL_BUTTON
             else if(EIO[i].NewState == 2)  {
-              send(msgSTATUS.setSensor(FirstSpecialButtonID + i).set(true));
+              send(msgSTATUS.setSensor(i + TOTAL_NUMBER_OF_OUTPUTS).set(true)); 
               EIO[i].NewState = EIO[i].State;
             }
           #endif
@@ -195,7 +188,7 @@ void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
           }
           #ifdef SPECIAL_BUTTON
             else if(EIO[i].NewState == 2)  {
-              send(msgSTATUS.setSensor(FirstSpecialButtonID + i).set(true));
+              send(msgSTATUS.setSensor(i + TOTAL_NUMBER_OF_OUTPUTS).set(true));
               EIO[i].NewState = EIO[i].State;
             }
           #endif

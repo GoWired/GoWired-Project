@@ -1,36 +1,22 @@
-/**
- * GetWired is an open source project for WIRED home automation. It aims at making wired
- * home automation easy and affordable for every home automation enthusiast. GetWired provides:
- * - hardware (https://www.crowdsupply.com/domatic/getwired),
- * - software (https://github.com/feanor-anglin/GetWired-Project), 
- * - 3D printable enclosures (https://github.com/feanor-anglin/GetWired-Project/tree/master/Enclosures),
- * - instructions (both campaign page / campaign updates and our GitHub wiki).
+/*
+ * GoWired is an open source project for WIRED home automation. It aims at making wired
+ * home automation easy and affordable for every home automation enthusiast. GoWired provides
+ * hardware, software, enclosures and instructions necessary to build your own bus communicating
+ * smart home installation.
  * 
- * GetWired is based on RS485 industrial communication standard. The software is an implementation
- * of MySensors communication protocol (http://www.mysensors.org). 
+ * GoWired is based on RS485 industrial communication standard. The software uses MySensors
+ * communication protocol (http://www.mysensors.org).
  *
  * Created by feanor-anglin
- * Copyright (C) 2018-2020 feanor-anglin
+ * Copyright (C) 2018-2022 feanor-anglin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * version 3 as published by the Free Software Foundation.
  *
- * DESCRIPTION
- * The Ethernet Gateway sends data received from sensors to the ethernet link.
- * The gateway also accepts input on ethernet interface, which is then sent out to the RS485 network.
- * Hardware serial is used with baud rate of 57600 by default.
+ *******************************
  *
- * The code is designed for GetWired Ethernet Gateway
- *
- * LED purposes:
- * - RX - blink fast on radio message received
- * - TX - blink fast on radio message transmitted
- * - ERR - fast blink on error during transmission error or receive crc error
- * - CONF - turns on after pressing CONF button
- * 
- * Buttons:
- * - CONF - turns of bus power supply, cuts the power to any modules connected to the gateway.
+ * This is source code for GoWired Ethernet Gateway.
  *
  */
 

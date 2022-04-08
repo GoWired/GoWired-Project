@@ -1,33 +1,21 @@
 /*
- * GetWired is an open source project for WIRED home automation. It aims at making wired
- * home automation easy and affordable for every home automation enthusiast. GetWired provides:
- * - hardware (https://www.crowdsupply.com/domatic/getwired),
- * - software (https://github.com/feanor-anglin/GetWired-Project), 
- * - 3D printable enclosures (https://github.com/feanor-anglin/GetWired-Project/tree/master/Enclosures),
- * - instructions (both campaign page / campaign updates and our GitHub wiki).
+ * GoWired is an open source project for WIRED home automation. It aims at making wired
+ * home automation easy and affordable for every home automation enthusiast. GoWired provides
+ * hardware, software, enclosures and instructions necessary to build your own bus communicating
+ * smart home installation.
  * 
- * GetWired is based on RS485 industrial communication standard. The software is an implementation
- * of MySensors communication protocol (http://www.mysensors.org). 
+ * GoWired is based on RS485 industrial communication standard. The software uses MySensors
+ * communication protocol (http://www.mysensors.org).
  *
  * Created by feanor-anglin
- * Copyright (C) 2018-2020 feanor-anglin
+ * Copyright (C) 2018-2022 feanor-anglin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * version 3 as published by the Free Software Foundation.
  *
- *******************************
- *
- * REVISION HISTORY
- * Version 1.0.0 - feanor-anglin
- *
- * DESCRIPTION version 1.0.0
- * This is code for GetWired MCU Module which is designed to work with many different inputs 
- * (buttons, digital and analog sensors) and a certain kind of output (depending on what shield is 
- * used). For the list of available shields have a look here: 
- * https://github.com/feanor-anglin/GetWired-Project/wiki.
- * 
- * Hardware serial is used with baud rate of 57600 by default.
+ * ******************************
+ * This is source code for GoWired MCU working with 2SSR, RGBW & 4RelayDin Shields.
  * 
  * 
  */

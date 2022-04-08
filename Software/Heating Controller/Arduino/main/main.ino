@@ -1,9 +1,22 @@
 /*
- * This is GetWired heating Controller software. 
+ * GoWired is an open source project for WIRED home automation. It aims at making wired
+ * home automation easy and affordable for every home automation enthusiast. GoWired provides
+ * hardware, software, enclosures and instructions necessary to build your own bus communicating
+ * smart home installation.
  * 
- * To define some important variables, look at Configuration.h
+ * GoWired is based on RS485 industrial communication standard. The software uses MySensors
+ * communication protocol (http://www.mysensors.org).
+ *
+ * Created by feanor-anglin
+ * Copyright (C) 2018-2022 feanor-anglin
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 3 as published by the Free Software Foundation.
+ *
+ *******************************
  * 
- * Created by feanar-anglin
+ * This is source code for Heating Controller, which can work on GoWired MCU with any shield.
  * 
  */
 
