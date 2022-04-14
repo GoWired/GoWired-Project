@@ -43,7 +43,7 @@ RShutterControl::RShutterControl(uint8_t UpPin, uint8_t DownPin, bool RelayOn, b
  *  *******************************************************************************************/
 void RShutterControl::Calibration(uint8_t UpTime, uint8_t DownTime)  {
   
-  Position = 0;
+  //Position = 0;
 
   _UpTime = UpTime;
   _DownTime = DownTime;
@@ -52,7 +52,7 @@ void RShutterControl::Calibration(uint8_t UpTime, uint8_t DownTime)  {
   EEPROM.put(EEA_RS_TIME_UP, _UpTime);
   EEPROM.put(EEA_RS_POSITION, Position);
 
-  Calibrated = true;
+  //Calibrated = true;
 }
 
 // Read Message
@@ -64,10 +64,10 @@ uint32_t RShutterControl::ReadMessage(uint8_t Order) {
     NewState = Order;
 
     if(Order == 0) {
-      MovementTime = _UpTime * 1000;
+      MovementTime = _UpTime;
     }
     else if(Order == 1)  {
-      MovementTime = _DownTime * 1000;
+      MovementTime = _DownTime;
     }
     else if(Order == 2) {
       MovementTime = 0;
@@ -90,10 +90,10 @@ uint32_t RShutterControl::ReadButtons(uint8_t Button)  {
   if(State == 2)  {
     NewState = Button;
     if(Button == 0) {
-      MovementTime = _UpTime * 1000;
+      MovementTime = _UpTime;
     }
     else if(Button == 1)  {
-      MovementTime = _DownTime * 1000;
+      MovementTime = _DownTime;
     }
   }
   // Roller shutter is moving -> stop
@@ -114,11 +114,11 @@ uint32_t RShutterControl::ReadNewPosition(int NewPosition) {
 
   if(!MovementDirection)  {
     NewState = 0;
-    MovementTime = _UpTime * abs(MovementRange) * 10;
+    MovementTime = _UpTime * abs(MovementRange);
   }
   else  {
     NewState = 1;
-    MovementTime = _DownTime * abs(MovementRange) * 10;
+    MovementTime = _DownTime * abs(MovementRange);
   }
 
   return MovementTime;

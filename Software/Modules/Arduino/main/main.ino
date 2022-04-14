@@ -119,6 +119,7 @@ bool InitConfirm = false;
 #ifdef RS485_DEBUG
   MyMessage msgDEBUG(DEBUG_ID, V_TEXT);
   MyMessage msgDEBUG2(DEBUG_ID, V_WATT);
+  MyMessage msgCUSTOM(0, V_CUSTOM);
 #endif
 
 /*  *******************************************************************************************
@@ -167,12 +168,8 @@ void setup() {
   #ifdef ROLLER_SHUTTER
     IOD[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
     IOD[RS_ID + 1].SetValues(RELAY_OFF, 3, BUTTON_2);
-    if(!RS.Calibrated)  {
-    #ifdef RS_AUTO_CALIBRATION
-      RSCalibration(Vcc);
-    #else
+    if(!RS.Calibrated) {
       RS.Calibration(UP_TIME, DOWN_TIME);
-    #endif
     }
   #endif
 
@@ -570,6 +567,14 @@ void receive(const MyMessage &message)  {
         }
       }
     #endif
+    // Secret configuration
+    if(message.sensor == SECRET_CONFIG_ID_1)  {
+      #ifdef ROLLER_SHUTTER
+        // Roller shutter: calibration
+        float Vcc = ReadVcc();
+        RSCalibration(Vcc);
+      #endif
+    }
   }
   else if (message.type == V_PERCENTAGE) {
     #ifdef ROLLER_SHUTTER
@@ -579,7 +584,7 @@ void receive(const MyMessage &message)  {
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
         RS.NewState = 2;
         RSUpdate();
-        MovementTime = RS.ReadNewPosition(NewPosition);
+        MovementTime = RS.ReadNewPosition(NewPosition) * 10;
       }
     #endif
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
@@ -736,7 +741,7 @@ void IODUpdate() {
             #endif
             #ifdef ROLLER_SHUTTER
               if(IOD[i].NewState != 2)  {
-                MovementTime = RS.ReadButtons(i);
+                MovementTime = RS.ReadButtons(i) * 1000;
                 IOD[i].OldState = IOD[i].NewState;
               }
               else  {
@@ -776,11 +781,11 @@ void IODUpdate() {
  *  *******************************************************************************************/
 void RSCalibration(float Vcc)  {
 
-  #if defined(ROLLER_SHUTTER) && defined(RS_AUTO_CALIBRATION)
+  #ifdef ROLLER_SHUTTER
 
   float Current = 0;
-  uint16_t DownTimeCumulated = 0;
-  uint16_t UpTimeCumulated = 0;
+  uint32_t DownTimeCumulated = 0;
+  uint32_t UpTimeCumulated = 0;
   uint32_t StartTime = 0;
   uint32_t StopTime = 0;
   uint32_t MeasuredTime = 0;
@@ -790,7 +795,7 @@ void RSCalibration(float Vcc)  {
   RS.Movement();
 
   do  {
-    delay(250);
+    delay(500);
     wdt_reset();
     Current = PS.MeasureAC(Vcc);
   } while(Current > PS_OFFSET);
@@ -837,6 +842,14 @@ void RSCalibration(float Vcc)  {
 
   RS.Calibration(UpTime, DownTime);
 
+  // Inform Controller about the current state of roller shutter
+  send(msgRS3);
+  send(msgRS4.setSensor(RS_ID).set(RS.Position));
+  #ifdef RS485_DEBUG
+    send(msgDEBUG.set("DownTime ; UpTime"));
+    send(msgCUSTOM.set(DownTime)); send(msgCUSTOM.set(UpTime));
+  #endif
+
   #endif
     
 }
@@ -854,6 +867,10 @@ void RSUpdate() {
 
   if(RS.State != RS.NewState) {
     if(RS.NewState != 2)  {
+      #ifdef RS485_DEBUG
+        send(msgDEBUG.set("MovementTime"));
+        send(msgCUSTOM.set(MovementTime));
+      #endif
       RS.Movement();
       StartTime = millis();
       if(RS.NewState == 0)  {

@@ -13,8 +13,8 @@
  *  *******************************************************************************************/
 // Identification
 #define MY_NODE_ID 1                            // Set node ID
-#define SN "GetWired Module"               // Set node name to present to a controller
-#define SV "1.2"                                // Set sensor version
+#define SN "GoWired Module"               // Set node name to present to a controller
+#define SV "1.3.1"                                // Set sensor version
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
@@ -112,15 +112,11 @@
 #define DIMMING_INTERVAL 1                  // Duration of dimming interval, increase for slower dimming (default 10)
 #define DIMMING_TOGGLE_STEP 20              // Value to increase dimming percentage when using wall switch
 
-// Roller Shutter
-#define RS_AUTO_CALIBRATION                 // Roller shutter auto-calibration. Leave it defined or comment it out and define movement times manually
-#ifdef RS_AUTO_CALIBRATION
-  #define PS_OFFSET 0.2                     // Power sensor offset for roller shutter calibration (default 0.2)
-  #define CALIBRATION_SAMPLES 2             // Number of calibration samples for roller shutter calibration (default 2)
-#else
-  #define UP_TIME 21                        // Manually defined upward movement time in seconds (0-255)
-  #define DOWN_TIME 20                      // Manually defined downward movement time in seconds (0-255)
-#endif
+// Roller Shutter 
+#define PS_OFFSET 0.2                     // Power sensor offset for roller shutter calibration (default 0.2)
+#define CALIBRATION_SAMPLES 1             // Number of calibration samples for roller shutter calibration (default 2)
+#define UP_TIME 21                        // Manually defined upward movement time in seconds (0-255)
+#define DOWN_TIME 20                      // Manually defined downward movement time in seconds (0-255)
 
 // Heating system section thermometer
 //#define HEATING_SECTION_SENSOR            // Define if this module if going to be a temperature sensor for a heating controller
@@ -318,6 +314,9 @@
 #ifdef RS485_DEBUG
   #define DEBUG_ID 16
 #endif
+
+// Secret configuration
+#define SECRET_CONFIG_ID_1 20
 
 /*  *******************************************************************************************
                     EEPROM Definitions
