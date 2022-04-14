@@ -57,6 +57,9 @@
 
 #define SPECIAL_BUTTON                        // Enables long press functionality for all buttons
 
+#define INVERT_BUTTON_LOGIC false             // Invert logic of relay-related inputs 
+#define INVERT_INPUT_LOGIC true               // Invert logic of independend inputs
+
 /*  *******************************************************************************************
  *                                   MCU Pin Definitions
  *  *******************************************************************************************/

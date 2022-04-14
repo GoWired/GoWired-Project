@@ -26,6 +26,7 @@
 #include "Configuration.h"
 #include "ExpanderIO.h"
 #include <MySensors.h>
+#include <avr/wdt.h>
 
 
 /*  *******************************************************************************************
@@ -64,21 +65,21 @@ void before() {
 void setup() {
 
   #ifdef ENABLE_WATCHDOG
-    wdt_enable(WDTO_2S);
+    wdt_enable(WDTO_4S);
   #endif
   
   // This function calls Expander.begin(0x20);
   EIO[0].ExpanderInit();
 
   for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+INDEPENDENT_IO; i++)  {
-    EIO[i].SetValues(RELAY_OFF, 2, i);
-    EIO[i+TOTAL_NUMBER_OF_OUTPUTS].SetValues(RELAY_OFF, INPUT_TYPE, i+TOTAL_NUMBER_OF_OUTPUTS);
+    EIO[i].SetValues(RELAY_OFF, false, 2, i);
+    EIO[i+TOTAL_NUMBER_OF_OUTPUTS].SetValues(RELAY_OFF, INVERT_INPUT_LOGIC, INPUT_TYPE, i+TOTAL_NUMBER_OF_OUTPUTS);
   }
 
   uint8_t j = FIRST_OUTPUT_ID + INDEPENDENT_IO;
     
   for(int i=j; i<j+NUMBER_OF_OUTPUTS; i++)  {
-    EIO[i].SetValues(RELAY_OFF, 4, i+TOTAL_NUMBER_OF_OUTPUTS, i);
+    EIO[i].SetValues(RELAY_OFF, INVERT_BUTTON_LOGIC, 4, i+TOTAL_NUMBER_OF_OUTPUTS, i);
   }
 }
 
@@ -93,7 +94,7 @@ void presentation() {
 
   for(int i=Current_ID; i<Current_ID+INDEPENDENT_IO; i++)  {
     present(i, S_BINARY, "8RD Relay");  wait(PRESENTATION_DELAY);
-    present(i+TOTAL_NUMBER_OF_OUTPUTS, S_BINARY, "8RD Button"); wait(PRESENTATION_DELAY);
+    present(i+TOTAL_NUMBER_OF_OUTPUTS, S_BINARY, "8RD Input"); wait(PRESENTATION_DELAY);
   }
 
   Current_ID += INDEPENDENT_IO;
@@ -118,10 +119,18 @@ void presentation() {
  *  *******************************************************************************************/
 void InitConfirmation() {
 
-  uint8_t SensorsToConfirm = TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO+NumberOfLongpresses;
+  uint8_t SensorsToConfirm = TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO;
 
   for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+SensorsToConfirm; i++)  {
     send(msgSTATUS.setSensor(i).set(EIO[i].NewState));
+    request(i, V_STATUS);
+    wait(1000, C_SET, V_STATUS);
+  }
+
+  uint8_t FirstLongpressID = FIRST_OUTPUT_ID+SensorsToConfirm;
+
+  for(int i=FirstLongpressID; i<FirstLongpressID+NumberOfLongpresses; i++)  {
+    send(msgSTATUS.setSensor(i).set("0"));
     request(i, V_STATUS);
     wait(1000, C_SET, V_STATUS);
   }

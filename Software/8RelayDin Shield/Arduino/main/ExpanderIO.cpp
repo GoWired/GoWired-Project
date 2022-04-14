@@ -14,6 +14,7 @@ ExpanderIO::ExpanderIO()  {
   
   NewState = 0;
   State = 0;
+  _HighStateDetected = false;
 }
 
 /*  *******************************************************************************************
@@ -27,18 +28,19 @@ void ExpanderIO::ExpanderInit(uint8_t Address)  {
 /*  *******************************************************************************************
  *                                    Set Values
  *  *******************************************************************************************/
-void ExpanderIO::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2) {
+void ExpanderIO::SetValues(bool RelayOFF, bool Invert, uint8_t Type, uint8_t Pin1, uint8_t Pin2) {
 	
 	_RelayOFF = RelayOFF;
+  _Invert = Invert;
 
   SensorType = Type;
   switch(SensorType)  {
-    // Door/window sensor
+    // Door/window/motion sensors
     case 0:
       _SensorPin = Pin1;
       Expander.pinMode(_SensorPin, INPUT_PULLUP);
       break;
-    // Motion sensor // not used
+    // No-pullup sensors
     case 1:
       _SensorPin = Pin1;
       Expander.pinMode(_SensorPin, INPUT);
@@ -74,29 +76,40 @@ void ExpanderIO::CheckInput() {
 
   bool Reading;
   bool Shortpress = false;
+  bool CheckHighState = true;
   uint32_t StartTime = millis();
 
   do  {
-    if(SensorType == 0 || SensorType == 3 || SensorType == 4) {
-      // Hardcoded DebounceValue = 50
-      Reading = ReadDigital(50, false);
-    }
-    else if(SensorType == 1)  {
-      Reading = ReadDigital(50, true);
-    }
+    // Hardcoded debounce value 50 ms
+    Reading = _ReadDigital(50);
 
-    if(!Shortpress && Reading)  {
-      NewState = !State;
-      Shortpress = true;
+    if(SensorType == 0 || SensorType == 1)  {
+      if(State != Reading)  {
+        NewState = Reading;
+        break;
+      }
     }
-
-    if(SensorType == 3 || SensorType == 4)  {
-      // Hardcoded LongpressDuration = 1000
+    else if(SensorType == 3 || SensorType == 4)  {
+      if(CheckHighState)  {
+        // Check if high state was detected
+        if(!_HighStateDetected && !Reading)  {
+          _HighStateDetected = true;
+        }
+        if(!_HighStateDetected)  {
+          break;
+        }
+        CheckHighState = false;
+      }
+      if(!Shortpress && Reading)  {
+        NewState = !State;
+        Shortpress = true;
+        _HighStateDetected = false;
+      }
+      // Hardcoded LongpressDuration 1000 ms
       if(millis() - StartTime > 1000) {
         NewState = 2;
         break;
       }
-
       if(millis() < StartTime)  {
         StartTime = millis();
       }
@@ -105,16 +118,16 @@ void ExpanderIO::CheckInput() {
 }
 
 // Read digital input
-bool ExpanderIO::ReadDigital(uint8_t DebounceValue, bool Invert) {
+bool ExpanderIO::_ReadDigital(uint8_t DebounceValue) {
 
   bool DigitalReading;
   bool PreviousReading = false;
   bool InputState = false;
-  uint32_t Timeout = millis();
-  uint32_t StartTime = Timeout;
+  bool Invert;
+  uint32_t StartTime = millis();
 
   do {
-    DigitalReading = (Invert ? Expander.digitalRead(_SensorPin) : !Expander.digitalRead(_SensorPin));
+    DigitalReading = (_Invert ? Expander.digitalRead(_SensorPin) : !Expander.digitalRead(_SensorPin));
 
     if(DigitalReading && !PreviousReading)  {
       StartTime = millis();
@@ -126,7 +139,7 @@ bool ExpanderIO::ReadDigital(uint8_t DebounceValue, bool Invert) {
       }
     }
     
-    if(millis() - Timeout > 255 || millis() < StartTime) {
+    if(millis() - StartTime > 255 || millis() < StartTime) {
       break;
     }
 

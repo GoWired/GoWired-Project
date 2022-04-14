@@ -30,17 +30,16 @@ class ExpanderIO
     uint8_t State;
     
     void ExpanderInit(uint8_t Address=0x20);
-    void SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0);
+    void SetValues(bool RelayOFF, bool Invert, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0);
     void CheckInput();
     void SetRelay();
-    bool ReadDigital(uint8_t DebounceValue, bool Invert);
+    bool _ReadDigital(uint8_t DebounceValue);
   
   private:
     uint8_t _RelayPin;
     uint8_t _SensorPin;
-    bool _LowStateDetection;
-    bool _HighStateDetection;
-    bool _Condition;
+    bool _HighStateDetected;
+    bool _Invert;
     bool _RelayOFF;    
    
 };
