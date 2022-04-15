@@ -64,11 +64,11 @@ bool IT_STATUS = false;
  *  *******************************************************************************************/
 // Heating constructor
 Heating Section[HEATING_SECTIONS];
-MyMessage msgH1(0, V_STATUS);
-MyMessage msgH2(0, V_PERCENTAGE);
-MyMessage msgH3(0, V_HVAC_SETPOINT_HEAT);
-MyMessage msgH4(0, V_TEMP);
-MyMessage msgH5(0, V_HVAC_FLOW_STATE);
+MyMessage msgSTATUS(0, V_STATUS);
+MyMessage msgPERCENTAGE(0, V_PERCENTAGE);
+MyMessage msgHVAC1(0, V_HVAC_SETPOINT_HEAT);
+MyMessage msgHVAC2(0, V_HVAC_FLOW_STATE);
+MyMessage msgTEMP(0, V_TEMP);
 
 // I2C expander
 #ifdef EXPANDER_SHIELD
@@ -78,12 +78,8 @@ MyMessage msgH5(0, V_HVAC_FLOW_STATE);
 // SHT30 sensor
 #ifdef INTERNAL_TEMP
   SHTSensor sht;
-  MyMessage msgITT(ITT_ID, V_TEMP);
-  MyMessage msgITH(ITH_ID, V_HUM);
+  MyMessage msgHUM(0, V_HUM);
 #endif
-
-// Module Safety Indicators
-MyMessage msgSI(0, V_STATUS);
 
 /*  *******************************************************************************************
                                             Before
@@ -174,44 +170,44 @@ void presentation() {
 void InitConfirmation() {
 
   for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {   
-    send(msgH3.setSensor(i).set(Section[i].SetPointDay, 1));
+    send(msgHVAC1.setSensor(i).set(Section[i].SetPointDay, 1));
     request(i, V_HVAC_SETPOINT_HEAT);
     wait(2000, C_SET, V_HVAC_SETPOINT_HEAT);
 
-    send(msgH5.setSensor(i).set("Off"));
+    send(msgHVAC2.setSensor(i).set("Off"));
     request(i, V_HVAC_FLOW_STATE);
     wait(2000, C_SET, V_HVAC_FLOW_STATE);
   }
 
-  send(msgH1.setSensor(SELECTOR_SWITCH_ID).set(HeatingStatus));
+  send(msgSTATUS.setSensor(SELECTOR_SWITCH_ID).set(HeatingStatus));
   request(SELECTOR_SWITCH_ID, V_STATUS);
   wait(2000, C_SET, V_STATUS);
   
-  send(msgH2.setSensor(SELECTOR_SWITCH_ID).set(HeatingMode));
+  send(msgPERCENTAGE.setSensor(SELECTOR_SWITCH_ID).set(HeatingMode));
   request(SELECTOR_SWITCH_ID, V_PERCENTAGE);
   wait(2000, C_SET, V_PERCENTAGE);
   
-  send(msgH3.setSensor(SPN_ID).set(SetPointNight, 1));
+  send(msgHVAC1.setSensor(SPN_ID).set(SetPointNight, 1));
   request(SPN_ID, V_HVAC_SETPOINT_HEAT);
   wait(2000, C_SET, SPN_ID);
 
-  send(msgH5.setSensor(SPN_ID).set("Off"));
+  send(msgHVAC2.setSensor(SPN_ID).set("Off"));
   request(SPN_ID, V_HVAC_FLOW_STATE);
   wait(2000, C_SET, V_HVAC_FLOW_STATE);
   
-  send(msgH3.setSensor(SPH_ID).set(SetPointHoliday, 1));
+  send(msgHVAC1.setSensor(SPH_ID).set(SetPointHoliday, 1));
   request(SPH_ID, V_HVAC_SETPOINT_HEAT);
   wait(2000, C_SET, SPH_ID);
 
-  send(msgH5.setSensor(SPH_ID).set("Off"));
+  send(msgHVAC2.setSensor(SPH_ID).set("Off"));
   request(SPH_ID, V_HVAC_FLOW_STATE);
   wait(2000, C_SET, V_HVAC_FLOW_STATE);
   
-  send(msgH3.setSensor(HYSTERESIS_ID).set(Hysteresis, 1));
+  send(msgHVAC1.setSensor(HYSTERESIS_ID).set(Hysteresis, 1));
   request(HYSTERESIS_ID, V_HVAC_SETPOINT_HEAT);
   wait(2000, C_SET, HYSTERESIS_ID);
 
-  send(msgH5.setSensor(HYSTERESIS_ID).set("Off"));
+  send(msgHVAC2.setSensor(HYSTERESIS_ID).set("Off"));
   request(HYSTERESIS_ID, V_HVAC_FLOW_STATE);
   wait(2000, C_SET, V_HVAC_FLOW_STATE);
     
@@ -231,10 +227,10 @@ void receive(const MyMessage &message)  {
         HeatingStatus = message.getBool();
         if(!HeatingStatus) {
           for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {
-            send(msgH5.setSensor(i+HEATING_SECTIONS).set("Off"));
+            send(msgHVAC2.setSensor(i+HEATING_SECTIONS).set("Off"));
           }
-          send(msgH5.setSensor(SPN_ID).set("Off"));
-          send(msgH5.setSensor(SPH_ID).set("Off"));
+          send(msgHVAC2.setSensor(SPN_ID).set("Off"));
+          send(msgHVAC2.setSensor(SPH_ID).set("Off"));
         }
       }
       break;
@@ -247,20 +243,20 @@ void receive(const MyMessage &message)  {
           EEPROM.put(EA_HM, HeatingMode);
         }        
         if(NewValue == 10)  {
-          send(msgH5.setSensor(SPN_ID).set("Off"));
-          send(msgH5.setSensor(SPH_ID).set("Off")); 
+          send(msgHVAC2.setSensor(SPN_ID).set("Off"));
+          send(msgHVAC2.setSensor(SPH_ID).set("Off")); 
         }
         else if(NewValue == 20)  {
-          send(msgH5.setSensor(SPN_ID).set("HeatOn"));
-          send(msgH5.setSensor(SPH_ID).set("Off"));
+          send(msgHVAC2.setSensor(SPN_ID).set("HeatOn"));
+          send(msgHVAC2.setSensor(SPH_ID).set("Off"));
         }
         else if(NewValue == 30)  {
-          send(msgH5.setSensor(SPH_ID).set("HeatOn"));
-          send(msgH5.setSensor(SPN_ID).set("Off"));
+          send(msgHVAC2.setSensor(SPH_ID).set("HeatOn"));
+          send(msgHVAC2.setSensor(SPN_ID).set("Off"));
         }
         else if(NewValue == 40) {
-          send(msgH5.setSensor(SPN_ID).set("Off"));
-          send(msgH5.setSensor(SPH_ID).set("Off"));
+          send(msgHVAC2.setSensor(SPN_ID).set("Off"));
+          send(msgHVAC2.setSensor(SPH_ID).set("Off"));
         }
       }
       break;
@@ -292,7 +288,7 @@ void receive(const MyMessage &message)  {
         if(message.sender == Section[i].GetTID()) {
           float Temp = message.getFloat();
           Section[i].ReadTemperature(Temp);
-          send(msgH4.setSensor(i).set(Temp, 1));
+          send(msgTEMP.setSensor(i).set(Temp, 1));
         }
       }
       break;
@@ -301,7 +297,7 @@ void receive(const MyMessage &message)  {
       if(HeatingMode != 40)  {
         if(message.sensor >= FIRST_SECTION_ID && message.sensor <= HYSTERESIS_ID)  {
           uint8_t i = message.sensor;
-          send(msgH5.setSensor(i).set("Off"));
+          send(msgHVAC2.setSensor(i).set("Off"));
         }
       }
       // Manual control; possible to change section states by controller
@@ -326,7 +322,7 @@ void receive(const MyMessage &message)  {
           }
         }
         if(message.sensor >= FIRST_SECTION_ID+HEATING_SECTIONS)  {
-          send(msgH5.setSensor(message.sensor).set("Off"));
+          send(msgHVAC2.setSensor(message.sensor).set("Off"));
         }
       }
     default:
@@ -376,7 +372,7 @@ void HeatingUpdate()  {
 
       if(NewState == RELAY_ON)  {
         do  {
-          MessageDelivered = send(msgH5.setSensor(i).set("HeatOn"));
+          MessageDelivered = send(msgHVAC2.setSensor(i).set("HeatOn"));
           counter++;
           wait(10);
         } while (!MessageDelivered || counter < 3);
@@ -384,7 +380,7 @@ void HeatingUpdate()  {
       }
       else  {
         do  {
-          MessageDelivered = send(msgH5.setSensor(i).set("Off"));
+          MessageDelivered = send(msgHVAC2.setSensor(i).set("Off"));
           counter++;
           wait(10);
         } while (!MessageDelivered || counter < 3);
@@ -402,14 +398,14 @@ void ITUpdate()  {
     if(sht.readSample()) {
       if(IT_STATUS == false)  {
         IT_STATUS = true;
-        send(msgH1.setSensor(IT_STATUS_ID).set(IT_STATUS));
+        send(msgSTATUS.setSensor(IT_STATUS_ID).set(IT_STATUS));
       }
-      send(msgITT.set(sht.getTemperature(), 1));
-      send(msgITH.set(sht.getHumidity(), 1));
+      send(msgTEMP.setSensor(ITT_ID).set(sht.getTemperature(), 1));
+      send(msgHUM.setSensor(ITH_ID).set(sht.getHumidity(), 1));
     }
     else  {
       IT_STATUS = false;
-      send(msgH1.setSensor(IT_STATUS_ID).set(IT_STATUS));
+      send(msgSTATUS.setSensor(IT_STATUS_ID).set(IT_STATUS));
     }
   #endif
 }
@@ -435,7 +431,7 @@ void loop() {
       HeatingStatus = false;
       for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {
         Expander.digitalWrite(i, RELAY_OFF);
-        send(msgH1.setSensor(i).set(RELAY_OFF));
+        send(msgSTATUS.setSensor(i).set(RELAY_OFF));
       }
       send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
       InformControllerTS = true;
