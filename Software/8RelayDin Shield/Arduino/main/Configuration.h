@@ -12,9 +12,9 @@
  *                            MySensors Definitions
  *  *******************************************************************************************/
 // Identification
-#define MY_NODE_ID 5
+#define MY_NODE_ID AUTO
 #define MN "GW-8RD"
-#define FV "1.3"
+#define FV "1.4"
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer

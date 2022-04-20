@@ -14,7 +14,7 @@ ExpanderIO::ExpanderIO()  {
   
   NewState = 0;
   State = 0;
-  _HighStateDetected = false;
+  _HighStateDetected = true;
 }
 
 /*  *******************************************************************************************
@@ -32,8 +32,8 @@ void ExpanderIO::SetValues(bool RelayOFF, bool Invert, uint8_t Type, uint8_t Pin
 	
 	_RelayOFF = RelayOFF;
   _Invert = Invert;
-
   SensorType = Type;
+
   switch(SensorType)  {
     // Door/window/motion sensors
     case 0:
@@ -88,14 +88,13 @@ void ExpanderIO::CheckInput() {
         NewState = Reading;
         break;
       }
+      else break;
     }
     else if(SensorType == 3 || SensorType == 4)  {
       if(CheckHighState)  {
         // Check if high state was detected
-        if(!_HighStateDetected && !Reading)  {
-          _HighStateDetected = true;
-        }
-        if(!_HighStateDetected)  {
+        if(!_HighStateDetected) {
+          _HighStateDetected = !Reading;
           break;
         }
         CheckHighState = false;
@@ -123,7 +122,6 @@ bool ExpanderIO::_ReadDigital(uint8_t DebounceValue) {
   bool DigitalReading;
   bool PreviousReading = false;
   bool InputState = false;
-  bool Invert;
   uint32_t StartTime = millis();
 
   do {
