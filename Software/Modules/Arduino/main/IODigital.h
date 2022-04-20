@@ -25,18 +25,18 @@ class IODigital
     uint8_t NewState;
     uint8_t OldState;
 
-    void SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0);
+    void SetValues(bool RelayOFF, bool Invert, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0);
     void CheckInput();
     void SetRelay();
-    bool ReadDigital(uint8_t DebounceValue, bool Invert);
   
   private:
     uint8_t _RelayPin;
     uint8_t _SensorPin;
-    bool _LowStateDetection;
-    bool _HighStateDetection;
-    bool _Condition;
+    bool _Invert;
+    bool _HighStateDetected;
     bool _RelayOFF;
+
+    bool _ReadDigital(uint8_t DebounceValue);
    
 };
 

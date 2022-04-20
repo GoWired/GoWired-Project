@@ -12,9 +12,9 @@
                     MySensors Definitions
  *  *******************************************************************************************/
 // Identification
-#define MY_NODE_ID 1                            // Set node ID
-#define SN "GoWired Module"               // Set node name to present to a controller
-#define SV "1.3.1"                                // Set sensor version
+#define MY_NODE_ID AUTO                       // Set node ID
+#define SN "GoWired Module"                   // Set node name to present to a controller
+#define SV "1.3.1"                            // Set sensor version
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
@@ -219,6 +219,7 @@
   #define INPUT_ID_1 FIRST_INPUT_ID
   #define PIN_1 INPUT_PIN_3
   #define PULLUP_1
+  #define INVERT_1 false
   #define NUMBER_OF_INPUTS 1
 #endif
 
@@ -226,6 +227,7 @@
   #define INPUT_ID_2 INPUT_ID_1+1
   #define PIN_2 INPUT_PIN_4
   #define PULLUP_2
+  #define INVERT_2 false
   #define NUMBER_OF_INPUTS 2
 #endif
 
@@ -233,6 +235,7 @@
   #define INPUT_ID_3 INPUT_ID_2+1
   #define PIN_3 INPUT_PIN_5
   #define PULLUP_3
+  #define INVERT_3 false
   #define NUMBER_OF_INPUTS 3
 #endif
 
@@ -240,6 +243,7 @@
   #define INPUT_ID_4 INPUT_ID_3+1
   #define PIN_4 INPUT_PIN_6
   #define PULLUP_4
+  #define INVERT_4 false
   #define NUMBER_OF_INPUTS 4
 #endif
 

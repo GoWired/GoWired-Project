@@ -154,13 +154,13 @@ void setup() {
 
   // OUTPUT
   #ifdef DOUBLE_RELAY
-    IOD[RELAY_ID_1].SetValues(RELAY_OFF, 4, BUTTON_1, RELAY_1);
-    IOD[RELAY_ID_2].SetValues(RELAY_OFF, 4, BUTTON_2, RELAY_2);
+    IOD[RELAY_ID_1].SetValues(RELAY_OFF, false, 4, BUTTON_1, RELAY_1);
+    IOD[RELAY_ID_2].SetValues(RELAY_OFF, false, 4, BUTTON_2, RELAY_2);
   #endif
 
   #ifdef ROLLER_SHUTTER
-    IOD[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
-    IOD[RS_ID + 1].SetValues(RELAY_OFF, 3, BUTTON_2);
+    IOD[RS_ID].SetValues(RELAY_OFF, false, 3, BUTTON_1);
+    IOD[RS_ID + 1].SetValues(RELAY_OFF, false, 3, BUTTON_2);
     if(!RS.Calibrated) {
       RS.Calibration(UP_TIME, DOWN_TIME);
     }
@@ -175,52 +175,52 @@ void setup() {
 
   #ifdef DIMMER
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
-    IOD[0].SetValues(0, 3, BUTTON_1);
-    IOD[1].SetValues(0, 3, BUTTON_2);
+    IOD[0].SetValues(0, false, 3, BUTTON_1);
+    IOD[1].SetValues(0, false, 3, BUTTON_2);
   #endif
 
   #ifdef RGB
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3);
-    IOD[0].SetValues(0, 3, BUTTON_1);
-    IOD[1].SetValues(0, 3, BUTTON_2);
+    IOD[0].SetValues(0, false, 3, BUTTON_1);
+    IOD[1].SetValues(0, false, 3, BUTTON_2);
   #endif
 
   #ifdef RGBW
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
-    IOD[0].SetValues(0, 3, BUTTON_1);
-    IOD[1].SetValues(0, 3, BUTTON_2);
+    IOD[0].SetValues(0, false, 3, BUTTON_1);
+    IOD[1].SetValues(0, false, 3, BUTTON_2);
   #endif
 
   // INPUT
   #ifdef INPUT_1
     #ifdef PULLUP_1
-      IOD[INPUT_ID_1].SetValues(RELAY_OFF, 0, PIN_1);
+      IOD[INPUT_ID_1].SetValues(RELAY_OFF, INVERT_1, 0, PIN_1);
     #else
-      IOD[INPUT_ID_1].SetValues(RELAY_OFF, 1, PIN_1);
+      IOD[INPUT_ID_1].SetValues(RELAY_OFF, INVERT_1, 1, PIN_1);
     #endif
   #endif
 
   #ifdef INPUT_2
     #ifdef PULLUP_2
-      IOD[INPUT_ID_2].SetValues(RELAY_OFF, 0, PIN_2);
+      IOD[INPUT_ID_2].SetValues(RELAY_OFF, INVERT_2, 0, PIN_2);
     #else
-      IOD[INPUT_ID_2].SetValues(RELAY_OFF, 1, PIN_2);
+      IOD[INPUT_ID_2].SetValues(RELAY_OFF, INVERT_2, 1, PIN_2);
     #endif
   #endif
 
   #ifdef INPUT_3
     #ifdef PULLUP_3
-      IOD[INPUT_ID_3].SetValues(RELAY_OFF, 0, PIN_3);
+      IOD[INPUT_ID_3].SetValues(RELAY_OFF, INVERT_3, 0, PIN_3);
     #else
-      IOD[INPUT_ID_3].SetValues(RELAY_OFF, 1, PIN_3);
+      IOD[INPUT_ID_3].SetValues(RELAY_OFF, INVERT_3, 1, PIN_3);
     #endif
   #endif
 
   #ifdef INPUT_4
     #ifdef PULLUP_4
-      IOD[INPUT_ID_4].SetValues(RELAY_OFF, 0, PIN_4);
+      IOD[INPUT_ID_4].SetValues(RELAY_OFF, INVERT_4, 0, PIN_4);
     #else
-      IOD[INPUT_ID_4].SetValues(RELAY_OFF, 1, PIN_4);
+      IOD[INPUT_ID_4].SetValues(RELAY_OFF, INVERT_4, 1, PIN_4);
     #endif
   #endif
 

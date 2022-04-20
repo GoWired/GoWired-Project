@@ -11,16 +11,18 @@ IODigital::IODigital()  {
   
   NewState = 0;
   OldState = 0;
+  _HighStateDetected = true;
 }
 
 /*  *******************************************************************************************
  *                                    Set Values
  *  *******************************************************************************************/
-void IODigital::SetValues(bool RelayOFF, uint8_t Type, uint8_t Pin1, uint8_t Pin2) {
+void IODigital::SetValues(bool RelayOFF, bool Invert, uint8_t Type, uint8_t Pin1, uint8_t Pin2) {
 	
-	_RelayOFF = RelayOFF;
-
+  _RelayOFF = RelayOFF;
+  _Invert = Invert;
   SensorType = Type;
+
   switch(SensorType)  {
     // Door/window sensor
     case 0:
@@ -63,61 +65,56 @@ void IODigital::CheckInput() {
 
   bool Reading;
   bool Shortpress = false;
+  bool CheckHighState = true;
   uint32_t StartTime = millis();
 
   do  {
-    if(SensorType == 0 || SensorType == 3 || SensorType == 4) {
-      // Hardcoded DebounceValue = 50
-      Reading = ReadDigital(50, false);
-    }
-    else  {
-      Reading = ReadDigital(50, true);
-    }
+    // Hardcoded debounce value 50 ms
+    Reading = _ReadDigital(50);
 
-    switch(SensorType)  {
-      case 0:
-      case 1:
-        if(Reading == true) {
-          NewState = 1;
-        }
-        else  {
-          NewState = 0;
-        }
+    if(SensorType == 0 || SensorType == 1)  {
+      if(OldState != Reading)  {
+        NewState = Reading;
         break;
-      case 3:
-      case 4:
-        if(!Shortpress && Reading)  {
-          NewState = !OldState;
-          Shortpress = true;
-        }
-
-        // Hardcoded LongpressDuration = 1000
-        if(millis() - StartTime > 1000) {
-          NewState = 2;
+      }
+      else break;
+    }
+    else if(SensorType == 3 || SensorType == 4)  {
+      if(CheckHighState)  {
+        // Check if high state was detected
+        if(!_HighStateDetected) {
+          _HighStateDetected = !Reading;
           break;
         }
-
-        if(millis() < StartTime)  {
-          StartTime = millis();
-        }
+        CheckHighState = false;
+      }
+      if(!Shortpress && Reading)  {
+        NewState = !OldState;
+        Shortpress = true;
+        _HighStateDetected = false;
+      }
+      // Hardcoded LongpressDuration 1000 ms
+      if(millis() - StartTime > 1000) {
+        NewState = 2;
         break;
-      default:
-        break;
+      }
+      if(millis() < StartTime)  {
+        StartTime = millis();
+      }
     }
   } while(Reading);
 }
 
 // Read digital input
-bool IODigital::ReadDigital(uint8_t DebounceValue, bool Invert) {
+bool IODigital::_ReadDigital(uint8_t DebounceValue) {
 
   bool DigitalReading;
   bool PreviousReading = false;
   bool InputState = false;
-  uint32_t Timeout = millis();
-  uint32_t StartTime = Timeout;
+  uint32_t StartTime = millis();
 
   do {
-    DigitalReading = (Invert ? digitalRead(_SensorPin) : !digitalRead(_SensorPin));
+    DigitalReading = (_Invert ? digitalRead(_SensorPin) : !digitalRead(_SensorPin));
 
     if(DigitalReading && !PreviousReading)  {
       StartTime = millis();
@@ -129,7 +126,7 @@ bool IODigital::ReadDigital(uint8_t DebounceValue, bool Invert) {
       }
     }
     
-    if(millis() - Timeout > 255 || millis() < StartTime) {
+    if(millis() - StartTime > 255 || millis() < StartTime) {
       break;
     }
 
