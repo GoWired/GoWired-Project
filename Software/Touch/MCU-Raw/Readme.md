@@ -1,0 +1,1 @@
+Firmware for Touch MCU with no wired communication functionality.
