@@ -20,35 +20,29 @@
  * 
  */
 
-/*  *******************************************************************************************
- *                                      Includes
- *  *******************************************************************************************/
+/***** INCLUDES *****/
 #include "Configuration.h"
-#include "ExpanderIO.h"
+#include <GoWired2.h>
 #include <MySensors.h>
 #include <avr/wdt.h>
 
 
-/*  *******************************************************************************************
- *                                      Globals
- *  *******************************************************************************************/
-// Additional presentation status required by Home Assistant
-bool InitConfirm = false;
-uint8_t NumberOfLongpresses = NUMBER_OF_OUTPUTS;
+/***** Globals *****/
+bool InitConfirm = false;                           // Additional presentation status required by Home Assistant
+uint8_t NumberOfLongpresses = NUMBER_OF_OUTPUTS;    // Number of long press functionalities
 
 // Module Safety Indicators
-bool THERMAL_ERROR = false;                        // Thermal error status
+bool THERMAL_ERROR = false;                         // Thermal error status
 
-/*  *******************************************************************************************
- *                                      Constructors
- *  *******************************************************************************************/
+/***** Constructors *****/
 // Expander Input constructor
 ExpanderIO EIO[TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO];
 MyMessage msgSTATUS(0, V_STATUS);
 
-/*  *******************************************************************************************
-                                            Before
- *  *******************************************************************************************/
+/**
+ * @brief Function called before setup(); resets wdt
+ * 
+ */
 void before() {
 
   #ifdef ENABLE_WATCHDOG
@@ -59,9 +53,10 @@ void before() {
   
 }
 
-/*  *******************************************************************************************
- *                                          Setup
- *  *******************************************************************************************/
+/**
+ * @brief Setups software components: wdt, expander, inputs, outputs
+ * 
+ */
 void setup() {
 
   #ifdef ENABLE_WATCHDOG
@@ -83,9 +78,10 @@ void setup() {
   }
 }
 
-/*  *******************************************************************************************
- *                                          Presentation
- *  *******************************************************************************************/
+/**
+ * @brief Presents module to the controller, send name, software version, info about sensors
+ * 
+ */
 void presentation() {
 
   sendSketchInfo(MN, FV);
@@ -114,9 +110,10 @@ void presentation() {
   }    
 }
 
-/*  *******************************************************************************************
-                                            Init Confirmation
- *  *******************************************************************************************/
+/**
+ * @brief Sends initial value of sensors as required by Home Assistant
+ * 
+ */
 void InitConfirmation() {
 
   uint8_t SensorsToConfirm = TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO;
@@ -139,9 +136,11 @@ void InitConfirmation() {
   
 }
 
-/*  *******************************************************************************************
- *                                      MySensors Receive
- *  *******************************************************************************************/
+/**
+ * @brief Handles incoming messages
+ * 
+ * @param message incoming message data
+ */
 void receive(const MyMessage &message)  {
 
   if(message.type == V_STATUS)  {
@@ -154,9 +153,12 @@ void receive(const MyMessage &message)  {
   }
 }
 
-/*  *******************************************************************************************
-                                        Universal Input
- *  *******************************************************************************************/
+/**
+ * @brief Updates ExpanderIO class instances; checks inputs and set outputs
+ * 
+ * @param FirstSensor first sensor ID to check
+ * @param NumberOfSensors number of sensors to check
+ */
 void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
 
   for(int i=FirstSensor; i<FirstSensor+NumberOfSensors; i++)  {
@@ -210,6 +212,10 @@ void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
   }
 }
 
+/**
+ * @brief main loop
+ * 
+ */
 void loop() {
 
   // Extended presentation as required by Home Assistant; runs only after startup
