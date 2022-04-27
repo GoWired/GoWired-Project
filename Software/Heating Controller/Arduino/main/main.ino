@@ -20,19 +20,16 @@
  * 
  */
 
-/*  *******************************************************************************************
- *                                      Includes
- *  *******************************************************************************************/
+/***** INCLUDES *****/
 #include "Configuration.h"
-#include "Heating.h"
+#include <GoWired2.h>
 #include <MySensors.h>
 #include <Wire.h>
-#include <PCF8574.h>
+#include <PCF8575.h>
 #include "SHTSensor.h"
+#include <avr/wdt.h>
 
-/*  *******************************************************************************************
- *                                      Globals
- *  *******************************************************************************************/
+/***** Globals *****/
 // Timer
 unsigned long LastUpdate = 0;                      // Interval for updating internal thermometer values to controller
 
@@ -59,9 +56,7 @@ bool THERMAL_ERROR = false;                        // Thermal error status
 bool InformControllerTS = false;                   // Was controller informed about error?
 bool IT_STATUS = false;
 
-/*  *******************************************************************************************
- *                                      Constructors
- *  *******************************************************************************************/
+/***** Constructors *****/
 // Heating constructor
 Heating Section[HEATING_SECTIONS];
 MyMessage msgSTATUS(0, V_STATUS);
@@ -72,7 +67,7 @@ MyMessage msgTEMP(0, V_TEMP);
 
 // I2C expander
 #ifdef EXPANDER_SHIELD
-  PCF8574 Expander;
+  PCF8575 Expander;
 #endif
 
 // SHT30 sensor
@@ -81,23 +76,31 @@ MyMessage msgTEMP(0, V_TEMP);
   MyMessage msgHUM(0, V_HUM);
 #endif
 
-/*  *******************************************************************************************
-                                            Before
- *  *******************************************************************************************/
+/**
+ * @brief Function called before setup(); resets wdt
+ * 
+ */
 void before() {
 
-  uint32_t InitDelay = MY_NODE_ID * INIT_DELAY;
-  
-  wait(InitDelay);
+  #ifdef ENABLE_WATCHDOG
+    wdt_reset();
+    MCUSR = 0;
+    wdt_disable();
+  #endif
 }
 
-/*  *******************************************************************************************
- *                                          Setup
- *  *******************************************************************************************/
+/**
+ * @brief Setups software components: wdt, expander, inputs, outputs
+ * 
+ */
 void setup() {
 
+  #ifdef ENABLE_WATCHDOG
+    wdt_enable(WDTO_4S);
+  #endif
+
   #ifdef EXPANDER_SHIELD
-    Expander.begin(0x38);
+    Expander.begin(EXPANDER_ADDRESS);
   #endif
 
   #ifdef INTERNAL_TEMP
@@ -140,9 +143,10 @@ void setup() {
   
 }
 
-/*  *******************************************************************************************
- *                                          Presentation
- *  *******************************************************************************************/
+/**
+ * @brief Presents module to the controller, send name, software version, info about sensors
+ * 
+ */
 void presentation() {
 
   sendSketchInfo(SN, SV);
@@ -164,9 +168,10 @@ void presentation() {
   
 }
 
-/*  *******************************************************************************************
-                                            Init Confirmation
- *  *******************************************************************************************/
+/**
+ * @brief Sends initial value of sensors as required by Home Assistant
+ * 
+ */
 void InitConfirmation() {
 
   for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {   
@@ -215,9 +220,11 @@ void InitConfirmation() {
   
 }
 
-/*  *******************************************************************************************
- *                                      MySensors Receive
- *  *******************************************************************************************/
+/**
+ * @brief Handles incoming messages
+ * 
+ * @param message incoming message data
+ */
 void receive(const MyMessage &message)  {
 
   switch(message.type)  {
@@ -330,9 +337,10 @@ void receive(const MyMessage &message)  {
   }
 }
 
-/*  *******************************************************************************************
- *                                      Heating Procedure
- *  *******************************************************************************************/
+/**
+ * @brief Heating controlling backend
+ * 
+ */
 void HeatingUpdate()  {
 
   bool NewState;
@@ -389,9 +397,10 @@ void HeatingUpdate()  {
   }
 }
 
-/*  *******************************************************************************************
- *                                      SHT30 Sensor
- *  *******************************************************************************************/
+/**
+ * @brief Sensing temperature and humidity from attached SHT30 sensor
+ * 
+ */
 void ITUpdate()  {
 
   #ifdef INTERNAL_TEMP
@@ -410,9 +419,10 @@ void ITUpdate()  {
   #endif
 }
 
-/*  *******************************************************************************************
- *                                      Main Loop
- *  *******************************************************************************************/
+/**
+ * @brief main loop
+ * 
+ */
 void loop() {
 
   // Extended presentation as required by Home Assistant; runs only after startup

@@ -12,9 +12,9 @@
  *                            MySensors Definitions
  *  *******************************************************************************************/
 // Identification
-#define MY_NODE_ID 100
-#define SN "GetWired HC"
-#define SV "1.0"
+#define MY_NODE_ID AUTO
+#define SN "GW-HC"
+#define SV "1.4"
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
@@ -35,6 +35,7 @@
 // Shield - choose only 1
 // Define this if your shield utilizes an I2C Expander (Heating Shield, I/O Shield, etc.)
 #define EXPANDER_SHIELD
+#define EXPANDER_ADDRESS 0x20
 
 // Define this if your shield controls outputs directly, by uC pins (2SSR Shield - up to 2 sections, 4RelayDin Shield - up to 4 sections)                                 
 //#define DIRECT_SHIELD                                 
