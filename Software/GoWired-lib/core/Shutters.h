@@ -15,12 +15,11 @@
 
 #include "Arduino.h"
 #include <EEPROM.h>
-#include "Configuration.h"
 
 class Shutters
 {
   public:
-    Shutters(bool RelayOff, uint8_t UpPin, uint8_t DownPin);
+    Shutters(uint16_t AddressDownTime, uint16_t AddressUpTime, uint16_t AddressPosition);
 
     uint8_t Position;
     uint8_t State;              // 0 - moving upward, 1- moving downward, 2 - stopped

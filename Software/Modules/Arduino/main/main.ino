@@ -64,7 +64,7 @@ MyMessage msgHUM(0, V_HUM);
 
 // Shutter Constructor
 #ifdef ROLLER_SHUTTER
-  Shutters Shutter();
+  Shutters Shutter(EEA_RS_TIME_DOWN, EEA_RS_TIME_UP, EEA_RS_POSITION);
   MyMessage msgUP(RS_ID, V_UP);
   MyMessage msgDOWN(RS_ID, V_DOWN);
   MyMessage msgSTOP(RS_ID, V_STOP);
@@ -792,6 +792,10 @@ void ShutterCalibration(float Vcc)  {
 
   Shutter.Calibration(UpTime, DownTime);
 
+  EEPROM.put(EEA_RS_TIME_DOWN, DownTime);
+  EEPROM.put(EEA_RS_TIME_UP, UpTime);
+  EEPROM.put(EEA_RS_POSITION, Shutter.Position);
+
   // Inform Controller about the current state of roller shutter
   send(msgSTOP);
   send(msgPERCENTAGE.setSensor(RS_ID).set(Shutter.Position));
@@ -861,6 +865,7 @@ void ShutterUpdate() {
   if(StopTime > 0)  {
     MeasuredTime = StopTime - StartTime;
     Shutter.CalculatePosition(Direction, MeasuredTime);
+    EEPROM.put(EEA_RS_POSITION, Shutter.Position);
   
     send(msgPERCENTAGE.setSensor(RS_ID).set(Shutter.Position));
   }

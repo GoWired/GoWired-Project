@@ -15,7 +15,7 @@
  * @brief Construct a new Shutters:: Shutters object
  * 
  */
-Shutters::Shutters()  {
+Shutters::Shutters(uint16_t AddressDownTime, uint16_t AddressUpTime, uint16_t AddressPosition)  {
 
   NewState = 2;
   State = 2;
@@ -23,14 +23,14 @@ Shutters::Shutters()  {
   uint8_t DownTime;
   uint8_t UpTime;
 
-  EEPROM.get(EEA_RS_TIME_DOWN, DownTime);
-  EEPROM.get(EEA_RS_TIME_UP, UpTime);
+  EEPROM.get(AddressDownTime, DownTime);
+  EEPROM.get(AddressUpTime, UpTime);
   
   if(UpTime != 255 && DownTime != 255)  {
     Calibrated = true;
     _UpTime = UpTime;
     _DownTime = DownTime;
-    EEPROM.get(EEA_RS_POSITION, Position);
+    EEPROM.get(AddressPosition, Position);
   }
   else  {
     Calibrated = false;
@@ -65,11 +65,6 @@ void Shutters::Calibration(uint8_t UpTime, uint8_t DownTime)  {
 
   _UpTime = UpTime;
   _DownTime = DownTime;
-
-  EEPROM.put(EEA_RS_TIME_DOWN, _DownTime);
-  EEPROM.put(EEA_RS_TIME_UP, _UpTime);
-  EEPROM.put(EEA_RS_POSITION, Position);
-
 }
 
 /**
@@ -209,7 +204,5 @@ void Shutters::CalculatePosition(bool Direction, uint32_t MeasuredTime)  {
   NewPosition = NewPosition < 0 ? 0 : NewPosition;
 
   Position = (uint8_t)NewPosition;
-
-  EEPROM.put(EEA_RS_POSITION, Position);
 }
 
