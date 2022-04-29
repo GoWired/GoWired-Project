@@ -208,6 +208,7 @@ bool CommonIO::_ReadDigital(uint8_t DebounceValue) {
       if(DigitalReading) {
         InputState = true;
         DebugValue = 2;
+		break;
       }
     }
     

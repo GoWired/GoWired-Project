@@ -156,6 +156,7 @@ bool ExpanderIO::_ReadDigital(uint8_t DebounceValue) {
     if(millis() - StartTime > DebounceValue)  {
       if(DigitalReading) {
         InputState = true;
+		break;
       }
     }
     
