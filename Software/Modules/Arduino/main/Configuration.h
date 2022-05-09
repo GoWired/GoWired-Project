@@ -146,7 +146,7 @@
 
 // Roller Shutter
 #ifdef ROLLER_SHUTTER
-  #define RS_ID 0
+  #define SHUTTER_ID 0
   #define RELAY_ID_1 0
   #define RELAY_1 OUTPUT_PIN_1
   #define RELAY_2 OUTPUT_PIN_2

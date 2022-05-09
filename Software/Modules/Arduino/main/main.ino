@@ -65,9 +65,9 @@ MyMessage msgHUM(0, V_HUM);
 // Shutter Constructor
 #ifdef ROLLER_SHUTTER
   Shutters Shutter(EEA_RS_TIME_DOWN, EEA_RS_TIME_UP, EEA_RS_POSITION);
-  MyMessage msgUP(RS_ID, V_UP);
-  MyMessage msgDOWN(RS_ID, V_DOWN);
-  MyMessage msgSTOP(RS_ID, V_STOP);
+  MyMessage msgUP(SHUTTER_ID, V_UP);
+  MyMessage msgDOWN(SHUTTER_ID, V_DOWN);
+  MyMessage msgSTOP(SHUTTER_ID, V_STOP);
 #endif
 
 // Dimmer
@@ -148,8 +148,8 @@ void setup() {
 
   #ifdef ROLLER_SHUTTER
     Shutter.SetOutputs( RELAY_OFF, RELAY_1, RELAY_2);
-    CommonIO[RS_ID].SetValues(RELAY_OFF, false, 3, BUTTON_1);
-    CommonIO[RS_ID + 1].SetValues(RELAY_OFF, false, 3, BUTTON_2);
+    CommonIO[SHUTTER_ID].SetValues(RELAY_OFF, false, 3, BUTTON_1);
+    CommonIO[SHUTTER_ID + 1].SetValues(RELAY_OFF, false, 3, BUTTON_2);
     if(!Shutter.Calibrated) {
       Shutter.Calibration(UP_TIME, DOWN_TIME);
     }
@@ -237,7 +237,7 @@ void presentation() {
   #endif
 
   #ifdef ROLLER_SHUTTER
-    present(RS_ID, S_COVER, "Roller Shutter");  wait(PRESENTATION_DELAY);
+    present(SHUTTER_ID, S_COVER, "Roller Shutter");  wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef FOUR_RELAY
@@ -342,19 +342,19 @@ void InitConfirmation() {
 
   #ifdef ROLLER_SHUTTER
     send(msgUP.set(0));
-    request(RS_ID, V_UP);
+    request(SHUTTER_ID, V_UP);
     wait(2000, C_SET, V_UP);
 
     send(msgDOWN.set(0));
-    request(RS_ID, V_DOWN);
+    request(SHUTTER_ID, V_DOWN);
     wait(2000, C_SET, V_DOWN);
 
     send(msgSTOP.set(0));
-    request(RS_ID, V_STOP);
+    request(SHUTTER_ID, V_STOP);
     wait(2000, C_SET, V_STOP);
 
-    send(msgPERCENTAGE.setSensor(RS_ID).set(Shutter.Position));
-    request(RS_ID, V_PERCENTAGE);
+    send(msgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
+    request(SHUTTER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
   #endif
 
@@ -524,7 +524,7 @@ void receive(const MyMessage &message)  {
   }
   else if (message.type == V_PERCENTAGE) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
+      if(message.sensor == SHUTTER_ID) {
         int NewPosition = atoi(message.data);
         NewPosition = NewPosition > 100 ? 100 : NewPosition;
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
@@ -552,21 +552,21 @@ void receive(const MyMessage &message)  {
   }
   else if(message.type == V_UP) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
-        MovementTime = Shutter.ReadMessage(0);
+      if(message.sensor == SHUTTER_ID) {
+        MovementTime = Shutter.ReadMessage(0) * 1000;
       }
     #endif
   }
   else if(message.type == V_DOWN) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
-        MovementTime = Shutter.ReadMessage(1);
+      if(message.sensor == SHUTTER_ID) {
+        MovementTime = Shutter.ReadMessage(1) * 1000;
       }
     #endif
   }
   else if(message.type == V_STOP) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
+      if(message.sensor == SHUTTER_ID) {
         MovementTime = Shutter.ReadMessage(2);
       }
     #endif
@@ -637,7 +637,7 @@ void ETUpdate()  {
  * @brief Updates CommonIO class objects; reads inputs & set outputs
  * 
  */
-void IOUpdate() {
+void UpdateIO() {
 
   int FirstSensor = 0;
   int Iterations = NUMBER_OF_RELAYS+NUMBER_OF_INPUTS;
@@ -790,7 +790,7 @@ void ShutterCalibration(float Vcc)  {
   uint8_t DownTime = (int)(DownTimeCumulated / CALIBRATION_SAMPLES);
   uint8_t UpTime = (int)(UpTimeCumulated / CALIBRATION_SAMPLES);
 
-  Shutter.Calibration(UpTime, DownTime);
+  Shutter.Calibration(UpTime+1, DownTime+1);
 
   EEPROM.put(EEA_RS_TIME_DOWN, DownTime);
   EEPROM.put(EEA_RS_TIME_UP, UpTime);
@@ -798,7 +798,7 @@ void ShutterCalibration(float Vcc)  {
 
   // Inform Controller about the current state of roller shutter
   send(msgSTOP);
-  send(msgPERCENTAGE.setSensor(RS_ID).set(Shutter.Position));
+  send(msgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
   #ifdef RS485_DEBUG
     send(msgDEBUG.set("DownTime ; UpTime"));
     send(msgCUSTOM.set(DownTime)); send(msgCUSTOM.set(UpTime));
@@ -867,7 +867,7 @@ void ShutterUpdate() {
     Shutter.CalculatePosition(Direction, MeasuredTime);
     EEPROM.put(EEA_RS_POSITION, Shutter.Position);
   
-    send(msgPERCENTAGE.setSensor(RS_ID).set(Shutter.Position));
+    send(msgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
   }
 
   #endif
@@ -933,7 +933,7 @@ void loop() {
 
   // Reading inputs / activating outputs
   if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0) {
-    IOUpdate();
+    UpdateIO();
   }
 
   // Updating roller shutter

@@ -48,6 +48,24 @@ void Dimmer::SetValues(uint8_t NumberOfChannels, uint8_t DimmingStep, uint8_t Di
 }
 
 /**
+ * @brief Sipmle LEDs update without transition effect
+ * 
+ * @param DimmingLevel new dimming value
+ * @param R new red value
+ * @param G new green value
+ * @param B new blue value
+ * @param W new white value
+ */
+void Dimmer::UpdateLEDs(uint8_t DimmingLevel, uint8_t R, uint8_t G, uint8_t B, uint8_t W)  {
+
+  uint8_t RGBValues[4] = {R, G, B, W};
+
+  for(int i=0; i<_NumberOfChannels; i++)  {
+    analogWrite(_Channels[i], (int)(DimmingLevel / 100.0 * RGBValues[i]));
+  }
+}
+
+/**
  * @brief updates dimming level and colour values of dimmer object with transition effect
  * 
  */
