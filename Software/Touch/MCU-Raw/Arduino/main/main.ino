@@ -20,20 +20,18 @@
  * 
  */
 
-
-
-// Includes
+/***** INCLUDES *****/
 #include <avr/wdt.h>
 #include <EEPROM.h>
 #include "Configuration.h"
-#include "InOut.h"
-#include "Dimmer.h"
+#include <GoWired.h>
 
-// Globals
+
+/***** Globals *****/
 // 1 - 1 output; 2 - 2 outputs
 uint8_t HardwareVariant;                    // Variant of connected hardware: 0 - Power Board AC, 1 - Power Board DC
 uint8_t LoadVariant;                        // Variant of connected load: 1 - One input/output; 2 - Two inputs/outputs
-bool RollerShutter = false;                 // false - lighting; true - roller shutter
+bool Shutter = false;                 // false - lighting; true - roller shutter
 bool Monostable = false;
 bool RememberStates = false;
 
@@ -44,12 +42,15 @@ bool RSReset = false;
 
 uint16_t EPPROM_Address[2] = {EEA_RELAY_1, EEA_RELAY_2};
 
-// Constructors
-InOut IO[NUMBER_OF_BUTTONS];
+/***** Constructors *****/
+CommonIO IO[NUMBER_OF_BUTTONS];
 
 Dimmer D[NUMBER_OF_BUTTONS];
 
-// Setup
+/**
+ * @brief Setups software components: wdt, check & initialize hardware, initialize LEDs
+ * 
+ */
 void setup()  {
 
   #ifdef ENABLE_WATCHDOG
@@ -98,13 +99,13 @@ void setup()  {
   // Reading dip switch 3
   if(!digitalRead(DIP_SWITCH_3)) {
     if(HardwareVariant == 0)  {
-      RollerShutter = true;
+      Shutter = true;
     }
   }
 
   // Reading dip switch 4
   if(!digitalRead(DIP_SWITCH_4)) {
-    if(!Monostable && !RollerShutter) {
+    if(!Monostable && !Shutter) {
       RememberStates = true;
       uint8_t RecoveredState;
       for(int i=0; i<HardwareVariant; i++)  {
@@ -126,16 +127,16 @@ void setup()  {
 
     // Initializing and calibrating button
     if(HardwareVariant == 0) {
-      IO[0].SetValues(RELAY_OFF, RELAY_ON, 1, TOUCH_FIELD_3, INPUT_PIN_1, RELAY_PIN_1);
+      IO[0].SetValues(RELAY_OFF, false, 6, TOUCH_FIELD_3, INPUT_PIN_1, RELAY_PIN_1);
     }
     else if(HardwareVariant == 1) {
-      IO[0].SetValues(RELAY_OFF, RELAY_ON, 2, TOUCH_FIELD_3, RELAY_PIN_1);
+      IO[0].SetValues(RELAY_OFF, false, 7, TOUCH_FIELD_3, RELAY_PIN_1);
     }
 
     // Restore saved state
     if(RememberStates)  {
       IO[0].SetRelay();
-      AdjustLEDs(IO[0].ReadNewState(), 0);
+      AdjustLEDs(IO[0].NewState, 0);
     }
     else  {
       // Turn on LED
@@ -153,19 +154,19 @@ void setup()  {
     
     // Initializing and calibrating buttons
     if(HardwareVariant == 0) {
-      IO[0].SetValues(RELAY_OFF, RELAY_ON, 1, TOUCH_FIELD_1, INPUT_PIN_1, RELAY_PIN_1);
-      IO[1].SetValues(RELAY_OFF, RELAY_ON, 1, TOUCH_FIELD_2, INPUT_PIN_2, RELAY_PIN_2);
+      IO[0].SetValues(RELAY_OFF, false, 6, TOUCH_FIELD_1, INPUT_PIN_1, RELAY_PIN_1);
+      IO[1].SetValues(RELAY_OFF, false, 6, TOUCH_FIELD_2, INPUT_PIN_2, RELAY_PIN_2);
     }
     else if(HardwareVariant == 1) {
-      IO[0].SetValues(RELAY_OFF, RELAY_ON, 2, TOUCH_FIELD_1, RELAY_PIN_1);
-      IO[1].SetValues(RELAY_OFF, RELAY_ON, 2, TOUCH_FIELD_2, RELAY_PIN_2);
+      IO[0].SetValues(RELAY_OFF, false, 7, TOUCH_FIELD_1, RELAY_PIN_1);
+      IO[1].SetValues(RELAY_OFF, false, 7, TOUCH_FIELD_2, RELAY_PIN_2);
     }
 
     // Restore saved states
     if(RememberStates)  {
       for(int i=0; i<2; i++)  {
         IO[i].SetRelay();
-        AdjustLEDs(IO[i].ReadNewState(), i);
+        AdjustLEDs(IO[i].NewState, i);
       }
     }
     else  {
@@ -181,7 +182,12 @@ void setup()  {
   #endif
 }
 
-// Builtin LEDs rainbow effect
+/**
+ * @brief performs a rainbow effect on active LEDs
+ * 
+ * @param Duration duration of effect
+ * @param Rate rate of effect
+ */
 void RainbowLED(uint16_t Duration, uint8_t Rate)	{
 	
   int RValue = 254;
@@ -217,7 +223,12 @@ void RainbowLED(uint16_t Duration, uint8_t Rate)	{
   }
 }
 
-// Adjust LEDs
+/**
+ * @brief Adjusts built-in LEDs to current state of buttons 
+ * 
+ * @param State state of button
+ * @param Dimmer number of dimmer
+ */
 void AdjustLEDs(bool State, uint8_t Dimmer) {
 
   if(State != 1) {
@@ -228,46 +239,52 @@ void AdjustLEDs(bool State, uint8_t Dimmer) {
   }
 }
 
-// Check Inputs and adjust outputs
+/**
+ * @brief Updates CommonIO class objects; reads inputs & set outputs
+ * 
+ */
 void UpdateIO() {
 
-  bool NewState[LoadVariant];
-
   for(int i=0; i<LoadVariant; i++)  {
-    IO[i].ReadInput(TOUCH_THRESHOLD, DEBOUNCE_VALUE, Monostable);
-    NewState[i] = IO[i].ReadNewState();
-    if(NewState[i] != IO[i].ReadState())  {
-      if(RollerShutter) {
-        if(IO[i].ReadState())  {
-          // Stop
-          for(int j=0; j<LoadVariant; j++)  {
-            IO[j].SetState(0);            
-            IO[j].SetRelay();
-            AdjustLEDs(false, j);
-          }
-        }
-        else  {
-          IO[i].SetRelay();
-          AdjustLEDs(IO[i].ReadNewState(), i);
-          if(IO[i].ReadNewState())  {
-            RSTimer = millis();
-            RSReset = true;
-          }
+    IO[i].CheckInput3(TOUCH_THRESHOLD, DEBOUNCE_VALUE, Monostable);
+
+    if(IO[i].NewState == IO[i].State) {
+      continue;
+    }
+    
+    if(Shutter) {
+      if(IO[i].State)  {
+        // Stop
+        for(int j=0; j<LoadVariant; j++)  {
+          IO[j].SetState(0);            
+          IO[j].SetRelay();
+          AdjustLEDs(false, j);
         }
       }
       else  {
-        if(!Monostable) {
-          IO[i].SetRelay();
-          AdjustLEDs(IO[i].ReadNewState(), i);
+        IO[i].SetRelay();
+        AdjustLEDs(IO[i].NewState, i);
+        if(IO[i].NewState)  {
+          RSTimer = millis();
+          RSReset = true;
         }
-        // Saving state to eeprom
-        //EEPROM.put(EPPROM_Address[i], IO[i].NewState);
       }
+    }
+    else  {
+      if(!Monostable) {
+        IO[i].SetRelay();
+        AdjustLEDs(IO[i].NewState, i);
+      }
+      // Saving state to eeprom
+      //EEPROM.put(EPPROM_Address[i], IO[i].NewState);
     }
   }
 }
 
-// Loop
+/**
+ * @brief main loop: resets wdt, updates inputs & outputs
+ * 
+ */
 void loop() {
 
   #ifdef ENABLE_WATCHDOG
@@ -284,7 +301,7 @@ void loop() {
   }
 
   // Roller shutter timer  
-  if(RollerShutter == true) {
+  if(Shutter == true) {
     if((millis() > RSTimer + RS_INTERVAL) && RSReset)  {
       for(int i=0; i<2; i++)  {
         IO[i].SetState(0);

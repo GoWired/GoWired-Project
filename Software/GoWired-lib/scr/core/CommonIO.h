@@ -32,6 +32,7 @@ class CommonIO
     void SetState(uint8_t ReceivedState);
     void CheckInput(uint16_t LongpressDuration, uint8_t DebounceValue);
     void CheckInput2(uint8_t Threshold, uint16_t LongpressDuration, uint8_t DebounceValue);
+    void CheckInput3(uint16_t Threshold, uint8_t DebounceValue, bool Monostable);
     void SetRelay();
   
   private:

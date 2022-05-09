@@ -48,7 +48,7 @@ void CommonIO::SetValues(bool RelayOFF, bool Invert, uint8_t SensorType, uint8_t
     case 1:
       _SensorPin = Pin1;    pinMode(_SensorPin, INPUT);
       break;
-    // Relay output
+    // Output
     case 2:
       _RelayPin = Pin1;     pinMode(_RelayPin, OUTPUT);
       digitalWrite(_RelayPin, _RelayOFF);
@@ -57,7 +57,7 @@ void CommonIO::SetValues(bool RelayOFF, bool Invert, uint8_t SensorType, uint8_t
     case 3:
       _SensorPin = Pin1;    pinMode(_SensorPin, INPUT_PULLUP);
       break;
-    // Digital button + relay
+    // Digital button + output
     case 4:
       _SensorPin = Pin1;    pinMode(_SensorPin, INPUT_PULLUP);
       _RelayPin = Pin2;     pinMode(_RelayPin, OUTPUT);
@@ -67,11 +67,17 @@ void CommonIO::SetValues(bool RelayOFF, bool Invert, uint8_t SensorType, uint8_t
     case 5:
       _SensorPin = Pin1;    ReadReference();
       break;
-    // Touch button + digital button + relay
+    // Touch button + digital button + output
     case 6:
       _SensorPin = Pin1;    ReadReference();
       _SensorPin2 = Pin2;   pinMode(_SensorPin2, INPUT_PULLUP);
       _RelayPin = Pin3;     pinMode(_RelayPin, OUTPUT);
+      digitalWrite(_RelayPin, _RelayOFF);
+      break;
+    // Touch button + output
+    case 7:
+      _SensorPin = Pin1;    ReadReference();
+      _RelayPin = Pin2;     pinMode(_RelayPin, OUTPUT);
       digitalWrite(_RelayPin, _RelayOFF);
       break;
     default:
@@ -183,6 +189,37 @@ void CommonIO::CheckInput2(uint8_t Threshold, uint16_t LongpressDuration, uint8_
   } while(Reading);
 }
 
+void InOut::CheckInput3(uint16_t Threshold, uint8_t DebounceValue, bool Monostable) {
+
+  bool Reading;
+  bool Shortpress = false;
+
+  do  {
+    Reading = _ReadAnalog(Threshold);
+    
+    if(SensorType == 1 && !Reading) {
+      Reading = _ReadDigital(DebounceValue);
+    }
+
+    if(Monostable)  {
+      if(!Shortpress && Reading)  {
+        NewState = !State;  Shortpress = true;
+        SetRelay();
+      }
+      else if(Shortpress && !Reading) {
+        NewState = !State;  Shortpress = false;
+        SetRelay();
+      }
+    }
+    else  {
+      if(!Shortpress && Reading) {
+        NewState = !State;
+        Shortpress = true;
+      }
+    }
+  } while(Reading);
+}
+
 /**
  * @brief reads any kind of digital input
  * 
@@ -208,7 +245,7 @@ bool CommonIO::_ReadDigital(uint8_t DebounceValue) {
       if(DigitalReading) {
         InputState = true;
         DebugValue = 2;
-		break;
+        break;
       }
     }
     

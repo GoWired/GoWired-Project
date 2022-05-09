@@ -53,7 +53,7 @@
  *  *******************************************************************************************/
 // Identification
 #define MY_NODE_ID AUTO                            // Set module ID
-#define SV "1.0"                                   // Set software version
+#define SV "1.4"                                   // Set software version
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
@@ -116,7 +116,7 @@
 // Roller Shutter
 //#define RS_AUTO_CALIBRATION                 // Roller shutter auto-calibration. Leave it defined or comment it out and define movement times manually
 #define PS_OFFSET 0.2                     // Power sensor offset for roller shutter calibration (default 0.2)
-#define CALIBRATION_SAMPLES 2             // Number of calibration samples for roller shutter calibration (default 2)
+#define CALIBRATION_SAMPLES 1             // Number of calibration samples for roller shutter calibration (default 2)
 #define UP_TIME 21                        // Manually defined upward movement time in seconds (0-255)
 #define DOWN_TIME 20                      // Manually defined downward movement time in seconds (0-255)
 
@@ -153,7 +153,7 @@
 // IDs
 #define RELAY_ID_1 0
 #define RELAY_ID_2 1
-#define RS_ID 0
+#define SHUTTER_ID 0
 #define DIMMER_ID 0
 
 // 2Relay Board
@@ -192,7 +192,7 @@
   #define PS_PIN ANALOG_PIN_4
 #endif
 
-// 1wire external thermometer (e.g. DHT22)
+// External thermometer (SHT30)
 #ifdef SHT30
   #define ETT_ID PS_ID+1
   #define ETH_ID ETT_ID+1
@@ -249,9 +249,9 @@
 //#define DIMMER_STATE
 
 // Roller Shutter
-#define EEA_RS_TIME_DOWN EEPROM_OFFSET                  // EEPROM address to save RShutter travel down time
-#define EEA_RS_TIME_UP EEA_RS_TIME_DOWN+SIZE_OF_BYTE     // EEPROM address to save RShutter travel up time
-#define EEA_RS_POSITION EEA_RS_TIME_UP+SIZE_OF_BYTE      // EEPROM address to save RShutter last known position
+#define EEA_SHUTTER_TIME_DOWN EEPROM_OFFSET                        // EEPROM address to save Shutter travel down time
+#define EEA_SHUTTER_TIME_UP EEA_SHUTTER_TIME_DOWN+SIZE_OF_BYTE     // EEPROM address to save Shutter travel up time
+#define EEA_SHUTTER_POSITION EEA_SHUTTER_TIME_UP+SIZE_OF_BYTE      // EEPROM address to save Shutter last known position
 
 #endif
 /*
