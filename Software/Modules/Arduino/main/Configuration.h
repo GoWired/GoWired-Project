@@ -94,6 +94,8 @@
 // General
 #define RELAY_ON HIGH                       // Pin state to turn the relays on (default HIGH)
 #define RELAY_OFF LOW                       // Pin state to turn the relays off (default LOW)
+#define LONGPRESS_DURATION 1000
+#define DEBOUNCE_VALUE 50
 
 // Internal temperature sensor
 #define MVPERC 10                         // V per 1 degree celsius (default 10)
