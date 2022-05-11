@@ -219,7 +219,7 @@ void Dimmer::ChangeState(bool NewState) {
  */
 void Dimmer::NewColorValues(const char *input) {
   
-  for(int i=0; i<NumberOfChannels; i++) {
+  for(int i=0; i<_NumberOfChannels; i++) {
     if(strlen(input) == 6 || strlen(input) == 8)    {
         NewValues[i] = _StringHexToByte(&input[2*i]);
     }
@@ -236,7 +236,7 @@ void Dimmer::NewColorValues(const char *input) {
  * @param str input char value
  * @return byte output value
  */
-byte Dimmer::fromhex(const char *str)  {
+byte Dimmer::_StringHexToByte(const char *str)  {
   
   char c = str[0] - '0';
   

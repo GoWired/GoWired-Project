@@ -27,6 +27,7 @@ class Shutters
     bool Calibrated;
 
     void Calibration(uint8_t UpTime=0, uint8_t DownTime=0);     // Finds up and down time by measuring current, save values to eeprom for use after power failure
+    void SetOutputs(bool RelayOff, uint8_t UpPin, uint8_t DownPin);
     uint32_t ReadMessage(uint8_t Order);
     uint32_t ReadButtons(uint8_t Button);
     uint32_t ReadNewPosition(int NewPosition);

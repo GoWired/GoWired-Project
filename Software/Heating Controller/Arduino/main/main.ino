@@ -112,7 +112,7 @@ void setup() {
   uint8_t T_ID[8] = {T_ID_1, T_ID_2, T_ID_3, T_ID_4, T_ID_5, T_ID_6, T_ID_7, T_ID_8};
   
   for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {
-    EEPROM_ADDRESS = Section[i].SetSectionValues(T_ID[i], DEFAULT_DAY_SP, EEPROM_ADDRESS, RELAY_ON, RELAY_OFF);
+    EEPROM_ADDRESS = Section[i].SetSectionValues(T_ID[i], DEFAULT_DAY_SP, EEPROM_ADDRESS, RELAY_OFF);
     Section[i].RelayState = RELAY_OFF;
     #ifdef EXPANDER_SHIELD
       Expander.pinMode(i, OUTPUT);

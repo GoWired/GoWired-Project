@@ -37,7 +37,7 @@ void CommonIO::SetValues(bool RelayOFF, bool Invert, uint8_t SensorType, uint8_t
 	
   _RelayOFF = RelayOFF;
   _Invert = Invert;
-  SensorType = Type;
+  SensorType = SensorType;
 
   switch(SensorType)  {
     // Security sensors (door/window/motion)
@@ -189,7 +189,7 @@ void CommonIO::CheckInput2(uint8_t Threshold, uint16_t LongpressDuration, uint8_
   } while(Reading);
 }
 
-void InOut::CheckInput3(uint16_t Threshold, uint8_t DebounceValue, bool Monostable) {
+void CommonIO::CheckInput3(uint8_t Threshold, uint8_t DebounceValue, bool Monostable) {
 
   bool Reading;
   bool Shortpress = false;
@@ -197,7 +197,7 @@ void InOut::CheckInput3(uint16_t Threshold, uint8_t DebounceValue, bool Monostab
   do  {
     Reading = _ReadAnalog(Threshold);
     
-    if(SensorType == 1 && !Reading) {
+    if(SensorType == 6 && !Reading) {
       Reading = _ReadDigital(DebounceValue);
     }
 
@@ -288,7 +288,7 @@ bool CommonIO::_ReadAnalog(uint8_t Threshold)  {
  * @brief Changes state of the relay
  * 
  */
-void IODigital::SetRelay() {
+void CommonIO::SetRelay() {
 
   bool RelayValue = NewState == 1 ? !_RelayOFF : _RelayOFF;
 

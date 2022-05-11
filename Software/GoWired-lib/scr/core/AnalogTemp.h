@@ -17,7 +17,7 @@
 class AnalogTemp
 {
   public:
-    InternalTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage);
+    AnalogTemp(uint8_t SensorPin, uint8_t MaxTemperature, float mVperC, float ZeroVoltage);
   
     float Temperature;
 

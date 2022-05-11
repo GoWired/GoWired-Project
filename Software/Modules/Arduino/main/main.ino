@@ -644,7 +644,7 @@ void UpdateIO() {
 
   if (Iterations > 0)  {
     for (int i = FirstSensor; i < FirstSensor + Iterations; i++)  {
-      CommonIO[i].CheckInput();
+      CommonIO[i].CheckInput(LONGPRESS_DURATION, DEBOUNCE_VALUE);
       if (CommonIO[i].NewState != CommonIO[i].State)  {
         switch(CommonIO[i].SensorType)  {
           case 0:

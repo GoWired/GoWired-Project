@@ -332,17 +332,17 @@ void InitConfirmation() {
   if(HardwareVariant == 0)  {
     // Single output
     if(LoadVariant == 0)  {
-      send(MsgSTATUS.setSensor(RELAY_ID_1).set(IO[RELAY_ID_1].ReadNewState()));
+      send(MsgSTATUS.setSensor(RELAY_ID_1).set(CommonIO[RELAY_ID_1].NewState));
       request(RELAY_ID_1, V_STATUS);
       wait(2000, C_SET, V_STATUS);
     }
     // Double output
     else if(LoadVariant == 1) {
-      send(MsgSTATUS.setSensor(RELAY_ID_1).set(IO[RELAY_ID_1].ReadNewState()));
+      send(MsgSTATUS.setSensor(RELAY_ID_1).set(CommonIO[RELAY_ID_1].NewState));
       request(RELAY_ID_1, V_STATUS);
       wait(2000, C_SET, V_STATUS);
 
-      send(MsgSTATUS.setSensor(RELAY_ID_2).set(IO[RELAY_ID_2].ReadNewState()));
+      send(MsgSTATUS.setSensor(RELAY_ID_2).set(CommonIO[RELAY_ID_2].NewState));
       request(RELAY_ID_2, V_STATUS);
       wait(2000, C_SET, V_STATUS);
     }
@@ -417,7 +417,7 @@ void InitConfirmation() {
   #endif
 
   for(int i=0; i<Iterations; i++) {
-    AdjustLEDs(IO[i].ReadNewState(), i);
+    AdjustLEDs(CommonIO[i].NewState, i);
   }
 
   InitConfirm = true;
@@ -563,14 +563,14 @@ void BlinkLEDs(uint8_t InitialState=0) {
 bool TouchDiagnosis(uint16_t Threshold) {
 
   for(int i=0; i<Iterations; i++)  {
-    if(IO[i].TouchDiagnosisValue > (int)(Threshold / 2) || IO[i].TouchDiagnosisValue < -(int)(Threshold / 2))  {
+    if(CommonIO[i].TouchDiagnosisValue > (int)(Threshold / 2) || CommonIO[i].TouchDiagnosisValue < -(int)(Threshold / 2))  {
       
       #ifdef RS485_DEBUG
         // Send message with TouchValue
         send(MsgCUSTOM.setSensor(TOUCH_DIAGNOSTIC_ID).set(IO[i].TouchDiagnosisValue));
       #endif
 
-      if(IO[i].TouchDiagnosisValue < Threshold) {
+      if(CommonIO[i].TouchDiagnosisValue < Threshold) {
         LimitTransgressions++;
       }
     }
@@ -591,7 +591,7 @@ void ReadNewReference() {
 
   // Read new reference
   for(int i=0; i<Iterations; i++)  {
-    IO[i].ReadReference();
+    CommonIO[i].ReadReference();
   }
 
   // Rainbow LED visual effect - indicate calibration
@@ -599,7 +599,7 @@ void ReadNewReference() {
 
   // Adjust LEDs to indicate button states
   for(int i=0; i<Iterations; i++)  {
-    AdjustLEDs(IO[i].ReadNewState(), i);
+    AdjustLEDs(CommonIO[i].NewState, i);
   }
 }
 
@@ -1021,13 +1021,13 @@ void loop() {
   // Reading inputs & adjusting outputs
   if(Iterations > 0)  {
     for(int i=0; i<Iterations; i++) {
-      IO[i].CheckInput2(TOUCH_THRESHOLD, LONGPRESS_DURATION, DEBOUNCE_VALUE);
+      CommonIO[i].CheckInput2(TOUCH_THRESHOLD, LONGPRESS_DURATION, DEBOUNCE_VALUE);
     }
     UpdateIO();
     if(LongpressDetection > 0)  {
       for(int j=0; j<2; j++)  {
         for(int i=0; i<Iterations; i++) {
-          IO[i].CheckInput2(TOUCH_THRESHOLD, LONGPRESS_DURATION, DEBOUNCE_VALUE);
+          CommonIO[i].CheckInput2(TOUCH_THRESHOLD, LONGPRESS_DURATION, DEBOUNCE_VALUE);
         }
         UpdateIO();
       }
