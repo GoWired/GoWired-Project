@@ -638,15 +638,6 @@ void receive(const MyMessage &message)  {
         }
       }
     }
-    // Secret configuration
-    if(message.sensor == SECRET_CONFIG_ID_1)  {
-      if(HardwareVariant == 0 && LoadVariant == 2)  {
-        // Roller shutter: calibration
-        float Vcc = ReadVcc();
-        ShutterCalibration(Vcc);
-      }
-    }
-    // More secret config options will appear here in the future
   }
   // Percentage messages
   else if (message.type == V_PERCENTAGE) {
@@ -694,6 +685,19 @@ void receive(const MyMessage &message)  {
   else if(message.type == V_STOP) {
     if(HardwareVariant == 0 && LoadVariant == 2 && message.sensor == SHUTTER_ID)  {
       MovementTime = Shutter.ReadMessage(2);
+    }
+  }
+  // Text messages
+  else if(message.type == V_TEXT) {
+    // Configuration by message
+    if(message.sensor == CONFIGURATION_SENSOR_ID)  {
+      if(message.getString() == CONF_MSG_1 && HardwareVariant == 0 && LoadVariant == 2) {
+        // Roller shutter: calibration
+        float Vcc = ReadVcc();
+        ShutterCalibration(Vcc);
+      }
+      /*else if(message.getString() == CONF_MSG_2) { }*/
+      /*else if(message.getString() == CONF_MSG_3) { }*/
     }
   }
 }

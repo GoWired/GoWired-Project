@@ -24,10 +24,13 @@
 #include "Configuration.h"
 #include <GoWired.h>
 #include <MySensors.h>
-#include <dht.h>
 #include <Wire.h>
 #include <avr/wdt.h>
-#include "SHTSensor.h"
+#ifdef SHT30
+  #include <SHTSensor.h>
+#elif defined(DHT22)
+  #include <dht.h>
+#endif
 
 /***** Globals *****/
 // Shutter
@@ -513,14 +516,6 @@ void receive(const MyMessage &message)  {
         }
       }
     #endif
-    // Secret configuration
-    if(message.sensor == SECRET_CONFIG_ID_1)  {
-      #ifdef ROLLER_SHUTTER
-        // Roller shutter: calibration
-        float Vcc = ReadVcc();
-        ShutterCalibration(Vcc);
-      #endif
-    }
   }
   else if (message.type == V_PERCENTAGE) {
     #ifdef ROLLER_SHUTTER
@@ -570,6 +565,20 @@ void receive(const MyMessage &message)  {
         MovementTime = Shutter.ReadMessage(2);
       }
     #endif
+  }
+  else if(message.type == V_TEXT) {
+    // Configuration by message
+    if(message.sensor == CONFIGURATION_SENSOR_ID)  {
+      if(message.getString() == CONF_MSG_1) {
+        #ifdef ROLLER_SHUTTER
+          // Roller shutter: calibration
+          float Vcc = ReadVcc();
+          ShutterCalibration(Vcc);
+        #endif
+      }
+      /*else if(message.getString() == CONF_MSG_2) { }*/
+      /*else if(message.getString() == CONF_MSG_3) { }*/
+    }
   }
 }
 

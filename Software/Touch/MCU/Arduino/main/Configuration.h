@@ -8,9 +8,7 @@
 #ifndef Configuration_h
 #define Configuration_h
 
-/*  *******************************************************************************************
-                    Pinout
- *  *******************************************************************************************/
+/***** Pinout *****/
 // Serial pin: 0 & 1
 // EEPROM CS pin: 8
 // SPI pins: 11, 12, 13
@@ -48,9 +46,7 @@
 #define SDA1 23
 #define SCL1 24
 
-/*  *******************************************************************************************
-                    MySensors Definitions
- *  *******************************************************************************************/
+/***** Protocol Definitions *****/
 // Identification
 #define MY_NODE_ID AUTO                            // Set module ID
 #define SV "1.4"                                   // Set software version
@@ -68,26 +64,12 @@
 // Other
 #define MY_TRANSPORT_WAIT_READY_MS 60000        // Time to wait for gateway to respond at startup (default 60000)
 
-/*  *******************************************************************************************
-                    Quick config
- *  *******************************************************************************************/
-// Output Config - one of these has to be defined
-//#define SINGLE_RELAY
-//#define DOUBLE_RELAY              // Define this node as a double relay node, setting below
-//#define ROLLER_SHUTTER            // Define this node as a roller shutter node, setting below
-//#define DIMMER                    // Define this node as a 1-channel dimmer node, setting below
-//#define RGB                       // Define this node as a RGB dimmer node, setting below
-//#define RGBW                      // Define this node as a RGBW dimmer node, setting below
-
-// Board dependent
+/***** Quick Config *****/
+// Sensors
 #define POWER_SENSOR
-
-// Onboard temperature sensor - SHT30
 //#define SHT30
 
-/*  *******************************************************************************************
-                    Various Definitions
- *  *******************************************************************************************/
+/***** Various Definitions *****/
 // General
 #define RELAY_ON HIGH                       // Pin state to turn the relays on (default HIGH)
 #define RELAY_OFF LOW                       // Pin state to turn the relays off (default LOW)
@@ -147,9 +129,7 @@
 #define PRESENTATION_DELAY 10               // Time (ms) to wait between subsequent presentation messages (default 10)
 #define LOOP_TIME 80                        // Main loop wait time (default 100)
 
-/*  *******************************************************************************************
-                    OUTPUT Config
- *  *******************************************************************************************/
+/***** Output Config *****/
 // IDs
 #define RELAY_ID_1 0
 #define RELAY_ID_2 1
@@ -175,9 +155,7 @@
 
 #define FIRST_INPUT_ID 2
 
-/*  *******************************************************************************************
-                    INPUT Config
- *  *******************************************************************************************/
+/***** Input Config *****/
 #ifndef NUMBER_OF_INPUTS
   #define NUMBER_OF_INPUTS 0
 #endif
@@ -198,9 +176,7 @@
   #define ETH_ID ETT_ID+1
 #endif
 
-/*  *******************************************************************************************
-                      ERROR REPORTING & PREVENTION
- *  *******************************************************************************************/
+/***** Watchdog, Fuses, Errors, Debug *****/
 #define ENABLE_WATCHDOG
 
 #define ELECTRONIC_FUSE
@@ -222,16 +198,13 @@
   #define TOUCH_DIAGNOSTIC_ID 13
 #endif
 
-/*  *******************************************************************************************
-                      SECRET CONFIGURATION
- *  *******************************************************************************************/
-#define SECRET_CONFIG_ID_1 20
-#define SECRET_CONFIG_ID_2 21
-#define SECRET_CONFIG_ID_3 22
+/***** Configuration by message *****/
+#define CONFIGURATION_SENSOR_ID 20
+#define CONF_MSG_1 "cmd1"
+//#define CONF_MSG_2 "cmd2"
+//#define CONF_MSG_3 "cmd3"
 
-/*  *******************************************************************************************
-                    EEPROM Definitions
- *  *******************************************************************************************/
+/***** EEPROM Definitions *****/
 #define SIZE_OF_BYTE 1
 #define EEPROM_OFFSET 512                               // First eeprom address to use (prior addresses are taken)
 
