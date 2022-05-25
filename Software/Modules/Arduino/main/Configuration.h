@@ -8,9 +8,7 @@
 #ifndef Configuration_h
 #define Configuration_h
 
-/*  *******************************************************************************************
-                    MySensors Definitions
- *  *******************************************************************************************/
+/***** Protocol Definitions *****/
 // Identification
 #define MY_NODE_ID AUTO                       // Set node ID
 #define SN "GoWired Module"                   // Set node name to present to a controller
@@ -29,9 +27,7 @@
 // Other
 #define MY_TRANSPORT_WAIT_READY_MS 60000        // Time to wait for gateway to respond at startup (default 60000)
 
-/*  *******************************************************************************************
-                    Quick config
- *  *******************************************************************************************/
+/***** Quick Config *****/
 // Output Config - one of these has to be defined
 #define DOUBLE_RELAY              // Define this node as a double relay node, setting below
 //#define ROLLER_SHUTTER            // Define this node as a roller shutter node, setting below
@@ -58,9 +54,7 @@
     #define SHT30
 #endif
 
-/*  *******************************************************************************************
-                    MCU Pin Definitions
- *  *******************************************************************************************/
+/***** Pin Definitions *****/
 // OUTPUT [RELAY / RGBW]
 #define OUTPUT_PIN_1 5
 #define OUTPUT_PIN_2 9
@@ -88,9 +82,7 @@
 #define I2C_PIN_1 A4              // default A4
 #define I2C_PIN_2 A5              // default A5
 
-/*  *******************************************************************************************
-                    Various Definitions
- *  *******************************************************************************************/
+/***** Various Definitions *****/
 // General
 #define RELAY_ON HIGH                       // Pin state to turn the relays on (default HIGH)
 #define RELAY_OFF LOW                       // Pin state to turn the relays off (default LOW)
@@ -132,9 +124,7 @@
 #define PRESENTATION_DELAY 10       // Time (ms) to wait between subsequent presentation messages (default 10)
 #define LOOP_TIME 80                       // Main loop wait time (default 100)        
 
-/*  *******************************************************************************************
-                    OUTPUT Config
- *  *******************************************************************************************/
+/***** Output Config *****/
 // 2SSR DOUBLE_RELAY
 #ifdef DOUBLE_RELAY
   #define RELAY_ID_1 0
@@ -213,9 +203,7 @@
   #define FIRST_INPUT_ID 0
 #endif
 
-/*  *******************************************************************************************
-                    INPUT Config
- *  *******************************************************************************************/
+/***** Input Config *****/
 // Digital input - define what inputs to use
 #ifdef INPUT_1
   #define INPUT_ID_1 FIRST_INPUT_ID
@@ -298,9 +286,7 @@
   #endif
 #endif
 
-/*  *******************************************************************************************
-                      ERROR REPORTING & PREVENTION
- *  *******************************************************************************************/
+/***** Watchdog, Fuses, Errors, Debug *****/
 #define ENABLE_WATCHDOG 
 
 #define ERROR_REPORTING
@@ -321,12 +307,13 @@
   #define DEBUG_ID 16
 #endif
 
-// Secret configuration
-#define SECRET_CONFIG_ID_1 20
+/***** Configuration by message *****/
+#define CONFIGURATION_SENSOR_ID 20
+#define CONF_MSG_1 "cmd1"
+//#define CONF_MSG_2 "cmd2"
+//#define CONF_MSG_3 "cmd3"
 
-/*  *******************************************************************************************
-                    EEPROM Definitions
- *  *******************************************************************************************/
+/***** EEPROM Definitions *****/
 #define SIZE_OF_INT 2
 #define EEPROM_OFFSET 512                         // First eeprom address to use (prior addresses are taken)
 #define EEA_RS_TIME_DOWN EEPROM_OFFSET            // EEPROM address to save RShutter travel down time
