@@ -497,9 +497,9 @@ void receive(const MyMessage &message)  {
       }
     #endif
     #if defined(DOUBLE_RELAY)
-      if (message.sensor >= RELAY_ID_1 && message.sensor < NUMBER_OF_RELAYS)  {
+      if (message.sensor == RELAY_ID_1 || message.sensor == RELAY_ID_2)  {
         if (!OVERCURRENT_ERROR[0] && !THERMAL_ERROR) {
-          CommonIO[message.sensor].NewState = message.getBool();
+          CommonIO[message.sensor].SetState(message.getBool());
           CommonIO[message.sensor].SetRelay();
         }
       }

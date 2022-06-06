@@ -27,7 +27,7 @@ class CommonIO
     uint8_t DebugValue;
     int TouchDiagnosisValue;
 
-    void SetValues(bool RelayOFF, bool Invert, uint8_t SensorType, uint8_t Pin1, uint8_t Pin2=0, uint8_t Pin3=0);
+    void SetValues(bool RelayOFF, bool Invert, uint8_t Type, uint8_t Pin1, uint8_t Pin2=0, uint8_t Pin3=0);
     void ReadReference();
     void SetState(uint8_t ReceivedState);
     void CheckInput(uint16_t LongpressDuration, uint8_t DebounceValue);

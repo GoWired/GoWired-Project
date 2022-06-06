@@ -33,11 +33,11 @@ CommonIO::CommonIO()  {
  * @param Pin2 second uC pin attached to this object (output/secondary input)
  * @param Pin3 third uC pin attached to this object (output)
  */
-void CommonIO::SetValues(bool RelayOFF, bool Invert, uint8_t SensorType, uint8_t Pin1, uint8_t Pin2, uint8_t Pin3) {
+void CommonIO::SetValues(bool RelayOFF, bool Invert, uint8_t Type, uint8_t Pin1, uint8_t Pin2, uint8_t Pin3) {
 	
   _RelayOFF = RelayOFF;
   _Invert = Invert;
-  SensorType = SensorType;
+  SensorType = Type;
 
   switch(SensorType)  {
     // Security sensors (door/window/motion)
@@ -249,7 +249,7 @@ bool CommonIO::_ReadDigital(uint8_t DebounceValue) {
       }
     }
     
-    // HArdcoded timeout 255 ms
+    // Hardcoded timeout 255 ms
     if(millis() - StartTime > 255 || millis() < StartTime) {
       break;
     }
