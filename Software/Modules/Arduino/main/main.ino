@@ -325,7 +325,8 @@ void presentation() {
     present(DEBUG_ID, S_INFO, "DEBUG INFO");
   #endif
 
-  present(CONFIGURATION_SENSOR_ID, S_INFO, "CONFIG SENSOR");
+  // Configuration sensor
+  present(CONFIGURATION_SENSOR_ID, S_INFO);
 
 }
 
@@ -841,6 +842,7 @@ void ShutterUpdate() {
 
   uint32_t StopTime = 0;
   uint32_t MeasuredTime;
+  uint8_t TempState = 2;
   bool Direction;
 
   if(Shutter.State != Shutter.NewState) {
@@ -849,13 +851,23 @@ void ShutterUpdate() {
         send(msgDEBUG.set("MovementTime"));
         send(msgCUSTOM.set(MovementTime));
       #endif
-      Shutter.Movement();
-      StartTime = millis();
-      if(Shutter.NewState == 0)  {
-        send(msgUP);
+      if(Shutter.State == 2)  {
+        Shutter.Movement();
+        StartTime = millis();
+        Shutter.NewState == 0 ? send(msgUP) : send(msgDOWN);
+        /*if(Shutter.NewState == 0)  {
+          send(msgUP);
+        }
+        else if(Shutter.NewState == 1) {
+          send(msgDOWN);
+        }*/
       }
-      else if(Shutter.NewState == 1) {
-        send(msgDOWN);
+      else  {
+        TempState = Shutter.NewState;
+        Shutter.NewState = 2;
+        Shutter.Movement();
+
+        StopTime = millis();
       }
     }
     else  {
@@ -891,6 +903,21 @@ void ShutterUpdate() {
     EEPROM.put(EEA_RS_POSITION, Shutter.Position);
   
     send(msgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
+
+    if(TempState != 2)  {
+      wait(500);
+      Shutter.NewState = TempState;
+      Shutter.Movement();
+      StartTime = millis();
+
+      Shutter.NewState == 0 ? send(msgUP) : send(msgDOWN);
+      /*if(Shutter.NewState == 0)  {
+        send(msgUP);
+      }
+      else if(Shutter.NewState == 1) {
+        send(msgDOWN);
+      }*/
+    }
   }
 
   #endif

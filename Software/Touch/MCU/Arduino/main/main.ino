@@ -93,10 +93,10 @@ MyMessage MsgSTOP(0, V_STOP);
 MyMessage MsgPERCENTAGE(0, V_PERCENTAGE);
 MyMessage MsgRGB(0, V_RGB);
 MyMessage MsgRGBW(0, V_RGBW);
+MyMessage MsgTEXT(0, V_TEXT);
 
 // Debug
 #ifdef RS485_DEBUG
-  MyMessage MsgTEXT(0, V_TEXT);
   MyMessage MsgCUSTOM(0, V_CUSTOM);
 #endif
 
@@ -319,6 +319,9 @@ void presentation() {
     present(TOUCH_DIAGNOSTIC_ID, S_CUSTOM, "Touch Diagnostic");
   #endif
 
+  // Configuration sensor
+  present(CONFIGURATION_SENSOR_ID, S_INFO);
+
 }
 
 /**
@@ -415,6 +418,8 @@ void InitConfirmation() {
     send(MsgTEXT.setSensor(DEBUG_ID).set("DEBUG MESSAGE"));
     send(MsgCUSTOM.setSensor(TOUCH_DIAGNOSTIC_ID).set(0));
   #endif
+
+  send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set("CONFIG INIT"));
 
   for(int i=0; i<Iterations; i++) {
     AdjustLEDs(CommonIO[i].NewState, i);
@@ -691,10 +696,22 @@ void receive(const MyMessage &message)  {
   else if(message.type == V_TEXT) {
     // Configuration by message
     if(message.sensor == CONFIGURATION_SENSOR_ID)  {
-      if(message.getString() == CONF_MSG_1 && HardwareVariant == 0 && LoadVariant == 2) {
-        // Roller shutter: calibration
-        float Vcc = ReadVcc();
-        ShutterCalibration(Vcc);
+      
+      // Initialize strings and pointers
+      char ReceivedPayload[10];
+      char *RPaddr = ReceivedPayload;
+      String RPstr = String(message.getString());
+
+      // Turn String payload to char array and send back to the controller
+      RPstr.toCharArray(ReceivedPayload, 10);
+      send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set(RPaddr));
+
+      if(RPstr.equals(CONF_MSG_1)) {
+        if(HardwareVariant == 0 && LoadVariant == 2)  {
+          // Roller shutter: calibration
+          float Vcc = ReadVcc();
+          ShutterCalibration(Vcc);
+        }
       }
       /*else if(message.getString() == CONF_MSG_2) { }*/
       /*else if(message.getString() == CONF_MSG_3) { }*/
@@ -911,27 +928,36 @@ void ShutterUpdate() {
 
   uint32_t StopTime = 0;
   uint32_t MeasuredTime;
+  uint8_t TempState = 2;
   bool Direction;
 
   if(Shutter.State != Shutter.NewState) {
     if(Shutter.NewState != 2)  {
-      Shutter.Movement();
-      StartTime = millis();
-      if(Shutter.NewState == 0)  {
-        AdjustLEDs(1, 0);
-        send(MsgUP.setSensor(SHUTTER_ID));
+      if(Shutter.State == 2)  {
+        Shutter.Movement();
+        StartTime = millis();
+        if(Shutter.NewState == 0)  {
+          AdjustLEDs(1, 0);
+          send(MsgUP.setSensor(SHUTTER_ID));
+        }
+        else if(Shutter.NewState == 1) {
+          AdjustLEDs(1, 1);
+          send(MsgDOWN.setSensor(SHUTTER_ID));
+        }
       }
-      else if(Shutter.NewState == 1) {
-        AdjustLEDs(1, 1);
-        send(MsgDOWN.setSensor(SHUTTER_ID));
+      else  {
+        TempState = Shutter.NewState;
+        Shutter.NewState = 2;
+        Shutter.Movement();
+        AdjustLEDs(0, 0); AdjustLEDs(0, 1);
+        StopTime = millis();
       }
     }
     else  {
       Direction = Shutter.State;
       Shutter.Movement();
       StopTime = millis();
-      AdjustLEDs(0, 0);
-      AdjustLEDs(0, 1);
+      AdjustLEDs(0, 0); AdjustLEDs(0, 1);
       send(MsgSTOP.setSensor(SHUTTER_ID));
     }
   }
@@ -965,6 +991,22 @@ void ShutterUpdate() {
     EEPROM.put(EEA_SHUTTER_POSITION, Shutter.Position);
   
     send(MsgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
+  
+    if(TempState != 2)  {
+      wait(500);
+      Shutter.NewState = TempState;
+      Shutter.Movement();
+      StartTime = millis();
+
+      if(Shutter.NewState == 0)  {
+        AdjustLEDs(1, 0);
+        send(MsgUP.setSensor(SHUTTER_ID));
+      }
+      else if(Shutter.NewState == 1) {
+        AdjustLEDs(1, 1);
+        send(MsgDOWN.setSensor(SHUTTER_ID));
+      }
+    }
   }
 }
 

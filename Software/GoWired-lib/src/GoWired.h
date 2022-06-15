@@ -12,10 +12,16 @@
 #ifndef GoWired_h
 #define GoWired_h
 
+// Internal library files
 #include "core/AnalogTemp.h"
 #include "core/CommonIO.h"
 #include "core/Dimmer.h"
 #include "core/PowerSensor.h"
 #include "core/Shutters.h"
+
+// GoWired dependencies
+#include <MySensors.h>
+#include <Wire.h>
+#include <avr/wdt.h>
 
 #endif
