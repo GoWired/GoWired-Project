@@ -166,11 +166,13 @@ uint8_t Shutters::Movement()  {
   // Move upward
   else if(NewState == 0)  {
     digitalWrite(_DownPin, _RelayOff);
+	delay(200);
     digitalWrite(_UpPin, _RelayOn);
   }
   // Move downward
   else if(NewState == 1) {
     digitalWrite(_UpPin, _RelayOff);
+	delay(200);
     digitalWrite(_DownPin, _RelayOn);
   }
 
