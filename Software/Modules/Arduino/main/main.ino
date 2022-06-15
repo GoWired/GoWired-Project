@@ -64,6 +64,7 @@ MyMessage msgPERCENTAGE(0, V_PERCENTAGE);
 MyMessage msgWATT(0, V_WATT);
 MyMessage msgTEMP(0, V_TEMP);
 MyMessage msgHUM(0, V_HUM);
+MyMessage msgTEXT(0, V_TEXT);
 
 // Shutter Constructor
 #ifdef ROLLER_SHUTTER
@@ -324,6 +325,8 @@ void presentation() {
     present(DEBUG_ID, S_INFO, "DEBUG INFO");
   #endif
 
+  present(CONFIGURATION_SENSOR_ID, S_INFO, "CONFIG SENSOR");
+
 }
 
 /**
@@ -457,8 +460,9 @@ void InitConfirmation() {
     send(msgDEBUG.setSensor(DEBUG_ID).set("DEBUG MESSAGE"));
   #endif
 
-  InitConfirm = true;
+  send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set("CONFIG INIT"));
 
+  InitConfirm = true;
 }
 
 
@@ -569,7 +573,17 @@ void receive(const MyMessage &message)  {
   else if(message.type == V_TEXT) {
     // Configuration by message
     if(message.sensor == CONFIGURATION_SENSOR_ID)  {
-      if(message.getString() == CONF_MSG_1) {
+      
+      // Initialize strings and pointers
+      char ReceivedPayload[10];
+      char *RPaddr = ReceivedPayload;
+      String RPstr = String(message.getString());
+
+      // Turn String payload to char array and send back to the controller
+      RPstr.toCharArray(ReceivedPayload, 10);
+      send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set(RPaddr));
+
+      if(RPstr.equals(CONF_MSG_1)) {
         #ifdef ROLLER_SHUTTER
           // Roller shutter: calibration
           float Vcc = ReadVcc();
