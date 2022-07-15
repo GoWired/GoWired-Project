@@ -419,7 +419,7 @@ void InitConfirmation() {
     send(MsgCUSTOM.setSensor(TOUCH_DIAGNOSTIC_ID).set(0));
   #endif
 
-  send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set("CONFIG INIT"));
+  send(MsgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set("CONFIG INIT"));
 
   for(int i=0; i<Iterations; i++) {
     AdjustLEDs(CommonIO[i].NewState, i);
@@ -704,7 +704,7 @@ void receive(const MyMessage &message)  {
 
       // Turn String payload to char array and send back to the controller
       RPstr.toCharArray(ReceivedPayload, 10);
-      send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set(RPaddr));
+      send(MsgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set(RPaddr));
 
       if(RPstr.equals(CONF_MSG_1)) {
         if(HardwareVariant == 0 && LoadVariant == 2)  {
