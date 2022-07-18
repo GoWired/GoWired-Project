@@ -1,1 +1,1 @@
-This is a directory for library files shared by all GoWired software.
+Moved to a separate [repository](https://github.com/GoWired/GoWired-lib).
