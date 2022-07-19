@@ -67,7 +67,7 @@ MyMessage msgTEMP(0, V_TEMP);
 
 // I2C expander
 #ifdef EXPANDER_SHIELD
-  PCF8575 Expander;
+  PCF8575 Exp;
 #endif
 
 // SHT30 sensor
@@ -100,7 +100,7 @@ void setup() {
   #endif
 
   #ifdef EXPANDER_SHIELD
-    Expander.begin(EXPANDER_ADDRESS);
+    Exp.begin(EXPANDER_ADDRESS);
   #endif
 
   #ifdef INTERNAL_TEMP
@@ -115,8 +115,8 @@ void setup() {
     EEPROM_ADDRESS = Section[i].SetSectionValues(T_ID[i], DEFAULT_DAY_SP, EEPROM_ADDRESS, RELAY_OFF);
     Section[i].RelayState = RELAY_OFF;
     #ifdef EXPANDER_SHIELD
-      Expander.pinMode(i, OUTPUT);
-      Expander.digitalWrite(i, Section[i].RelayState);
+      Exp.pinMode(i, OUTPUT);
+      Exp.digitalWrite(i, Section[i].RelayState);
     #elif defined(DIRECT_SHIELD)
       pinMode(OutputPins[i], OUTPUT);
       digitalWrite(OutputPins[i], Section[i].RelayState);
@@ -320,7 +320,7 @@ void receive(const MyMessage &message)  {
             }
             if(NewState != Section[i].RelayState) {
               #ifdef EXPANDER_SHIELD
-                Expander.digitalWrite(i, NewState);
+                Exp.digitalWrite(i, NewState);
               #elif defined(DIRECT_SHIELD)
                 digitalWrite(OutputPins[i], NewState);
               #endif
@@ -369,7 +369,7 @@ void HeatingUpdate()  {
     }
     if(NewState != Section[i].RelayState) {
       #ifdef EXPANDER_SHIELD
-        Expander.digitalWrite(i, NewState);
+        Exp.digitalWrite(i, NewState);
       #elif defined(DIRECT_SHIELD)
         digitalWrite(OutputPins[i], NewState);
       #endif
@@ -440,7 +440,7 @@ void loop() {
       // Turn off relays/triacs
       HeatingStatus = false;
       for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {
-        Expander.digitalWrite(i, RELAY_OFF);
+        Exp.digitalWrite(i, RELAY_OFF);
         send(msgSTATUS.setSensor(i).set(RELAY_OFF));
       }
       send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
