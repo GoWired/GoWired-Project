@@ -1,36 +1,22 @@
-/**
- * GetWired is an open source project for WIRED home automation. It aims at making wired
- * home automation easy and affordable for every home automation enthusiast. GetWired provides:
- * - hardware (https://www.crowdsupply.com/domatic/getwired),
- * - software (https://github.com/feanor-anglin/GetWired-Project), 
- * - 3D printable enclosures (https://github.com/feanor-anglin/GetWired-Project/tree/master/Enclosures),
- * - instructions (both campaign page / campaign updates and our GitHub wiki).
+/*
+ * GoWired is an open source project for WIRED home automation. It aims at making wired
+ * home automation easy and affordable for every home automation enthusiast. GoWired provides
+ * hardware, software, enclosures and instructions necessary to build your own bus communicating
+ * smart home installation.
  * 
- * GetWired is based on RS485 industrial communication standard. The software is an implementation
- * of MySensors communication protocol (http://www.mysensors.org). 
+ * GoWired is based on RS485 industrial communication standard. The software uses MySensors
+ * communication protocol (http://www.mysensors.org).
  *
  * Created by feanor-anglin
- * Copyright (C) 2018-2020 feanor-anglin
+ * Copyright (C) 2018-2022 feanor-anglin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
- * version 3 as published by the Free Software Foundation. *
+ * version 3 as published by the Free Software Foundation.
  *
- * DESCRIPTION
- * The Ethernet Gateway sends data received from sensors to the ethernet link.
- * The gateway also accepts input on ethernet interface, which is then sent out to the RS485 network.
- * Hardware serial is used with baud rate of 57600 by default.
+ *******************************
  *
- * The code is designed for GetWired Ethernet Gateway
- *
- * LED purposes:
- * - RX - blink fast on radio message received
- * - TX - blink fast on radio message transmitted
- * - ERR - fast blink on error during transmission error or receive crc error
- * - CONF - turns on after pressing CONF button
- * 
- * Buttons:
- * - CONF - turns of bus power supply, cuts the power to any modules connected to the gateway.
+ * This is source code for GoWired Ethernet Gateway.
  *
  */
 
@@ -64,9 +50,23 @@
 
 //#define MY_DEBUG                                        // Enable debug prints to serial monitor
 
+/* 
+ * WATCHDOG & CONTROLLER UPLINK CHECK
+ * Watchdog resets the gateway in case of any software hang. Enabling it should result in
+ * more robustness and long term reliability.
+ * Uplink Check tests the connection between the Gateway and the Controller.
+ * In case of connection loss, gateway will be reset be watchdog. 
+ * Time interval between tests can be customized.
+ * Use CONTROLLER UPLINK CHECK only together with WATCHDOG.
+ */
+#define ENABLE_WATCHDOG                                   // Resets the Gateway in case of any software hang
+#define ENABLE_UPLINK_CHECK                               // Resets the Gateway in case of connection loss with the controller
+#define UPLINK_CHECK_INTERVAL 60000                       // Time interval for the uplink check (default 60000)
+
 // Includes
 #include <UIPEthernet.h>
 #include <MySensors.h>
+#include <avr/wdt.h>
 
 // Definitions
 #define CONF_BUTTON A0
@@ -76,51 +76,64 @@
 // Globals
 bool ButtonState = false;
 bool ButtonHigh = false;
-unsigned long TIME_1;
+bool CheckControllerUplink = true;
+uint32_t TIME_1 = 0;
+uint32_t LastUpdate = 0;
 
 void before() {
 
-  pinMode(CONF_BUTTON, INPUT_PULLUP);
-  pinMode(BUS_RELAY, OUTPUT);
-  pinMode(CONF_LED, OUTPUT);
+  #ifdef ENABLE_WATCHDOG
+    wdt_reset();
+    MCUSR = 0;
+    wdt_disable();
+  #endif
+  
+  pinMode(CONF_BUTTON, INPUT_PULLUP); 
+  pinMode(BUS_RELAY, OUTPUT); digitalWrite(BUS_RELAY, 0);
 
-  pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
-  pinMode(6, OUTPUT);
+  uint8_t TEMP[4] = {MY_DEFAULT_ERR_LED_PIN, MY_DEFAULT_RX_LED_PIN, MY_DEFAULT_TX_LED_PIN, CONF_LED};
 
-  digitalWrite(BUS_RELAY, 0);
-  digitalWrite(CONF_LED, 0);
-  ButtonState = 0;
+  for(int i=0; i<4; i++)  {
+    pinMode(TEMP[i], OUTPUT); digitalWrite(TEMP[i], HIGH);
+  }
 
-  digitalWrite(4, 1);
-  digitalWrite(5, 1);
-  digitalWrite(6, 1);
-  digitalWrite(CONF_LED, 1);
   delay(500);
-  digitalWrite(4, 0);
+
+  for(int i=0; i<4; i++)  {
+    digitalWrite(TEMP[i], LOW); delay(500);
+  }
+
+  for(int i=0; i<4; i++)  {
+    digitalWrite(TEMP[i], HIGH);
+  }
+
   delay(500);
-  digitalWrite(5, 0);
-  delay(500);
-  digitalWrite(6, 0);
-  delay(500);
-  digitalWrite(CONF_LED, 0);
-  delay(500);
-  digitalWrite(4, 1);
-  digitalWrite(5, 1);
-  digitalWrite(6, 1);
-  digitalWrite(CONF_LED, 1);
-  delay(500);
-  digitalWrite(4, 0);
-  digitalWrite(5, 0);
-  digitalWrite(6, 0);
-  digitalWrite(CONF_LED, 0);
+
+  for(int i=0; i<4; i++)  {
+    digitalWrite(TEMP[i], LOW);
+  }
 }
 
 void setup()  {
 
+  #ifdef ENABLE_WATCHDOG
+    wdt_enable(WDTO_4S);
+  #endif
+  
 }
 
 void loop() {
+
+  wait(500);
+
+  #ifdef ENABLE_UPLINK_CHECK
+    if((millis() > LastUpdate + UPLINK_CHECK_INTERVAL) && CheckControllerUplink) {
+      if(!requestTime())  {
+        delay(10000);
+      }
+      LastUpdate = millis();
+    }
+  #endif
 
   if(!ButtonHigh)  {
     if(digitalRead(CONF_BUTTON))  {
@@ -135,14 +148,16 @@ void loop() {
       wait(251);
       if(millis() - TIME_1 > 500) {
         ButtonState = !ButtonState;
+        
         digitalWrite(BUS_RELAY, ButtonState);
         digitalWrite(CONF_LED, ButtonState);
+        
+        CheckControllerUplink = ButtonState == 1 ? false : true;
+        
         break;
       }
     }
   }
-  
-  wait(100);
 }
 /*
  * End of file

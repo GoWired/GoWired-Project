@@ -1,13 +1,11 @@
 /*
- * GetWired is an open source project for WIRED home automation. It aims at making wired
- * home automation easy and affordable for every home automation enthusiast. GetWired provides:
- * - hardware (https://www.crowdsupply.com/domatic/getwired),
- * - software (https://github.com/feanor-anglin/GetWired-Project), 
- * - 3D printable enclosures (https://github.com/feanor-anglin/GetWired-Project/tree/master/Enclosures),
- * - instructions (both campaign page / campaign updates and our GitHub wiki).
+ * GoWired is an open source project for WIRED home automation. It aims at making wired
+ * home automation easy and affordable for every home automation enthusiast. GoWired provides
+ * hardware, software, enclosures and instructions necessary to build your own bus communicating
+ * smart home installation.
  * 
- * GetWired is based on RS485 industrial communication standard. The software is an implementation
- * of MySensors communication protocol (http://www.mysensors.org). 
+ * GoWired is based on RS485 industrial communication standard. The software uses MySensors
+ * communication protocol (http://www.mysensors.org).
  *
  * Created by feanor-anglin
  * Copyright (C) 2018-2022 feanor-anglin
@@ -18,116 +16,131 @@
  *
  *******************************
  *
- * DESCRIPTION
- * This software is designed for GoWired MCU working with GoWired 8RelayDin board with 8 relays
- * and 8 digital inputs.
- * 
- * To define some important variables, look at Configuration.h
+ * This is source code for GoWired MCU working with 8RelayDin Shield.
  * 
  */
 
-/*  *******************************************************************************************
- *                                      Includes
- *  *******************************************************************************************/
+/***** INCLUDES *****/
 #include "Configuration.h"
-#include "ExpanderIO.h"
+#include <GoWired2.h>
 #include <MySensors.h>
+#include <avr/wdt.h>
 
 
-/*  *******************************************************************************************
- *                                      Globals
- *  *******************************************************************************************/
-// Additional presentation status required by Home Assistant
-bool InitConfirm = false;
+/***** Globals *****/
+bool InitConfirm = false;                           // Additional presentation status required by Home Assistant
+uint8_t NumberOfLongpresses = NUMBER_OF_OUTPUTS;    // Number of long press functionalities
 
 // Module Safety Indicators
-bool THERMAL_ERROR = false;                        // Thermal error status
+bool THERMAL_ERROR = false;                         // Thermal error status
 
-/*  *******************************************************************************************
- *                                      Constructors
- *  *******************************************************************************************/
+/***** Constructors *****/
 // Expander Input constructor
 ExpanderIO EIO[TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO];
-MyMessage msgEIO(0, V_STATUS);
+MyMessage msgSTATUS(0, V_STATUS);
 
-// Module Safety Indicators
-MyMessage msgSI(0, V_STATUS);
-
-/*  *******************************************************************************************
-                                            Before
- *  *******************************************************************************************/
+/**
+ * @brief Function called before setup(); resets wdt
+ * 
+ */
 void before() {
 
-  uint32_t InitDelay = MY_NODE_ID * INIT_DELAY;
+  #ifdef ENABLE_WATCHDOG
+    wdt_reset();
+    MCUSR = 0;
+    wdt_disable();
+  #endif
   
-  wait(InitDelay);
 }
 
-/*  *******************************************************************************************
- *                                          Setup
- *  *******************************************************************************************/
+/**
+ * @brief Setups software components: wdt, expander, inputs, outputs
+ * 
+ */
 void setup() {
+
+  #ifdef ENABLE_WATCHDOG
+    wdt_enable(WDTO_4S);
+  #endif
   
   // This function calls Expander.begin(0x20);
   EIO[0].ExpanderInit();
 
   for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+INDEPENDENT_IO; i++)  {
-    EIO[i].SetValues(RELAY_OFF, 2, i);
-    EIO[i+8].SetValues(RELAY_OFF, INPUT_TYPE, i+8);
+    EIO[i].SetValues(RELAY_OFF, false, 2, i);
+    EIO[i+TOTAL_NUMBER_OF_OUTPUTS].SetValues(RELAY_OFF, INVERT_INPUT_LOGIC, INPUT_TYPE, i+TOTAL_NUMBER_OF_OUTPUTS);
   }
 
   uint8_t j = FIRST_OUTPUT_ID + INDEPENDENT_IO;
     
   for(int i=j; i<j+NUMBER_OF_OUTPUTS; i++)  {
-    EIO[i].SetValues(RELAY_OFF, 4, i+8, i);
+    EIO[i].SetValues(RELAY_OFF, INVERT_BUTTON_LOGIC, 4, i+TOTAL_NUMBER_OF_OUTPUTS, i);
   }
 }
 
-/*  *******************************************************************************************
- *                                          Presentation
- *  *******************************************************************************************/
+/**
+ * @brief Presents module to the controller, send name, software version, info about sensors
+ * 
+ */
 void presentation() {
 
-  sendSketchInfo(SN, SV);
+  sendSketchInfo(MN, FV);
 
-  uint8_t Current_ID = 0;
+  uint8_t Current_ID = FIRST_OUTPUT_ID;
 
-  for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+INDEPENDENT_IO; i++)  {
-    present(i, S_BINARY, "8RelayDin Relay");  wait(PRESENTATION_DELAY);
-    present(i+8, S_BINARY, "8RelayDin Button"); wait(PRESENTATION_DELAY);
+  for(int i=Current_ID; i<Current_ID+INDEPENDENT_IO; i++)  {
+    present(i, S_BINARY, "8RD Relay");  wait(PRESENTATION_DELAY);
+    present(i+TOTAL_NUMBER_OF_OUTPUTS, S_BINARY, "8RD Input"); wait(PRESENTATION_DELAY);
   }
 
-  Current_ID = FIRST_OUTPUT_ID+INDEPENDENT_IO;
+  Current_ID += INDEPENDENT_IO;
 
   for(int i=Current_ID; i<Current_ID+NUMBER_OF_OUTPUTS; i++)  {
-    present(i, S_BINARY, "8RelayDin B+R");  wait(PRESENTATION_DELAY);
+    present(i, S_BINARY, "8RD B+R");  wait(PRESENTATION_DELAY);
   }
 
-  Current_ID = INDEPENDENT_IO + 8;
-
-  for(int i=Current_ID; i<Current_ID+NUMBER_OF_OUTPUTS; i++)  {
-    present(i, S_BINARY, "Special Button"); wait(PRESENTATION_DELAY);
+  if(INPUT_TYPE == 3) {
+    NumberOfLongpresses += INDEPENDENT_IO;
   }
+
+  Current_ID = TOTAL_NUMBER_OF_OUTPUTS + INDEPENDENT_IO;
+
+  for(int i=Current_ID; i<Current_ID+NumberOfLongpresses; i++)  {
+    present(i, S_BINARY, "Longpress"); wait(PRESENTATION_DELAY);
+  }    
 }
 
-/*  *******************************************************************************************
-                                            Init Confirmation
- *  *******************************************************************************************/
+/**
+ * @brief Sends initial value of sensors as required by Home Assistant
+ * 
+ */
 void InitConfirmation() {
 
-  for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+TOTAL_NUMBER_OF_OUTPUTS; i++)  {
-    send(msgEIO.setSensor(i).set(EIO[i].NewState));
+  uint8_t SensorsToConfirm = TOTAL_NUMBER_OF_OUTPUTS+INDEPENDENT_IO;
+
+  for(int i=FIRST_OUTPUT_ID; i<FIRST_OUTPUT_ID+SensorsToConfirm; i++)  {
+    send(msgSTATUS.setSensor(i).set(EIO[i].NewState));
     request(i, V_STATUS);
-    wait(200, C_SET, V_STATUS); //wait(2000, C_SET, V_STATUS);
+    wait(1000, C_SET, V_STATUS);
+  }
+
+  uint8_t FirstLongpressID = FIRST_OUTPUT_ID+SensorsToConfirm;
+
+  for(int i=FirstLongpressID; i<FirstLongpressID+NumberOfLongpresses; i++)  {
+    send(msgSTATUS.setSensor(i).set("0"));
+    request(i, V_STATUS);
+    wait(1000, C_SET, V_STATUS);
   }
     
   InitConfirm = true;
   
 }
 
-/*  *******************************************************************************************
- *                                      MySensors Receive
- *  *******************************************************************************************/
+/**
+ * @brief Handles incoming messages
+ * 
+ * @param message incoming message data
+ */
 void receive(const MyMessage &message)  {
 
   if(message.type == V_STATUS)  {
@@ -140,12 +153,13 @@ void receive(const MyMessage &message)  {
   }
 }
 
-/*  *******************************************************************************************
-                                        Universal Input
- *  *******************************************************************************************/
+/**
+ * @brief Updates ExpanderIO class instances; checks inputs and set outputs
+ * 
+ * @param FirstSensor first sensor ID to check
+ * @param NumberOfSensors number of sensors to check
+ */
 void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
-
-  uint8_t FirstSpecialButtonID = INDEPENDENT_IO + 8;
 
   for(int i=FirstSensor; i<FirstSensor+NumberOfSensors; i++)  {
     EIO[i].CheckInput();
@@ -155,7 +169,7 @@ void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
           // Door/window/button
         case 1:
           // Motion sensor
-          send(msgEIO.setSensor(i).set(EIO[i].NewState));
+          send(msgSTATUS.setSensor(i).set(EIO[i].NewState));
           EIO[i].State = EIO[i].NewState;
           break;
         case 2:
@@ -165,14 +179,12 @@ void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
         case 3:
           // Button input
           if(EIO[i].NewState != 2)  {
-            if(!THERMAL_ERROR)  {
-              send(msgEIO.setSensor(i).set(EIO[i].NewState));
-              EIO[i].State = EIO[i].NewState;
-            }
+            send(msgSTATUS.setSensor(i).set(EIO[i].NewState));
+            EIO[i].State = EIO[i].NewState;
           }
           #ifdef SPECIAL_BUTTON
             else if(EIO[i].NewState == 2)  {
-              send(msgEIO.setSensor(FirstSpecialButtonID + i).set(true));
+              send(msgSTATUS.setSensor(i + TOTAL_NUMBER_OF_OUTPUTS).set(true)); 
               EIO[i].NewState = EIO[i].State;
             }
           #endif
@@ -182,12 +194,12 @@ void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
           if(EIO[i].NewState != 2)  {
             if(!THERMAL_ERROR)  {
               EIO[i].SetRelay();
-              send(msgEIO.setSensor(i).set(EIO[i].NewState));
+              send(msgSTATUS.setSensor(i).set(EIO[i].NewState));
             }
           }
           #ifdef SPECIAL_BUTTON
             else if(EIO[i].NewState == 2)  {
-              send(msgEIO.setSensor(FirstSpecialButtonID + i).set(true));
+              send(msgSTATUS.setSensor(i + TOTAL_NUMBER_OF_OUTPUTS).set(true));
               EIO[i].NewState = EIO[i].State;
             }
           #endif
@@ -200,6 +212,10 @@ void IOUpdate(uint8_t FirstSensor, uint8_t NumberOfSensors) {
   }
 }
 
+/**
+ * @brief main loop
+ * 
+ */
 void loop() {
 
   // Extended presentation as required by Home Assistant; runs only after startup
@@ -207,41 +223,15 @@ void loop() {
     InitConfirmation();
   }
 
-  IOUpdate(FIRST_OUTPUT_ID, NUMBER_OF_OUTPUTS);
-
   if(INDEPENDENT_IO > 0)  {
-    IOUpdate(8, INDEPENDENT_IO);
+    IOUpdate(TOTAL_NUMBER_OF_OUTPUTS, INDEPENDENT_IO);
+    if(INDEPENDENT_IO < TOTAL_NUMBER_OF_OUTPUTS)  {
+      IOUpdate(INDEPENDENT_IO, NUMBER_OF_OUTPUTS);
+    }
   }
-
-/*
-  #ifdef INTERNAL_TEMP
-    // Safety check
-    THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT());
-
-    // Handling safety procedures
-    if(THERMAL_ERROR == true && InformControllerTS == false) {
-      // Board temperature to hot
-      // Turn off relays/triacs
-      HeatingStatus = false;
-      for(int i=FIRST_SECTION_ID; i<FIRST_SECTION_ID+HEATING_SECTIONS; i++)  {
-        Expander.digitalWrite(i, RELAY_OFF);
-        send(msgH1.setSensor(i).set(RELAY_OFF));
-      }
-      send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
-      InformControllerTS = true;
-    }
-    else if(THERMAL_ERROR == false && InformControllerTS == true) {
-      HeatingStatus = true;
-      send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
-      InformControllerTS = false;
-    }
-
-    // Update internal temperature value to the controller
-    if(millis() > LastUpdate + INTERVAL)  {
-      ITUpdate();
-      LastUpdate = millis();
-    }
-  #endif*/
+  else  {
+    IOUpdate(FIRST_OUTPUT_ID, NUMBER_OF_OUTPUTS);
+  }
 
   wait(LOOP_TIME);
 

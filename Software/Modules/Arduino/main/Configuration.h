@@ -8,13 +8,11 @@
 #ifndef Configuration_h
 #define Configuration_h
 
-/*  *******************************************************************************************
-                    MySensors Definitions
- *  *******************************************************************************************/
+/***** Protocol Definitions *****/
 // Identification
-#define MY_NODE_ID 1                            // Set node ID
-#define SN "GetWired Module"               // Set node name to present to a controller
-#define SV "1.2"                                // Set sensor version
+#define MY_NODE_ID AUTO                       // Set node ID
+#define SN "GoWired Module"                   // Set node name to present to a controller
+#define SV "1.4"                            // Set sensor version
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
@@ -29,9 +27,7 @@
 // Other
 #define MY_TRANSPORT_WAIT_READY_MS 60000        // Time to wait for gateway to respond at startup (default 60000)
 
-/*  *******************************************************************************************
-                    Quick config
- *  *******************************************************************************************/
+/***** Quick Config *****/
 // Output Config - one of these has to be defined
 #define DOUBLE_RELAY              // Define this node as a double relay node, setting below
 //#define ROLLER_SHUTTER            // Define this node as a roller shutter node, setting below
@@ -58,9 +54,7 @@
     #define SHT30
 #endif
 
-/*  *******************************************************************************************
-                    MCU Pin Definitions
- *  *******************************************************************************************/
+/***** Pin Definitions *****/
 // OUTPUT [RELAY / RGBW]
 #define OUTPUT_PIN_1 5
 #define OUTPUT_PIN_2 9
@@ -88,12 +82,12 @@
 #define I2C_PIN_1 A4              // default A4
 #define I2C_PIN_2 A5              // default A5
 
-/*  *******************************************************************************************
-                    Various Definitions
- *  *******************************************************************************************/
+/***** Various Definitions *****/
 // General
 #define RELAY_ON HIGH                       // Pin state to turn the relays on (default HIGH)
 #define RELAY_OFF LOW                       // Pin state to turn the relays off (default LOW)
+#define LONGPRESS_DURATION 1000
+#define DEBOUNCE_VALUE 50
 
 // Internal temperature sensor
 #define MVPERC 10                         // V per 1 degree celsius (default 10)
@@ -112,15 +106,11 @@
 #define DIMMING_INTERVAL 1                  // Duration of dimming interval, increase for slower dimming (default 10)
 #define DIMMING_TOGGLE_STEP 20              // Value to increase dimming percentage when using wall switch
 
-// Roller Shutter
-#define RS_AUTO_CALIBRATION                 // Roller shutter auto-calibration. Leave it defined or comment it out and define movement times manually
-#ifdef RS_AUTO_CALIBRATION
-  #define PS_OFFSET 0.2                     // Power sensor offset for roller shutter calibration (default 0.2)
-  #define CALIBRATION_SAMPLES 2             // Number of calibration samples for roller shutter calibration (default 2)
-#else
-  #define UP_TIME 21                        // Manually defined upward movement time in seconds (0-255)
-  #define DOWN_TIME 20                      // Manually defined downward movement time in seconds (0-255)
-#endif
+// Roller Shutter 
+#define PS_OFFSET 0.2                     // Power sensor offset for roller shutter calibration (default 0.2)
+#define CALIBRATION_SAMPLES 1             // Number of calibration samples for roller shutter calibration (default 2)
+#define UP_TIME 21                        // Manually defined upward movement time in seconds (0-255)
+#define DOWN_TIME 20                      // Manually defined downward movement time in seconds (0-255)
 
 // Heating system section thermometer
 //#define HEATING_SECTION_SENSOR            // Define if this module if going to be a temperature sensor for a heating controller
@@ -134,9 +124,7 @@
 #define PRESENTATION_DELAY 10       // Time (ms) to wait between subsequent presentation messages (default 10)
 #define LOOP_TIME 80                       // Main loop wait time (default 100)        
 
-/*  *******************************************************************************************
-                    OUTPUT Config
- *  *******************************************************************************************/
+/***** Output Config *****/
 // 2SSR DOUBLE_RELAY
 #ifdef DOUBLE_RELAY
   #define RELAY_ID_1 0
@@ -150,7 +138,7 @@
 
 // Roller Shutter
 #ifdef ROLLER_SHUTTER
-  #define RS_ID 0
+  #define SHUTTER_ID 0
   #define RELAY_ID_1 0
   #define RELAY_1 OUTPUT_PIN_1
   #define RELAY_2 OUTPUT_PIN_2
@@ -215,14 +203,13 @@
   #define FIRST_INPUT_ID 0
 #endif
 
-/*  *******************************************************************************************
-                    INPUT Config
- *  *******************************************************************************************/
+/***** Input Config *****/
 // Digital input - define what inputs to use
 #ifdef INPUT_1
   #define INPUT_ID_1 FIRST_INPUT_ID
   #define PIN_1 INPUT_PIN_3
   #define PULLUP_1
+  #define INVERT_1 false
   #define NUMBER_OF_INPUTS 1
 #endif
 
@@ -230,6 +217,7 @@
   #define INPUT_ID_2 INPUT_ID_1+1
   #define PIN_2 INPUT_PIN_4
   #define PULLUP_2
+  #define INVERT_2 false
   #define NUMBER_OF_INPUTS 2
 #endif
 
@@ -237,6 +225,7 @@
   #define INPUT_ID_3 INPUT_ID_2+1
   #define PIN_3 INPUT_PIN_5
   #define PULLUP_3
+  #define INVERT_3 false
   #define NUMBER_OF_INPUTS 3
 #endif
 
@@ -244,6 +233,7 @@
   #define INPUT_ID_4 INPUT_ID_3+1
   #define PIN_4 INPUT_PIN_6
   #define PULLUP_4
+  #define INVERT_4 false
   #define NUMBER_OF_INPUTS 4
 #endif
 
@@ -296,9 +286,7 @@
   #endif
 #endif
 
-/*  *******************************************************************************************
-                      ERROR REPORTING & PREVENTION
- *  *******************************************************************************************/
+/***** Watchdog, Fuses, Errors, Debug *****/
 #define ENABLE_WATCHDOG 
 
 #define ERROR_REPORTING
@@ -319,9 +307,13 @@
   #define DEBUG_ID 16
 #endif
 
-/*  *******************************************************************************************
-                    EEPROM Definitions
- *  *******************************************************************************************/
+/***** Configuration by message *****/
+#define CONFIGURATION_SENSOR_ID 20
+#define CONF_MSG_1 "cmd1"
+//#define CONF_MSG_2 "cmd2"
+//#define CONF_MSG_3 "cmd3"
+
+/***** EEPROM Definitions *****/
 #define SIZE_OF_INT 2
 #define EEPROM_OFFSET 512                         // First eeprom address to use (prior addresses are taken)
 #define EEA_RS_TIME_DOWN EEPROM_OFFSET            // EEPROM address to save RShutter travel down time

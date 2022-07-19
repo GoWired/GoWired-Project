@@ -1,56 +1,39 @@
 /*
- * GetWired is an open source project for WIRED home automation. It aims at making wired
- * home automation easy and affordable for every home automation enthusiast. GetWired provides:
- * - hardware (https://www.crowdsupply.com/domatic/getwired),
- * - software (https://github.com/feanor-anglin/GetWired-Project), 
- * - 3D printable enclosures (https://github.com/feanor-anglin/GetWired-Project/tree/master/Enclosures),
- * - instructions (both campaign page / campaign updates and our GitHub wiki).
+ * GoWired is an open source project for WIRED home automation. It aims at making wired
+ * home automation easy and affordable for every home automation enthusiast. GoWired provides
+ * hardware, software, enclosures and instructions necessary to build your own bus communicating
+ * smart home installation.
  * 
- * GetWired is based on RS485 industrial communication standard. The software is an implementation
- * of MySensors communication protocol (http://www.mysensors.org). 
+ * GoWired is based on RS485 industrial communication standard. The software uses MySensors
+ * communication protocol (http://www.mysensors.org).
  *
  * Created by feanor-anglin
- * Copyright (C) 2018-2020 feanor-anglin
+ * Copyright (C) 2018-2022 feanor-anglin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * version 3 as published by the Free Software Foundation.
  *
- *******************************
- *
- * REVISION HISTORY
- * Version 1.0.0 - feanor-anglin
- *
- * DESCRIPTION version 1.0.0
- * This is code for GetWired MCU Module which is designed to work with many different inputs 
- * (buttons, digital and analog sensors) and a certain kind of output (depending on what shield is 
- * used). For the list of available shields have a look here: 
- * https://github.com/feanor-anglin/GetWired-Project/wiki.
- * 
- * Hardware serial is used with baud rate of 57600 by default.
+ * ******************************
+ * This is source code for GoWired MCU working with 2SSR, RGBW & 4RelayDin Shields.
  * 
  * 
  */
 
-/*  *******************************************************************************************
-                                        Includes
- *  *******************************************************************************************/
-#include "PowerSensor.h"
-#include "InternalTemp.h"
-#include "IODigital.h"
-#include "Dimmer.h"
-#include "RShutterControl.h"
+/***** INCLUDES *****/
 #include "Configuration.h"
+#include <GoWired.h>
 #include <MySensors.h>
-#include <dht.h>
 #include <Wire.h>
 #include <avr/wdt.h>
-#include "SHTSensor.h"
+#ifdef SHT30
+  #include <SHTSensor.h>
+#elif defined(DHT22)
+  #include <dht.h>
+#endif
 
-/*  *******************************************************************************************
-                                        Globals
- *  *******************************************************************************************/
-// RShutter
+/***** Globals *****/
+// Shutter
 #ifdef ROLLER_SHUTTER
   uint32_t MovementTime;
   uint32_t StartTime;
@@ -70,45 +53,44 @@ uint8_t ET_ERROR = 3;                       // External thermometer status (0 - 
 // Initialization
 bool InitConfirm = false;
 
-/*  *******************************************************************************************
-                                        Constructors
- *  *******************************************************************************************/
-//Universal input constructor
+/***** Constructors *****/
+// CommonIO constructor
 #if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0)
-  IODigital IOD[NUMBER_OF_RELAYS+NUMBER_OF_INPUTS];
-  MyMessage msgIOD(0, V_LIGHT);
+  CommonIO CommonIO[NUMBER_OF_RELAYS+NUMBER_OF_INPUTS];
 #endif
 
-// RShutter Control Constructor
+MyMessage msgSTATUS(0, V_STATUS);
+MyMessage msgPERCENTAGE(0, V_PERCENTAGE);
+MyMessage msgWATT(0, V_WATT);
+MyMessage msgTEMP(0, V_TEMP);
+MyMessage msgHUM(0, V_HUM);
+MyMessage msgTEXT(0, V_TEXT);
+
+// Shutter Constructor
 #ifdef ROLLER_SHUTTER
-  RShutterControl RS(RELAY_1, RELAY_2, RELAY_ON, RELAY_OFF);
-  MyMessage msgRS1(RS_ID, V_UP);
-  MyMessage msgRS2(RS_ID, V_DOWN);
-  MyMessage msgRS3(RS_ID, V_STOP);
-  MyMessage msgRS4(RS_ID, V_PERCENTAGE);
+  Shutters Shutter(EEA_RS_TIME_DOWN, EEA_RS_TIME_UP, EEA_RS_POSITION);
+  MyMessage msgUP(SHUTTER_ID, V_UP);
+  MyMessage msgDOWN(SHUTTER_ID, V_DOWN);
+  MyMessage msgSTOP(SHUTTER_ID, V_STOP);
 #endif
 
 // Dimmer
 #if defined(DIMMER) || defined(RGB) || defined(RGBW)
   Dimmer Dimmer;
-  MyMessage msgDIM(DIMMER_ID, V_PERCENTAGE);
-  MyMessage msgDIM2(DIMMER_ID, V_RGB);
-  MyMessage msgDIM3(DIMMER_ID, V_RGBW);
+  MyMessage msgRGB(DIMMER_ID, V_RGB);
+  MyMessage msgRGBW(DIMMER_ID, V_RGBW);
 #endif
 
 // Power sensor constructor
 #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
   PowerSensor PS;
-  MyMessage msgPS(PS_ID, V_WATT);
 #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
   PowerSensor PS[NUMBER_OF_RELAYS];
-  MyMessage msgPS(0, V_WATT);
 #endif
 
 // Internal thermometer constructor
 #ifdef INTERNAL_TEMP
-  InternalTemp IT(IT_PIN, MAX_TEMPERATURE, MVPERC, ZEROVOLTAGE);
-  MyMessage msgIT(IT_ID, V_TEMP);
+  AnalogTemp AnalogTemp(IT_PIN, MAX_TEMPERATURE, MVPERC, ZEROVOLTAGE);
 #endif
 
 // External thermometer constructor
@@ -119,23 +101,18 @@ bool InitConfirm = false;
   #ifdef SHT30
     SHTSensor sht;
   #endif
-  MyMessage msgETT(ETT_ID, V_TEMP);
-  MyMessage msgETH(ETH_ID, V_HUM);
-#endif
-
-// Error Reporting
-#ifdef ERROR_REPORTING
-  MyMessage msgSI(0, V_STATUS);
 #endif
 
 #ifdef RS485_DEBUG
   MyMessage msgDEBUG(DEBUG_ID, V_TEXT);
   MyMessage msgDEBUG2(DEBUG_ID, V_WATT);
+  MyMessage msgCUSTOM(0, V_CUSTOM);
 #endif
 
-/*  *******************************************************************************************
-                                            Before
- *  *******************************************************************************************/
+/**
+ * @brief Function called before setup(); resets wdt
+ * 
+ */
 void before() {
 
   #ifdef ENABLE_WATCHDOG
@@ -143,15 +120,12 @@ void before() {
     MCUSR = 0;
     wdt_disable();
   #endif
-
-  uint32_t InitDelay = MY_NODE_ID * INIT_DELAY;
-  
-  wait(InitDelay);
 }
 
-/*  *******************************************************************************************
-                                            Setup
- *  *******************************************************************************************/
+/**
+ * @brief Setups software components: wdt, expander, inputs, outputs
+ * 
+ */
 void setup() {
 
   #ifdef ENABLE_WATCHDOG
@@ -172,77 +146,69 @@ void setup() {
 
   // OUTPUT
   #ifdef DOUBLE_RELAY
-    IOD[RELAY_ID_1].SetValues(RELAY_OFF, 4, BUTTON_1, RELAY_1);
-    IOD[RELAY_ID_2].SetValues(RELAY_OFF, 4, BUTTON_2, RELAY_2);
+    CommonIO[RELAY_ID_1].SetValues(RELAY_OFF, false, 4, BUTTON_1, RELAY_1);
+    CommonIO[RELAY_ID_2].SetValues(RELAY_OFF, false, 4, BUTTON_2, RELAY_2);
   #endif
 
   #ifdef ROLLER_SHUTTER
-    IOD[RS_ID].SetValues(RELAY_OFF, 3, BUTTON_1);
-    IOD[RS_ID + 1].SetValues(RELAY_OFF, 3, BUTTON_2);
-    if(!RS.Calibrated)  {
-    #ifdef RS_AUTO_CALIBRATION
-      RSCalibration(Vcc);
-    #else
-      RS.Calibration(UP_TIME, DOWN_TIME);
-    #endif
+    Shutter.SetOutputs( RELAY_OFF, RELAY_1, RELAY_2);
+    CommonIO[SHUTTER_ID].SetValues(RELAY_OFF, false, 3, BUTTON_1);
+    CommonIO[SHUTTER_ID + 1].SetValues(RELAY_OFF, false, 3, BUTTON_2);
+    if(!Shutter.Calibrated) {
+      Shutter.Calibration(UP_TIME, DOWN_TIME);
     }
   #endif
 
   #ifdef FOUR_RELAY
-    IOD[RELAY_ID_1].SetValues(RELAY_OFF, 2, RELAY_1);
-    IOD[RELAY_ID_2].SetValues(RELAY_OFF, 2, RELAY_2);
-    IOD[RELAY_ID_3].SetValues(RELAY_OFF, 2, RELAY_3);
-    IOD[RELAY_ID_4].SetValues(RELAY_OFF, 2, RELAY_4);
+    CommonIO[RELAY_ID_1].SetValues(RELAY_OFF, 2, RELAY_1);
+    CommonIO[RELAY_ID_2].SetValues(RELAY_OFF, 2, RELAY_2);
+    CommonIO[RELAY_ID_3].SetValues(RELAY_OFF, 2, RELAY_3);
+    CommonIO[RELAY_ID_4].SetValues(RELAY_OFF, 2, RELAY_4);
+  #endif
+
+  #if defined(DIMMER) || defined(RGB) || defined(RGBW)
+    CommonIO[0].SetValues(0, false, 3, BUTTON_1);
+    CommonIO[1].SetValues(0, false, 3, BUTTON_2);
   #endif
 
   #ifdef DIMMER
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
-    IOD[0].SetValues(0, 3, BUTTON_1);
-    IOD[1].SetValues(0, 3, BUTTON_2);
-  #endif
-
-  #ifdef RGB
+  #elif defined(RGB)
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3);
-    IOD[0].SetValues(0, 3, BUTTON_1);
-    IOD[1].SetValues(0, 3, BUTTON_2);
-  #endif
-
-  #ifdef RGBW
+  #elif defined(RGBW)
     Dimmer.SetValues(NUMBER_OF_CHANNELS, DIMMING_STEP, DIMMING_INTERVAL, LED_PIN_1, LED_PIN_2, LED_PIN_3, LED_PIN_4);
-    IOD[0].SetValues(0, 3, BUTTON_1);
-    IOD[1].SetValues(0, 3, BUTTON_2);
   #endif
 
   // INPUT
   #ifdef INPUT_1
     #ifdef PULLUP_1
-      IOD[INPUT_ID_1].SetValues(RELAY_OFF, 0, PIN_1);
+      CommonIO[INPUT_ID_1].SetValues(RELAY_OFF, INVERT_1, 0, PIN_1);
     #else
-      IOD[INPUT_ID_1].SetValues(RELAY_OFF, 1, PIN_1);
+      CommonIO[INPUT_ID_1].SetValues(RELAY_OFF, INVERT_1, 1, PIN_1);
     #endif
   #endif
 
   #ifdef INPUT_2
     #ifdef PULLUP_2
-      IOD[INPUT_ID_2].SetValues(RELAY_OFF, 0, PIN_2);
+      CommonIO[INPUT_ID_2].SetValues(RELAY_OFF, INVERT_2, 0, PIN_2);
     #else
-      IOD[INPUT_ID_2].SetValues(RELAY_OFF, 1, PIN_2);
+      CommonIO[INPUT_ID_2].SetValues(RELAY_OFF, INVERT_2, 1, PIN_2);
     #endif
   #endif
 
   #ifdef INPUT_3
     #ifdef PULLUP_3
-      IOD[INPUT_ID_3].SetValues(RELAY_OFF, 0, PIN_3);
+      CommonIO[INPUT_ID_3].SetValues(RELAY_OFF, INVERT_3, 0, PIN_3);
     #else
-      IOD[INPUT_ID_3].SetValues(RELAY_OFF, 1, PIN_3);
+      CommonIO[INPUT_ID_3].SetValues(RELAY_OFF, INVERT_3, 1, PIN_3);
     #endif
   #endif
 
   #ifdef INPUT_4
     #ifdef PULLUP_4
-      IOD[INPUT_ID_4].SetValues(RELAY_OFF, 0, PIN_4);
+      CommonIO[INPUT_ID_4].SetValues(RELAY_OFF, INVERT_4, 0, PIN_4);
     #else
-      IOD[INPUT_ID_4].SetValues(RELAY_OFF, 1, PIN_4);
+      CommonIO[INPUT_ID_4].SetValues(RELAY_OFF, INVERT_4, 1, PIN_4);
     #endif
   #endif
 
@@ -260,9 +226,10 @@ void setup() {
 
 }
 
-/*  *******************************************************************************************
-                                            Presentation
- *  *******************************************************************************************/
+/**
+ * @brief Presents module to the controller, send name, software version, info about sensors
+ * 
+ */
 void presentation() {
 
   sendSketchInfo(SN, SV);
@@ -274,7 +241,7 @@ void presentation() {
   #endif
 
   #ifdef ROLLER_SHUTTER
-    present(RS_ID, S_COVER, "Roller Shutter");  wait(PRESENTATION_DELAY);
+    present(SHUTTER_ID, S_COVER, "Roller Shutter");  wait(PRESENTATION_DELAY);
   #endif
 
   #ifdef FOUR_RELAY
@@ -358,138 +325,118 @@ void presentation() {
     present(DEBUG_ID, S_INFO, "DEBUG INFO");
   #endif
 
+  // Configuration sensor
+  present(CONFIGURATION_SENSOR_ID, S_INFO);
+
 }
 
-/*  *******************************************************************************************
-                                            Init Confirmation
- *  *******************************************************************************************/
+/**
+ * @brief Sends initial value of sensors as required by Home Assistant
+ * 
+ */
 void InitConfirmation() {
 
   // OUTPUT
   #ifdef DOUBLE_RELAY
-    send(msgIOD.setSensor(RELAY_ID_1).set(IOD[RELAY_ID_1].NewState));
+    send(msgSTATUS.setSensor(RELAY_ID_1).set(CommonIO[RELAY_ID_1].NewState));
     request(RELAY_ID_1, V_STATUS);
     wait(2000, C_SET, V_STATUS);
 
-    send(msgIOD.setSensor(RELAY_ID_2).set(IOD[RELAY_ID_2].NewState));
+    send(msgSTATUS.setSensor(RELAY_ID_2).set(CommonIO[RELAY_ID_2].NewState));
     request(RELAY_ID_2, V_STATUS);
     wait(2000, C_SET, V_STATUS);
-
   #endif
 
   #ifdef ROLLER_SHUTTER
-    send(msgRS1.set(0));
-    request(RS_ID, V_UP);
+    send(msgUP.set(0));
+    request(SHUTTER_ID, V_UP);
     wait(2000, C_SET, V_UP);
 
-    send(msgRS2.set(0));
-    request(RS_ID, V_DOWN);
+    send(msgDOWN.set(0));
+    request(SHUTTER_ID, V_DOWN);
     wait(2000, C_SET, V_DOWN);
 
-    send(msgRS3.set(0));
-    request(RS_ID, V_STOP);
+    send(msgSTOP.set(0));
+    request(SHUTTER_ID, V_STOP);
     wait(2000, C_SET, V_STOP);
 
-    send(msgRS4.set(RS.Position));
-    request(RS_ID, V_PERCENTAGE);
+    send(msgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
+    request(SHUTTER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
-
   #endif
 
   #ifdef FOUR_RELAY
-    send(msgIOD.setSensor(RELAY_ID_1).set(IOD[RELAY_ID_1].NewState));
+    send(msgSTATUS.setSensor(RELAY_ID_1).set(CommonIO[RELAY_ID_1].NewState));
     request(RELAY_ID_1, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgIOD.setSensor(RELAY_ID_2).set(IOD[RELAY_ID_2].NewState));
+    send(msgSTATUS.setSensor(RELAY_ID_2).set(CommonIO[RELAY_ID_2].NewState));
     request(RELAY_ID_2, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgIOD.setSensor(RELAY_ID_3).set(IOD[RELAY_ID_3].NewState));
+    send(msgSTATUS.setSensor(RELAY_ID_3).set(CommonIO[RELAY_ID_3].NewState));
     request(RELAY_ID_3, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgIOD.setSensor(RELAY_ID_4).set(IOD[RELAY_ID_4].NewState));
+    send(msgSTATUS.setSensor(RELAY_ID_4).set(CommonIO[RELAY_ID_4].NewState));
     request(RELAY_ID_4, V_STATUS);
     wait(2000, C_SET, V_STATUS);
-
   #endif
 
-  #ifdef DIMMER
-    send(msgIOD.setSensor(DIMMER_ID).set(false));
+  #if defined(DIMMER) || defined(RGB) || defined(RGBW)
+    send(msgSTATUS.setSensor(DIMMER_ID).set(false));
     request(DIMMER_ID, V_STATUS);
     wait(2000, C_SET, V_STATUS);
     
-    send(msgDIM.set(Dimmer.NewDimmingLevel));
+    send(msgPERCENTAGE.setSensor(DIMMER_ID).set(Dimmer.NewDimmingLevel));
     request(DIMMER_ID, V_PERCENTAGE);
     wait(2000, C_SET, V_PERCENTAGE);
-
   #endif
 
   #ifdef RGB
-    send(msgIOD.setSensor(DIMMER_ID).set(false));
-    request(DIMMER_ID, V_STATUS);
-    wait(2000, C_SET, V_STATUS);
-
-    send(msgDIM.set(Dimmer.NewDimmingLevel));
-    request(DIMMER_ID, V_PERCENTAGE);
-    wait(2000, C_SET, V_PERCENTAGE);
-
-    send(msgDIM2.set("ffffff"));
+    send(msgRGB.setSensor(DIMMER_ID).set("ffffff"));
     request(DIMMER_ID, V_RGB);
     wait(2000, C_SET, V_RGB);
-
-  #endif
-
-  #ifdef RGBW
-    send(msgIOD.setSensor(DIMMER_ID).set(false));
-    request(DIMMER_ID, V_STATUS);
-    wait(2000, C_SET, V_STATUS);
-
-    send(msgDIM.set(Dimmer.NewDimmingLevel));
-    request(DIMMER_ID, V_PERCENTAGE);
-    wait(2000, C_SET, V_PERCENTAGE);
-
-    send(msgDIM3.set("ffffffff"));
+  #elif defined(RGBW)
+    send(msgRGBW.setSensor(DIMMER_ID).set("ffffffff"));
     request(DIMMER_ID, V_RGBW);
     wait(2000, C_SET, V_RGBW);
-
   #endif
 
   // DIGITAL INPUT
   #ifdef INPUT_1
-    send(msgIOD.setSensor(INPUT_ID_1).set(IOD[INPUT_ID_1].NewState));
+    send(msgSTATUS.setSensor(INPUT_ID_1).set(CommonIO[INPUT_ID_1].NewState));
   #endif
 
   #ifdef INPUT_2
-    send(msgIOD.setSensor(INPUT_ID_2).set(IOD[INPUT_ID_2].NewState));
+    send(msgSTATUS.setSensor(INPUT_ID_2).set(CommonIO[INPUT_ID_2].NewState));
   #endif
 
   #ifdef INPUT_3
-    send(msgIOD.setSensor(INPUT_ID_3).set(IOD[INPUT_ID_3].NewState));
+    send(msgSTATUS.setSensor(INPUT_ID_3).set(CommonIO[INPUT_ID_3].NewState));
   #endif
 
   #ifdef INPUT_4
-    send(msgIOD.setSensor(INPUT_ID_4).set(IOD[INPUT_ID_4].NewState));
+    send(msgSTATUS.setSensor(INPUT_ID_4).set(CommonIO[INPUT_ID_4].NewState));
   #endif
 
   #ifdef SPECIAL_BUTTON
-    send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(0));
+    send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(0));
   #endif
 
   // Built-in sensors
   #ifdef POWER_SENSOR
     #if !defined(FOUR_RELAY)
-      send(msgPS.set("0"));
+      send(msgWATT.setSensor(PS_ID).set("0"));
     #elif defined(FOUR_RELAY)
       for(int i=PS_ID_1; i<=PS_ID_4; i++)  {
-        send(msgPS.setSensor(i).set("0"));
+        send(msgWATT.setSensor(i).set("0"));
       }
     #endif
   #endif
 
   #ifdef INTERNAL_TEMP
-    send(msgIT.set((int)IT.MeasureT(ReadVcc())));
+    send(msgTEMP.setSensor(IT_ID).set((int)AnalogTemp.MeasureT(ReadVcc())));
   #endif
 
   // External sensors
@@ -500,13 +447,13 @@ void InitConfirmation() {
   // Error Reporting
   #ifdef ERROR_REPORTING
     #ifdef POWER_SENSOR
-      send(msgSI.setSensor(ES_ID).set(0));
+      send(msgSTATUS.setSensor(ES_ID).set(0));
     #endif
     #ifdef INTERNAL_TEMP
-      send(msgSI.setSensor(TS_ID).set(0));
+      send(msgSTATUS.setSensor(TS_ID).set(0));
     #endif
     #ifdef EXTERNAL_TEMP
-      send(msgSI.setSensor(ETS_ID).set(0));
+      send(msgSTATUS.setSensor(ETS_ID).set(0));
     #endif
   #endif
 
@@ -514,14 +461,17 @@ void InitConfirmation() {
     send(msgDEBUG.setSensor(DEBUG_ID).set("DEBUG MESSAGE"));
   #endif
 
-  InitConfirm = true;
+  send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set("CONFIG INIT"));
 
+  InitConfirm = true;
 }
 
 
-/*  *******************************************************************************************
-                                        MySensors Receive
- *  *******************************************************************************************/
+/**
+ * @brief Handles incoming messages
+ * 
+ * @param message incoming message data
+ */
 void receive(const MyMessage &message)  {
   
   if (message.type == V_STATUS) {
@@ -546,27 +496,16 @@ void receive(const MyMessage &message)  {
         // Ignore this message
       }
     #endif
-    /*#ifdef ROLLER_SHUTTER
-      if (message.sensor == RS_ID)  {
-        if (message.getBool() == true) {
-          IOD[RS_ID + 1].NewState = message.getBool();
-        }
-        else  {
-          IOD[RS_ID].NewState = message.getBool();
-        }
-      }
-    #endif*/
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
       if (message.sensor == DIMMER_ID) {
-        //Dimmer.NewState = message.getBool();
         Dimmer.ChangeState(message.getBool());
       }
     #endif
     #if defined(DOUBLE_RELAY)
-      if (message.sensor >= RELAY_ID_1 && message.sensor < NUMBER_OF_RELAYS)  {
+      if (message.sensor == RELAY_ID_1 || message.sensor == RELAY_ID_2)  {
         if (!OVERCURRENT_ERROR[0] && !THERMAL_ERROR) {
-          IOD[message.sensor].NewState = message.getBool();
-          IOD[message.sensor].SetRelay();
+          CommonIO[message.sensor].SetState(message.getBool());
+          CommonIO[message.sensor].SetRelay();
         }
       }
     #endif
@@ -575,8 +514,8 @@ void receive(const MyMessage &message)  {
         for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++) {
           if (message.sensor == i) {
             if (!OVERCURRENT_ERROR[i] && !THERMAL_ERROR) {
-              IOD[message.sensor].NewState = message.getBool();
-              IOD[message.sensor].SetRelay();
+              CommonIO[message.sensor].NewState = message.getBool();
+              CommonIO[message.sensor].SetRelay();
             }
           }
         }
@@ -585,13 +524,13 @@ void receive(const MyMessage &message)  {
   }
   else if (message.type == V_PERCENTAGE) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
+      if(message.sensor == SHUTTER_ID) {
         int NewPosition = atoi(message.data);
         NewPosition = NewPosition > 100 ? 100 : NewPosition;
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
-        RS.NewState = 2;
-        RSUpdate();
-        MovementTime = RS.ReadNewPosition(NewPosition);
+        Shutter.NewState = 2;
+        ShutterUpdate();
+        MovementTime = Shutter.ReadNewPosition(NewPosition) * 10;
       }
     #endif
     #if defined(DIMMER) || defined(RGB) || defined(RGBW)
@@ -613,30 +552,55 @@ void receive(const MyMessage &message)  {
   }
   else if(message.type == V_UP) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
-        MovementTime = RS.ReadMessage(0);
+      if(message.sensor == SHUTTER_ID) {
+        MovementTime = Shutter.ReadMessage(0) * 1000;
       }
     #endif
   }
   else if(message.type == V_DOWN) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
-        MovementTime = RS.ReadMessage(1);
+      if(message.sensor == SHUTTER_ID) {
+        MovementTime = Shutter.ReadMessage(1) * 1000;
       }
     #endif
   }
   else if(message.type == V_STOP) {
     #ifdef ROLLER_SHUTTER
-      if(message.sensor == RS_ID) {
-        MovementTime = RS.ReadMessage(2);
+      if(message.sensor == SHUTTER_ID) {
+        MovementTime = Shutter.ReadMessage(2);
       }
     #endif
   }
+  else if(message.type == V_TEXT) {
+    // Configuration by message
+    if(message.sensor == CONFIGURATION_SENSOR_ID)  {
+      
+      // Initialize strings and pointers
+      char ReceivedPayload[10];
+      char *RPaddr = ReceivedPayload;
+      String RPstr = String(message.getString());
+
+      // Turn String payload to char array and send back to the controller
+      RPstr.toCharArray(ReceivedPayload, 10);
+      send(msgTEXT.setSensor(CONFIGURATION_SENSOR_ID).set(RPaddr));
+
+      if(RPstr.equals(CONF_MSG_1)) {
+        #ifdef ROLLER_SHUTTER
+          // Roller shutter: calibration
+          float Vcc = ReadVcc();
+          ShutterCalibration(Vcc);
+        #endif
+      }
+      /*else if(message.getString() == CONF_MSG_2) { }*/
+      /*else if(message.getString() == CONF_MSG_3) { }*/
+    }
+  }
 }
 
-/*  *******************************************************************************************
-                                      External Thermometer
- *  *******************************************************************************************/
+/**
+ * @brief Reads temperature & humidity from an optional, external thermometer 
+ * 
+ */
 void ETUpdate()  {
 
   #ifdef EXTERNAL_TEMP
@@ -644,74 +608,75 @@ void ETUpdate()  {
       int chk = DHT.read22(ET_PIN);
       switch (chk)  {
         case DHTLIB_OK:
-          send(msgETT.setDestination(0).set(DHT.temperature, 1));
-          send(msgETH.set(DHT.humidity, 1));
+          send(msgTEMP.setSensor(ETT_ID).setDestination(0).set(DHT.temperature, 1));
+          send(msgHUM.setSensor(ETH_ID).set(DHT.humidity, 1));
           #ifdef HEATING_SECTION_SENSOR
-            send(msgETT.setDestination(MY_HEATING_CONTROLLER).set(DHT.temperature, 1));
+            send(msgTEMP.setSensor(ETT_ID).setDestination(MY_HEATING_CONTROLLER).set(DHT.temperature, 1));
           #endif
           #ifdef ERROR_REPORTING
             if (ET_ERROR != 0) {
               ET_ERROR = 0;
-              send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+              send(msgSTATUS.setSensor(ETS_ID).set(ET_ERROR));
             }
           #endif
         break;
         case DHTLIB_ERROR_CHECKSUM:
           #ifdef ERROR_REPORTING
             ET_ERROR = 1;
-            send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+            send(msgSTATUS.setSensor(ETS_ID).set(ET_ERROR));
           #endif
         break;
         case DHTLIB_ERROR_TIMEOUT:
           #ifdef ERROR_REPORTING
             ET_ERROR = 2;
-            send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+            send(msgSTATUS.setSensor(ETS_ID).set(ET_ERROR));
           #endif
         break;
         default:
           #ifdef ERROR_REPORTING
             ET_ERROR = 3;
-            send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+            send(msgSTATUS.setSensor(ETS_ID).set(ET_ERROR));
           #endif
         break;
       }
     #elif defined(SHT30)
       if(sht.readSample())  {
-        send(msgETT.setDestination(0).set(sht.getTemperature(), 1));
-        send(msgETH.set(sht.getHumidity(), 1));
+        send(msgTEMP.setSensor(ETT_ID).setDestination(0).set(sht.getTemperature(), 1));
+        send(msgHUM.setSensor(ETH_ID).set(sht.getHumidity(), 1));
         #ifdef HEATING_SECTION_SENSOR
-          send(msgETT.setDestination(MY_HEATING_CONTROLLER).set(sht.getTemperature(), 1));
+          send(msgTEMP.setSensor(ETT_ID).setDestination(MY_HEATING_CONTROLLER).set(sht.getTemperature(), 1));
         #endif
       }
       else  {
         #ifdef ERROR_REPORTING
           ET_ERROR = 1;
-          send(msgSI.setSensor(ETS_ID).set(ET_ERROR));
+          send(msgSTATUS.setSensor(ETS_ID).set(ET_ERROR));
         #endif
       }
     #endif
   #endif
 }
 
-/*  *******************************************************************************************
-                                        Universal Input
- *  *******************************************************************************************/
-void IODUpdate() {
+/**
+ * @brief Updates CommonIO class objects; reads inputs & set outputs
+ * 
+ */
+void UpdateIO() {
 
   int FirstSensor = 0;
   int Iterations = NUMBER_OF_RELAYS+NUMBER_OF_INPUTS;
 
   if (Iterations > 0)  {
     for (int i = FirstSensor; i < FirstSensor + Iterations; i++)  {
-      IOD[i].CheckInput();
-      if (IOD[i].NewState != IOD[i].OldState)  {
-        switch(IOD[i].SensorType)  {
+      CommonIO[i].CheckInput(LONGPRESS_DURATION, DEBOUNCE_VALUE);
+      if (CommonIO[i].NewState != CommonIO[i].State)  {
+        switch(CommonIO[i].SensorType)  {
           case 0:
             // Door/window/button
           case 1:
             // Motion sensor
-            send(msgIOD.setSensor(i).set(IOD[i].NewState));
-            IOD[i].OldState = IOD[i].NewState;
+            send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
+            CommonIO[i].State = CommonIO[i].NewState;
             break;
           case 2:
             // Relay output
@@ -721,56 +686,56 @@ void IODUpdate() {
             // Button input
             #ifdef DIMMER_ID
               if(i == 0)  {
-                if(IOD[i].NewState != 2) {
+                if(CommonIO[i].NewState != 2) {
                   // Change dimmer state
                   Dimmer.ChangeState(!Dimmer.CurrentState);
-                  send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
-                  IOD[i].OldState = IOD[i].NewState;
+                  send(msgSTATUS.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
+                  CommonIO[i].State = CommonIO[i].NewState;
                 }
                 #ifdef SPECIAL_BUTTON
-                  if(IOD[i].NewState == 2) {
-                    send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
-                    IOD[i].NewState = IOD[i].OldState;
+                  if(CommonIO[i].NewState == 2) {
+                    send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
+                    CommonIO[i].NewState = CommonIO[i].State;
                   }
                 #endif  
               }
               else if(i == 1) {
-                if(IOD[i].NewState != 2)  {
+                if(CommonIO[i].NewState != 2)  {
                   if(Dimmer.CurrentState) {
                     // Toggle dimming level by DIMMING_TOGGLE_STEP
                     Dimmer.NewDimmingLevel += DIMMING_TOGGLE_STEP;
                     Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel > 100 ? DIMMING_TOGGLE_STEP : Dimmer.NewDimmingLevel;
-                    send(msgDIM.set(Dimmer.NewDimmingLevel));
+                    send(msgPERCENTAGE.setSensor(DIMMER_ID).set(Dimmer.NewDimmingLevel));
                   }
-                  IOD[i].NewState = IOD[i].OldState;
+                  CommonIO[i].NewState = CommonIO[i].State;
                 }
               }
             #endif
             #ifdef ROLLER_SHUTTER
-              if(IOD[i].NewState != 2)  {
-                MovementTime = RS.ReadButtons(i);
-                IOD[i].OldState = IOD[i].NewState;
+              if(CommonIO[i].NewState != 2)  {
+                MovementTime = Shutter.ReadButtons(i) * 1000;
+                CommonIO[i].State = CommonIO[i].NewState;
               }
               else  {
                 #ifdef SPECIAL_BUTTON
-                  send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
-                  IOD[i].NewState = IOD[i].OldState;
+                  send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
+                  CommonIO[i].NewState = CommonIO[i].State;
                 #endif
               }
             #endif
             break;
           case 4:
           // Button input + Relay output
-          if (IOD[i].NewState != 2)  {
+          if (CommonIO[i].NewState != 2)  {
             if (!OVERCURRENT_ERROR[0] && !THERMAL_ERROR)  {
-              IOD[i].SetRelay();
-              send(msgIOD.setSensor(i).set(IOD[i].NewState));
+              CommonIO[i].SetRelay();
+              send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
             }
           }
           #ifdef SPECIAL_BUTTON
-            else if (IOD[i].NewState == 2)  {
-              send(msgIOD.setSensor(SPECIAL_BUTTON_ID).set(true));
-              IOD[i].NewState = IOD[i].OldState;
+            else if (CommonIO[i].NewState == 2)  {
+              send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
+              CommonIO[i].NewState = CommonIO[i].State;
             }
           #endif
           break;
@@ -783,40 +748,42 @@ void IODUpdate() {
   }
 }
 
-/*  *******************************************************************************************
-                                    Roller Shutter Calibration
- *  *******************************************************************************************/
-void RSCalibration(float Vcc)  {
+/**
+ * @brief Measures shutter movement duration; calls class Calibration() function to save measured durations
+ * 
+ * @param Vcc current uC voltage
+ */
+void ShutterCalibration(float Vcc)  {
 
-  #if defined(ROLLER_SHUTTER) && defined(RS_AUTO_CALIBRATION)
+  #ifdef ROLLER_SHUTTER
 
   float Current = 0;
-  uint16_t DownTimeCumulated = 0;
-  uint16_t UpTimeCumulated = 0;
+  uint32_t DownTimeCumulated = 0;
+  uint32_t UpTimeCumulated = 0;
   uint32_t StartTime = 0;
   uint32_t StopTime = 0;
   uint32_t MeasuredTime = 0;
 
   // Opening the shutter  
-  RS.NewState = 0;
-  RS.Movement();
+  Shutter.NewState = 0;
+  Shutter.Movement();
 
   do  {
-    delay(250);
+    delay(500);
     wdt_reset();
     Current = PS.MeasureAC(Vcc);
   } while(Current > PS_OFFSET);
 
-  RS.NewState = 2;
-  RS.Movement();
+  Shutter.NewState = 2;
+  Shutter.Movement();
 
   delay(1000);
 
   // Calibrating
   for(int i=0; i<CALIBRATION_SAMPLES; i++) {
     for(int j=1; j>=0; j--)  {
-      RS.NewState = j;
-      RS.Movement();
+      Shutter.NewState = j;
+      Shutter.Movement();
       StartTime = millis();
 
       do  {
@@ -826,8 +793,8 @@ void RSCalibration(float Vcc)  {
         wdt_reset();
       } while(Current > PS_OFFSET);
 
-      RS.NewState = 2;
-      RS.Movement();
+      Shutter.NewState = 2;
+      Shutter.Movement();
 
       MeasuredTime = StopTime - StartTime;
 
@@ -842,61 +809,89 @@ void RSCalibration(float Vcc)  {
     }
   }
 
-  RS.Position = 0;
+  Shutter.Position = 0;
 
   uint8_t DownTime = (int)(DownTimeCumulated / CALIBRATION_SAMPLES);
   uint8_t UpTime = (int)(UpTimeCumulated / CALIBRATION_SAMPLES);
 
-  RS.Calibration(UpTime, DownTime);
+  Shutter.Calibration(UpTime+1, DownTime+1);
+
+  EEPROM.put(EEA_RS_TIME_DOWN, DownTime);
+  EEPROM.put(EEA_RS_TIME_UP, UpTime);
+  EEPROM.put(EEA_RS_POSITION, Shutter.Position);
+
+  // Inform Controller about the current state of roller shutter
+  send(msgSTOP);
+  send(msgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
+  #ifdef RS485_DEBUG
+    send(msgDEBUG.set("DownTime ; UpTime"));
+    send(msgCUSTOM.set(DownTime)); send(msgCUSTOM.set(UpTime));
+  #endif
 
   #endif
     
 }
 
-/*  *******************************************************************************************
-                                        Roller Shutter
- *  *******************************************************************************************/
-void RSUpdate() {
+/**
+ * @brief Updates shutter condition, informs controller about shutter condition and position
+ * 
+ */
+void ShutterUpdate() {
 
   #ifdef ROLLER_SHUTTER
 
   uint32_t StopTime = 0;
   uint32_t MeasuredTime;
+  uint8_t TempState = 2;
   bool Direction;
 
-  if(RS.State != RS.NewState) {
-    if(RS.NewState != 2)  {
-      RS.Movement();
-      StartTime = millis();
-      if(RS.NewState == 0)  {
-        send(msgRS1);
+  if(Shutter.State != Shutter.NewState) {
+    if(Shutter.NewState != 2)  {
+      #ifdef RS485_DEBUG
+        send(msgDEBUG.set("MovementTime"));
+        send(msgCUSTOM.set(MovementTime));
+      #endif
+      if(Shutter.State == 2)  {
+        Shutter.Movement();
+        StartTime = millis();
+        Shutter.NewState == 0 ? send(msgUP) : send(msgDOWN);
+        /*if(Shutter.NewState == 0)  {
+          send(msgUP);
+        }
+        else if(Shutter.NewState == 1) {
+          send(msgDOWN);
+        }*/
       }
-      else if(RS.NewState == 1) {
-        send(msgRS2);
+      else  {
+        TempState = Shutter.NewState;
+        Shutter.NewState = 2;
+        Shutter.Movement();
+
+        StopTime = millis();
       }
     }
     else  {
-      Direction = RS.State;
-      RS.Movement();
+      Direction = Shutter.State;
+      Shutter.Movement();
       StopTime = millis();
-      send(msgRS3);
+      send(msgSTOP);
     }
   }
 
-  if(RS.State != 2) {
+  if(Shutter.State != 2) {
     if(millis() >= StartTime + MovementTime) {
-      Direction = RS.State;
-      RS.NewState = 2;
-      RS.Movement();
+      Direction = Shutter.State;
+      Shutter.NewState = 2;
+      Shutter.Movement();
       StopTime = millis();
-      send(msgRS3);
+      send(msgSTOP);
     }
     if(millis() < StartTime)  {
       uint32_t Temp = 4294967295 - StartTime + millis();
       wait(MovementTime - Temp);
-      RS.NewState = 2;
-      RS.Movement();
-      send(msgRS3);
+      Shutter.NewState = 2;
+      Shutter.Movement();
+      send(msgSTOP);
       StartTime = 0;
       StopTime = MovementTime;
     }
@@ -904,32 +899,53 @@ void RSUpdate() {
 
   if(StopTime > 0)  {
     MeasuredTime = StopTime - StartTime;
-    RS.CalculatePosition(Direction, MeasuredTime);
+    Shutter.CalculatePosition(Direction, MeasuredTime);
+    EEPROM.put(EEA_RS_POSITION, Shutter.Position);
   
-    send(msgRS4.set(RS.Position));
+    send(msgPERCENTAGE.setSensor(SHUTTER_ID).set(Shutter.Position));
+
+    if(TempState != 2)  {
+      wait(500);
+      Shutter.NewState = TempState;
+      Shutter.Movement();
+      StartTime = millis();
+
+      Shutter.NewState == 0 ? send(msgUP) : send(msgDOWN);
+      /*if(Shutter.NewState == 0)  {
+        send(msgUP);
+      }
+      else if(Shutter.NewState == 1) {
+        send(msgDOWN);
+      }*/
+    }
   }
 
   #endif
 }
 
-/*  *******************************************************************************************
-                                        Power Sensor
- *  *******************************************************************************************/
+/**
+ * @brief Informs controller about power sensor readings
+ * 
+ * @param Current current measured by sensor 
+ * @param Sensor sensor ID if more than one sensor is attached
+ */
 void PSUpdate(float Current, uint8_t Sensor = 0)  {
   
   #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
-    send(msgPS.set(PS.CalculatePower(Current, COSFI), 0));
+    send(msgWATT.setSensor(PS_ID).set(PS.CalculatePower(Current, COSFI), 0));
     PS.OldValue = Current;
   #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
-    send(msgPS.setSensor(Sensor+4).set(PS[Sensor].CalculatePower(Current, COSFI), 0));
+    send(msgWATT.setSensor(Sensor+4).set(PS[Sensor].CalculatePower(Current, COSFI), 0));
     PS[Sensor].OldValue = Current;
   #endif
 
 }
 
-/*  *******************************************************************************************
- *                                    Read Vcc
- *  *******************************************************************************************/
+/**
+ * @brief Measures uC supply voltage
+ * 
+ * @return long measured voltage in mV
+ */
 long ReadVcc() {
   
   long result;
@@ -951,9 +967,10 @@ long ReadVcc() {
   return result;
 }
 
-/*  *******************************************************************************************
-                                        Main Loop
- *  *******************************************************************************************/
+/**
+ * @brief main loop: calls all 'Update' functions, runs all measurements, checks if safety parameters are within limits
+ * 
+ */
 void loop() {
 
   float Vcc = ReadVcc(); // mV
@@ -966,12 +983,12 @@ void loop() {
 
   // Reading inputs / activating outputs
   if (NUMBER_OF_RELAYS + NUMBER_OF_INPUTS > 0) {
-    IODUpdate();
+    UpdateIO();
   }
 
   // Updating roller shutter
   #ifdef ROLLER_SHUTTER
-    RSUpdate();
+    ShutterUpdate();
   #endif
 
   #if defined(DIMMER) || defined(RGB) || defined(RGBW)
@@ -1009,7 +1026,7 @@ void loop() {
     }
   #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
     for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++) {
-      if (IOD[i].OldState == RELAY_ON)  {
+      if (CommonIO[i].State == RELAY_ON)  {
         Current = PS[i].MeasureAC(Vcc);
       }
       else  {
@@ -1040,15 +1057,15 @@ void loop() {
       for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
         if (OVERCURRENT_ERROR[i]) {
           // Current to high
-          IOD[i].NewState = RELAY_OFF;
-          IOD[i].SetRelay();
-          send(msgIOD.setSensor(i).set(IOD[i].NewState));
-          send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
+          CommonIO[i].NewState = RELAY_OFF;
+          CommonIO[i].SetRelay();
+          send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
+          send(msgSTATUS.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
           InformControllerES = true;
         }
         else if(!OVERCURRENT_ERROR[i] && InformControllerES) {
           // Current normal (only after reporting error)
-          send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
+          send(msgSTATUS.setSensor(ES_ID).set(OVERCURRENT_ERROR[i]));
           InformControllerES = false;
         }
       }
@@ -1057,25 +1074,25 @@ void loop() {
         // Current to high
         #ifdef DOUBLE_RELAY
           for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
-            IOD[i].NewState = RELAY_OFF;
-            IOD[i].SetRelay();
-            send(msgIOD.setSensor(i).set(IOD[i].NewState));
+            CommonIO[i].NewState = RELAY_OFF;
+            CommonIO[i].SetRelay();
+            send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
           }
         #elif defined(ROLLER_SHUTTER)
-          RS.NewState = 2;
-          RSUpdate();
+          Shutter.NewState = 2;
+          ShutterUpdate();
         #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
           //Dimmer.NewState = false;
           Dimmer.ChangeState(false);
-          send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
+          send(msgSTATUS.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
         #endif
 
-        send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
+        send(msgSTATUS.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
         InformControllerES = true;
       }
       else if(!OVERCURRENT_ERROR[0] && InformControllerES)  {
         // Current normal (only after reporting error)
-        send(msgSI.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
+        send(msgSTATUS.setSensor(ES_ID).set(OVERCURRENT_ERROR[0]));
         InformControllerES = false;
       }
     #endif
@@ -1083,7 +1100,7 @@ void loop() {
 
   // Reading internal temperature sensor
   #if defined(ERROR_REPORTING) && defined(INTERNAL_TEMP)
-    THERMAL_ERROR = IT.ThermalStatus(IT.MeasureT(Vcc));
+    THERMAL_ERROR = AnalogTemp.ThermalStatus(AnalogTemp.MeasureT(Vcc));
   #endif
 
   // Thermal safety
@@ -1092,24 +1109,24 @@ void loop() {
     // Board temperature to high
       #ifdef DOUBLE_RELAY
         for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++)  {
-          IOD[i].NewState = RELAY_OFF;
-          IOD[i].SetRelay();
-          send(msgIOD.setSensor(i).set(IOD[i].NewState));
+          CommonIO[i].NewState = RELAY_OFF;
+          CommonIO[i].SetRelay();
+          send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
         }
       #elif defined(ROLLER_SHUTTER)
-        RS.NewState = 2;
-        RSUpdate();
+        Shutter.NewState = 2;
+        ShutterUpdate();
       #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
         //Dimmer.NewState = false;
         Dimmer.ChangeState(false);
-        send(msgIOD.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
+        send(msgSTATUS.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
       #endif
-      send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
+      send(msgSTATUS.setSensor(TS_ID).set(THERMAL_ERROR));
       InformControllerTS = true;
       CheckNow = true;
     }
     else if (!THERMAL_ERROR && InformControllerTS) {
-      send(msgSI.setSensor(TS_ID).set(THERMAL_ERROR));
+      send(msgSTATUS.setSensor(TS_ID).set(THERMAL_ERROR));
       InformControllerTS = false;
     }
   #endif
@@ -1122,7 +1139,7 @@ void loop() {
   // Checking out sensors which report at a defined interval
   if ((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {
     #ifdef INTERNAL_TEMP
-      send(msgIT.set((int)IT.MeasureT(Vcc)));
+      send(msgTEMP.setSensor(IT_ID).set((int)AnalogTemp.MeasureT(Vcc)));
     #endif
     #ifdef EXTERNAL_TEMP
       ETUpdate();
