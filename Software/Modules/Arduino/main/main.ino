@@ -23,9 +23,6 @@
 /***** INCLUDES *****/
 #include "Configuration.h"
 #include <GoWired.h>
-#include <MySensors.h>
-#include <Wire.h>
-#include <avr/wdt.h>
 #ifdef SHT30
   #include <SHTSensor.h>
 #elif defined(DHT22)

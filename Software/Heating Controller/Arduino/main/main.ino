@@ -23,11 +23,8 @@
 /***** INCLUDES *****/
 #include "Configuration.h"
 #include <GoWired2.h>
-#include <MySensors.h>
-#include <Wire.h>
 #include <PCF8575.h>
 #include "SHTSensor.h"
-#include <avr/wdt.h>
 
 /***** Globals *****/
 // Timer
