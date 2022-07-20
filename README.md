@@ -13,13 +13,3 @@ This is a repository for **GoWired**, RS485 & MySensors based, open source home 
 
 ## Wiki
 To learn more, have a look at our [wiki](https://github.com/feanor-anglin/GetWired-Project/wiki).
-
-## 2022-04 Changelog
-- Reorganize folders, add descriptions
-- Change the way software handles IOs
-- Add software for 8RelayDin Shield
-- Relocate Multiprotocol Gateway to separate [repository](https://github.com/GoWired/Multiprotocol-Gateway)
-- Improvements to dimmer operation (new function for simultaneous change of brightness and colours)
-
-##
-The code in master branch should always be tested & working. Dev branch may not be tested, use on your own responsibility.
