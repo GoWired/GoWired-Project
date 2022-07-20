@@ -23,9 +23,6 @@
 /***** INCLUDES *****/
 #include "Configuration.h"
 #include <GoWired2.h>
-#include <MySensors.h>
-#include <avr/wdt.h>
-
 
 /***** Globals *****/
 bool InitConfirm = false;                           // Additional presentation status required by Home Assistant

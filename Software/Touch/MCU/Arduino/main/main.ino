@@ -22,9 +22,6 @@
 /***** INCLUDES *****/
 #include "Configuration.h"
 #include <GoWired.h>
-#include <MySensors.h>
-#include <Wire.h>
-#include <avr/wdt.h>
 #include <LP50XX.h>
 #ifdef SHT30
   #include <SHTSensor.h>
