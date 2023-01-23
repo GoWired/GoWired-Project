@@ -14,7 +14,7 @@
 // Identification
 #define MY_NODE_ID AUTO
 #define SN "GW-HC"
-#define SV "1.4"
+#define SV "2.0"
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer

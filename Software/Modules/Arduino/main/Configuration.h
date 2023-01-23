@@ -12,7 +12,7 @@
 // Identification
 #define MY_NODE_ID AUTO                       // Set node ID
 #define SN "GoWired Module"                   // Set node name to present to a controller
-#define SV "1.4"                            // Set sensor version
+#define SV "2.0"                            // Set sensor version
 
 // Selecting transmission settings
 #define MY_RS485                              // Enable RS485 transport layer
