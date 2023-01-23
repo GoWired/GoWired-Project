@@ -250,10 +250,10 @@
 // ACS712 Power Sensor
 #ifdef POWER_SENSOR
   #if defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
-    #define PS_ID 9
+    #define PS_ID SPECIAL_BUTTON_ID+2
     #define PS_PIN INPUT_PIN_7
   #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-    #define PS_ID 9
+    #define PS_ID SPECIAL_BUTTON_ID+2
     #define PS_PIN INPUT_PIN_8
   #elif defined(FOUR_RELAY)
     #define PS_ID_1 4
@@ -269,7 +269,7 @@
 
 // Analog Internal Thermometer (Disable for 4RelayDin)
 #ifdef INTERNAL_TEMP
-  #define IT_ID 10
+  #define IT_ID 11
   #if defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
     #define IT_PIN INPUT_PIN_8
   #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
@@ -279,8 +279,8 @@
 
 // 1wire external thermometer (e.g. DHT22)
 #ifdef EXTERNAL_TEMP
-  #define ETT_ID 11
-  #define ETH_ID 12
+  #define ETT_ID IT_ID+1
+  #define ETH_ID ETT_ID+1
   #ifdef DHT22
     #define ET_PIN ONE_WIRE_PIN
   #endif
@@ -292,19 +292,19 @@
 #define ERROR_REPORTING
 #ifdef ERROR_REPORTING
   #ifdef POWER_SENSOR
-    #define ES_ID 13
+    #define ES_ID 15
   #endif
   #ifdef INTERNAL_TEMP
-    #define TS_ID 14
+    #define TS_ID ES_ID+1
   #endif
   #ifdef EXTERNAL_TEMP
-    #define ETS_ID 15
+    #define ETS_ID TS_ID+1
   #endif
 #endif
 
 //#define RS485_DEBUG
 #ifdef RS485_DEBUG
-  #define DEBUG_ID 16
+  #define DEBUG_ID ETS_ID+1
 #endif
 
 /***** Configuration by message *****/

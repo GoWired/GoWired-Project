@@ -278,7 +278,8 @@ void presentation() {
   #endif
 
   #ifdef SPECIAL_BUTTON
-    present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button"); wait(PRESENTATION_DELAY);
+    present(SPECIAL_BUTTON_ID, S_BINARY, "Longpress-1"); wait(PRESENTATION_DELAY);
+    present(SPECIAL_BUTTON_ID+1, S_BINARY, "Longpress-2"); wait(PRESENTATION_DELAY);
   #endif
 
   // POWER SENSOR
@@ -419,6 +420,7 @@ void InitConfirmation() {
 
   #ifdef SPECIAL_BUTTON
     send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(0));
+    send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID+1).set(0));
   #endif
 
   // Built-in sensors
@@ -489,7 +491,7 @@ void receive(const MyMessage &message)  {
       }
     #endif
     #ifdef SPECIAL_BUTTON
-      if (message.sensor == SPECIAL_BUTTON_ID)  {
+      if (message.sensor == SPECIAL_BUTTON_ID || message.sensor == SPECIAL_BUTTON_ID+1)  {
         // Ignore this message
       }
     #endif
@@ -731,7 +733,8 @@ void UpdateIO() {
           }
           #ifdef SPECIAL_BUTTON
             else if (CommonIO[i].NewState == 2)  {
-              send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
+              uint8_t SensorID = i == 0 ? SPECIAL_BUTTON_ID : SPECIAL_BUTTON_ID+1;
+              send(msgSTATUS.setSensor(SensorID).set(true));
               CommonIO[i].NewState = CommonIO[i].State;
             }
           #endif

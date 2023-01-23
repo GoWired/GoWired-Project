@@ -288,7 +288,8 @@ void presentation() {
   }
 
   #ifdef SPECIAL_BUTTON
-    present(SPECIAL_BUTTON_ID, S_BINARY, "Special Button"); wait(PRESENTATION_DELAY);
+    present(SPECIAL_BUTTON_ID, S_BINARY, "Longpress-1"); wait(PRESENTATION_DELAY);
+    present(SPECIAL_BUTTON_ID+1, S_BINARY, "Longpress-2"); wait(PRESENTATION_DELAY);
   #endif
 
   // POWER SENSOR
@@ -393,6 +394,7 @@ void InitConfirmation() {
 
   #ifdef SPECIAL_BUTTON
     send(MsgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(0));
+    send(MsgSTATUS.setSensor(SPECIAL_BUTTON_ID+1).set(0));
   #endif
 
   // Built-in sensors
@@ -615,7 +617,7 @@ void receive(const MyMessage &message)  {
   // Binary messages
   if (message.type == V_STATUS) {
     #ifdef SPECIAL_BUTTON
-      if (message.sensor == SPECIAL_BUTTON_ID)  {
+      if (message.sensor == SPECIAL_BUTTON_ID || message.sensor == SPECIAL_BUTTON_ID+1)  {
         // Ignore this message
       }
     #endif
@@ -789,40 +791,14 @@ void UpdateIO() {
     }
     // Longpress
     else  {
+      LongpressDetection++;
+      
       #ifdef SPECIAL_BUTTON
-        LongpressDetection++;
-        AdjustLEDs(CommonIO[i].NewState, 0);
-        CommonIO[i].NewState = CommonIO[i].State;
-
-        if(HardwareVariant == 0)  {
-          if(LoadVariant != 2)  {
-            AdjustLEDs(CommonIO[i].State, i);
-            if(LoadVariant != 0)  {
-              int j = i == 0 ? 1 : 0;
-              AdjustLEDs(CommonIO[j].State, j);
-            }
-          }
-          else {
-            if(Shutter.State == 2) {
-              AdjustLEDs(0, 0); AdjustLEDs(0, 1);
-            }
-            else if(Shutter.State == 1)  {
-              AdjustLEDs(0, 0); AdjustLEDs(1, 1);
-            }
-            else if(Shutter.State == 0)  {
-              AdjustLEDs(1, 0); AdjustLEDs(0, 1);
-            }
-          }
-        }
-        else if(HardwareVariant == 1) {
-          if(Dimmer.CurrentState) {
-            AdjustLEDs(1, 0); AdjustLEDs(0, 1);
-          }
-          else  {
-            AdjustLEDs(0, 0); AdjustLEDs(0, 1);
-          }
-        }
+        uint8_t SensorID = i == 0 ? SPECIAL_BUTTON_ID : SPECIAL_BUTTON_ID+1;
+        send(MsgSTATUS.setSensor(SensorID).set(true));
       #endif
+
+      CommonIO[i].NewState = CommonIO[i].State;
     }
     #ifdef RS485_DEBUG
       send(MsgCUSTOM.setSensor(TOUCH_DIAGNOSTIC_ID).set(IO[i].DebugValue));
@@ -1063,15 +1039,13 @@ void loop() {
 
   // Reading inputs & adjusting outputs
   if(Iterations > 0)  {
-    for(int i=0; i<Iterations; i++) {
-      CommonIO[i].CheckInput2(TOUCH_THRESHOLD, LONGPRESS_DURATION, DEBOUNCE_VALUE);
-    }
     UpdateIO();
     if(LongpressDetection > 0)  {
+      
+      // Launch Longpress LED sequence
+      AdjustLEDs(2, 0);
+
       for(int j=0; j<2; j++)  {
-        for(int i=0; i<Iterations; i++) {
-          CommonIO[i].CheckInput2(TOUCH_THRESHOLD, LONGPRESS_DURATION, DEBOUNCE_VALUE);
-        }
         UpdateIO();
       }
       if(LongpressDetection > 2)  {
@@ -1080,11 +1054,33 @@ void loop() {
           ReadNewReference();
         #endif
       }
-      else  {
-        // Send longpress message
-        #ifdef SPECIAL_BUTTON
-        send(MsgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
-        #endif
+
+      // Adjust LEDs back to indicate the states of buttons
+      if(HardwareVariant == 0)  {
+        if(LoadVariant != 2)  {
+          for(int i=0; i<Iterations; i++) {
+            AdjustLEDs(CommonIO[i].State, i);
+          }
+        }
+        else {
+          if(Shutter.State == 2) {
+            AdjustLEDs(0, 0); AdjustLEDs(0, 1);
+          }
+          else if(Shutter.State == 1)  {
+            AdjustLEDs(0, 0); AdjustLEDs(1, 1);
+          }
+          else if(Shutter.State == 0)  {
+            AdjustLEDs(1, 0); AdjustLEDs(0, 1);
+          }
+        }
+      }
+      else if(HardwareVariant == 1) {
+        if(Dimmer.CurrentState) {
+          AdjustLEDs(1, 0); AdjustLEDs(0, 1);
+        }
+        else  {
+          AdjustLEDs(0, 0); AdjustLEDs(0, 1);
+        }
       }
       LongpressDetection = 0;
     }

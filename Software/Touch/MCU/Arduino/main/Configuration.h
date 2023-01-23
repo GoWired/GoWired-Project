@@ -166,7 +166,7 @@
 
 // ACS712 Power Sensor
 #ifdef POWER_SENSOR
-  #define PS_ID SPECIAL_BUTTON_ID+1
+  #define PS_ID SPECIAL_BUTTON_ID+2
   #define PS_PIN ANALOG_PIN_4
 #endif
 
