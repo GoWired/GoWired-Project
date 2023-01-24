@@ -528,7 +528,7 @@ void receive(const MyMessage &message)  {
         NewPosition = NewPosition > 100 ? 100 : NewPosition;
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
         Shutter.NewState = 2;
-        ShutterUpdate();
+        ShutterUpdate(0);
         MovementTime = Shutter.ReadNewPosition(NewPosition) * 10;
       }
     #endif
@@ -838,7 +838,7 @@ void ShutterCalibration(float Vcc)  {
  * @brief Updates shutter condition, informs controller about shutter condition and position
  * 
  */
-void ShutterUpdate() {
+void ShutterUpdate(float Current) {
 
   #ifdef ROLLER_SHUTTER
 
@@ -857,12 +857,6 @@ void ShutterUpdate() {
         Shutter.Movement();
         StartTime = millis();
         Shutter.NewState == 0 ? send(msgUP) : send(msgDOWN);
-        /*if(Shutter.NewState == 0)  {
-          send(msgUP);
-        }
-        else if(Shutter.NewState == 1) {
-          send(msgDOWN);
-        }*/
       }
       else  {
         TempState = Shutter.NewState;
@@ -888,7 +882,7 @@ void ShutterUpdate() {
       StopTime = millis();
       send(msgSTOP);
     }
-    if(millis() < StartTime)  {
+    else if(millis() < StartTime)  {
       uint32_t Temp = 4294967295 - StartTime + millis();
       wait(MovementTime - Temp);
       Shutter.NewState = 2;
@@ -896,6 +890,15 @@ void ShutterUpdate() {
       send(msgSTOP);
       StartTime = 0;
       StopTime = MovementTime;
+    }
+    else if(Current < PS_OFFSET)  {
+      Direction = Shutter.State;
+      Shutter.NewState = 2;
+      Shutter.Movement();
+      StopTime = 4294967295;
+      AdjustLEDs(0, 0);
+      AdjustLEDs(0, 1);
+      send(MsgSTOP.setSensor(SHUTTER_ID));
     }
   }
 
@@ -994,7 +997,7 @@ void loop() {
 
   // Updating roller shutter
   #ifdef ROLLER_SHUTTER
-    ShutterUpdate();
+    ShutterUpdate(Current);
   #endif
 
   #if defined(DIMMER) || defined(RGB) || defined(RGBW)
@@ -1064,7 +1067,7 @@ void loop() {
           }
         #elif defined(ROLLER_SHUTTER)
           Shutter.NewState = 2;
-          ShutterUpdate();
+          ShutterUpdate(0);
         #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
           //Dimmer.NewState = false;
           Dimmer.ChangeState(false);
@@ -1099,7 +1102,7 @@ void loop() {
         }
       #elif defined(ROLLER_SHUTTER)
         Shutter.NewState = 2;
-        ShutterUpdate();
+        ShutterUpdate(0);
       #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
         //Dimmer.NewState = false;
         Dimmer.ChangeState(false);

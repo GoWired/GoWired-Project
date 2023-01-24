@@ -652,7 +652,7 @@ void receive(const MyMessage &message)  {
         NewPosition = NewPosition > 100 ? 100 : NewPosition;
         NewPosition = NewPosition < 0 ? 0 : NewPosition;
         Shutter.NewState = 2;
-        ShutterUpdate();
+        ShutterUpdate(0);
         MovementTime = Shutter.ReadNewPosition(NewPosition) * 10;
       }
     }
@@ -897,7 +897,7 @@ void ShutterCalibration(float Vcc)  {
  * @brief Updates shutter condition, informs controller about shutter condition and position
  * 
  */
-void ShutterUpdate() {
+void ShutterUpdate(float Current) {
 
   uint32_t StopTime = 0;
   uint32_t MeasuredTime;
@@ -909,14 +909,8 @@ void ShutterUpdate() {
       if(Shutter.State == 2)  {
         Shutter.Movement();
         StartTime = millis();
-        if(Shutter.NewState == 0)  {
-          AdjustLEDs(1, 0);
-          send(MsgUP.setSensor(SHUTTER_ID));
-        }
-        else if(Shutter.NewState == 1) {
-          AdjustLEDs(1, 1);
-          send(MsgDOWN.setSensor(SHUTTER_ID));
-        }
+        Shutter.NewState == 0 ? send(MsgUP.setSensor(SHUTTER_ID)) : send(MsgDOWN.setSensor(SHUTTER_ID));
+        Shutter.NewState == 0 ? AdjustLEDs(1, 0) : AdjustLEDs(1, 1);
       }
       else  {
         TempState = Shutter.NewState;
@@ -945,7 +939,7 @@ void ShutterUpdate() {
       AdjustLEDs(0, 1);
       send(MsgSTOP.setSensor(SHUTTER_ID));
     }
-    if(millis() < StartTime)  {
+    else if(millis() < StartTime)  {
       uint32_t Temp = 4294967295 - StartTime + millis();
       wait(MovementTime - Temp);
       Shutter.NewState = 2;
@@ -955,6 +949,15 @@ void ShutterUpdate() {
       send(MsgSTOP.setSensor(SHUTTER_ID));
       StartTime = 0;
       StopTime = MovementTime;
+    }
+    else if(Current < PS_OFFSET)  {
+      Direction = Shutter.State;
+      Shutter.NewState = 2;
+      Shutter.Movement();
+      StopTime = 4294967295;
+      AdjustLEDs(0, 0);
+      AdjustLEDs(0, 1);
+      send(MsgSTOP.setSensor(SHUTTER_ID));
     }
   }
 
@@ -1087,7 +1090,7 @@ void loop() {
       LongpressDetection = 0;
     }
     if(HardwareVariant == 0 && LoadVariant == 2)  {
-      ShutterUpdate();
+      ShutterUpdate(Current);
     }
     else if(HardwareVariant == 1)  {
       Dimmer.UpdateDimmer();
@@ -1133,7 +1136,7 @@ void loop() {
         // Load: Roller shutter
         else if(LoadVariant == 2) {
           Shutter.NewState = 2;
-          ShutterUpdate();
+          ShutterUpdate(0);
         }
       }
       // Board: RGBW
