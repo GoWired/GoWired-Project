@@ -665,85 +665,87 @@ void UpdateIO() {
   int FirstSensor = 0;
   int Iterations = NUMBER_OF_RELAYS+NUMBER_OF_INPUTS;
 
-  if (Iterations > 0)  {
-    for (int i = FirstSensor; i < FirstSensor + Iterations; i++)  {
-      CommonIO[i].CheckInput(LONGPRESS_DURATION, DEBOUNCE_VALUE);
-      if (CommonIO[i].NewState != CommonIO[i].State)  {
-        switch(CommonIO[i].SensorType)  {
-          case 0:
-            // Door/window/button
-          case 1:
-            // Motion sensor
-            send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
-            CommonIO[i].State = CommonIO[i].NewState;
-            break;
-          case 2:
-            // Relay output
-            // Nothing to do here
-            break;
-          case 3:
-            // Button input
-            #ifdef DIMMER_ID
-              if(i == 0)  {
-                if(CommonIO[i].NewState != 2) {
-                  // Change dimmer state
-                  Dimmer.ChangeState(!Dimmer.CurrentState);
-                  send(msgSTATUS.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
-                  CommonIO[i].State = CommonIO[i].NewState;
-                }
-                #ifdef SPECIAL_BUTTON
-                  if(CommonIO[i].NewState == 2) {
-                    send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
-                    CommonIO[i].NewState = CommonIO[i].State;
-                  }
-                #endif  
-              }
-              else if(i == 1) {
-                if(CommonIO[i].NewState != 2)  {
-                  if(Dimmer.CurrentState) {
-                    // Toggle dimming level by DIMMING_TOGGLE_STEP
-                    Dimmer.NewDimmingLevel += DIMMING_TOGGLE_STEP;
-                    Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel > 100 ? DIMMING_TOGGLE_STEP : Dimmer.NewDimmingLevel;
-                    send(msgPERCENTAGE.setSensor(DIMMER_ID).set(Dimmer.NewDimmingLevel));
-                  }
-                  CommonIO[i].NewState = CommonIO[i].State;
-                }
-              }
-            #endif
-            #ifdef ROLLER_SHUTTER
-              if(CommonIO[i].NewState != 2)  {
-                MovementTime = Shutter.ReadButtons(i) * 1000;
-                CommonIO[i].State = CommonIO[i].NewState;
-              }
-              else  {
-                #ifdef SPECIAL_BUTTON
-                  send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
-                  CommonIO[i].NewState = CommonIO[i].State;
-                #endif
-              }
-            #endif
-            break;
-          case 4:
-          // Button input + Relay output
-          if (CommonIO[i].NewState != 2)  {
-            if (!OVERCURRENT_ERROR[0] && !THERMAL_ERROR)  {
-              CommonIO[i].SetRelay();
-              send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
+  if(Iterations <= 0)  return;
+
+  for (int i = FirstSensor; i < FirstSensor + Iterations; i++)  {
+    CommonIO[i].CheckInput(LONGPRESS_DURATION, DEBOUNCE_VALUE);
+
+    if (CommonIO[i].NewState == CommonIO[i].State)  return;
+
+    switch(CommonIO[i].SensorType)  {
+      case 0:
+        // Door/window/button
+      case 1:
+        // Motion sensor
+        send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
+        CommonIO[i].State = CommonIO[i].NewState;
+        break;
+      case 2:
+        // Relay output
+        // Nothing to do here
+        break;
+      case 3:
+        // Button input
+        #ifdef DIMMER_ID
+          if(i == 0)  {
+            if(CommonIO[i].NewState != 2) {
+              // Change dimmer state
+              Dimmer.ChangeState(!Dimmer.CurrentState);
+              send(msgSTATUS.setSensor(DIMMER_ID).set(Dimmer.CurrentState));
+              CommonIO[i].State = CommonIO[i].NewState;
             }
-          }
-          #ifdef SPECIAL_BUTTON
-            else if (CommonIO[i].NewState == 2)  {
-              uint8_t SensorID = i == 0 ? SPECIAL_BUTTON_ID : SPECIAL_BUTTON_ID+1;
-              send(msgSTATUS.setSensor(SensorID).set(true));
+            if(CommonIO[i].NewState == 2) {
+              #ifdef SPECIAL_BUTTON
+                send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
+              #endif
               CommonIO[i].NewState = CommonIO[i].State;
             }
-          #endif
-          break;
-        default:
-          // Nothing to do here
-          break;
+          }
+          else if(i == 1) {
+            if(CommonIO[i].NewState != 2)  {
+              if(!Dimmer.CurrentState) continue;
+                    
+              // Toggle dimming level by DIMMING_TOGGLE_STEP
+              Dimmer.NewDimmingLevel += DIMMING_TOGGLE_STEP;
+              Dimmer.NewDimmingLevel = Dimmer.NewDimmingLevel > 100 ? DIMMING_TOGGLE_STEP : Dimmer.NewDimmingLevel;
+              send(msgPERCENTAGE.setSensor(DIMMER_ID).set(Dimmer.NewDimmingLevel));
+              CommonIO[i].NewState = CommonIO[i].State;
+            }
+          }
+        #endif
+        #ifdef ROLLER_SHUTTER
+          if(CommonIO[i].NewState != 2)  {
+            MovementTime = Shutter.ReadButtons(i) * 1000;
+            CommonIO[i].State = CommonIO[i].NewState;
+          }
+          else  {
+            #ifdef SPECIAL_BUTTON
+              send(msgSTATUS.setSensor(SPECIAL_BUTTON_ID).set(true));
+            #endif
+            CommonIO[i].NewState = CommonIO[i].State;
+          }
+        #endif
+        break;
+      case 4:
+        // Button input + Relay output
+        if (CommonIO[i].NewState != 2)  {
+          if (OVERCURRENT_ERROR[0] || THERMAL_ERROR)  continue;
+
+          CommonIO[i].SetRelay();
+          send(msgSTATUS.setSensor(i).set(CommonIO[i].NewState));
         }
-      }
+        else if (CommonIO[i].NewState == 2)  {
+          #ifdef SPECIAL_BUTTON
+            uint8_t SensorID = i == 0 ? SPECIAL_BUTTON_ID : SPECIAL_BUTTON_ID+1;
+            send(msgSTATUS.setSensor(SensorID).set(true));
+          #endif
+          
+          CommonIO[i].NewState = CommonIO[i].State;
+        }
+        break;
+      default:
+        // Nothing to do here
+        break;
     }
   }
 }
