@@ -930,6 +930,10 @@ void ShutterUpdate() {
  * @param Sensor sensor ID if more than one sensor is attached
  */
 void PSUpdate(float Current, uint8_t Sensor = 0)  {
+
+  if(Current == 0 && PS.OldValue == 0)  return;
+  else if(Current < 1 && (abs(PS.OldValue - Current) < 0.1)) return;
+  else if(Current >= 1 && (abs(PS.OldValue - Current) < (0.1 * PS.OldValue))) return;
   
   #if defined(POWER_SENSOR) && !defined(FOUR_RELAY)
     send(msgWATT.setSensor(PS_ID).set(PS.CalculatePower(Current, COSFI), 0));
@@ -1011,19 +1015,8 @@ void loop() {
       OVERCURRENT_ERROR[0] = PS.ElectricalStatus(Current);
     #endif
     
-    if (Current < 0.5) {
-      if (Current == 0 && PS.OldValue != 0)  {
-        PSUpdate(Current);
-      }
-      else if (abs(PS.OldValue - Current) > 0.05) {
-        PSUpdate(Current);
-      }
-    }
-    else  {
-      if(abs(PS.OldValue - Current) > (0.1 * PS.OldValue))  {
-        PSUpdate(Current);
-      }
-    }
+    PSUpdate(Current);
+
   #elif defined(POWER_SENSOR) && defined(FOUR_RELAY)
     for (int i = RELAY_ID_1; i < RELAY_ID_1 + NUMBER_OF_RELAYS; i++) {
       if (CommonIO[i].State == RELAY_ON)  {
@@ -1035,19 +1028,8 @@ void loop() {
       #ifdef ERROR_REPORTING
         OVERCURRENT_ERROR[i] = PS[i].ElectricalStatus(Current);
       #endif
-      if (Current < 0.5)  {
-        if (Current == 0 && PS[i].OldValue != 0)  {
-          PSUpdate(Current, i);
-        }
-        else if (abs(PS[i].OldValue - Current) > 0.05)  {
-          PSUpdate(Current, i);
-        }
-      }
-      else  {
-        if (abs(PS[i].OldValue - Current) > (0.1 * PS[i].OldValue)) {
-          PSUpdate(Current, i);
-        }
-      }
+
+      PSUpdate(Current, i);
     }
   #endif
 

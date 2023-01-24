@@ -990,11 +990,13 @@ void ShutterUpdate() {
  * @param Sensor sensor ID if more than one sensor is attached
  */
 void PSUpdate(float Current, uint8_t Sensor = 0)  {
+
+  if(Current == 0 && PS.OldValue == 0)  return;
+  else if(Current < 1 && (abs(PS.OldValue - Current) < 0.1)) return;
+  else if(Current >= 1 && (abs(PS.OldValue - Current) < (0.1 * PS.OldValue))) return;
   
-  #if defined(POWER_SENSOR)
-    send(MsgWATT.setSensor(PS_ID).set(PS.CalculatePower(Current, COSFI), 0));
-    PS.OldValue = Current;
-  #endif
+  send(MsgWATT.setSensor(PS_ID).set(PS.CalculatePower(Current, COSFI), 0));
+  PS.OldValue = Current;
 }
 
 /**
@@ -1106,24 +1108,12 @@ void loop() {
         Current = PS.MeasureDC(Vcc);
       }
     }
+
+    PSUpdate(Current);
       
     #ifdef ERROR_REPORTING
       OVERCURRENT_ERROR = PS.ElectricalStatus(Current);
     #endif
-    
-    if (Current < 0.5) {
-      if (Current == 0 && PS.OldValue != 0)  {
-        PSUpdate(Current);
-      }
-      else if (abs(PS.OldValue - Current) > 0.05) {
-        PSUpdate(Current);
-      }
-    }
-    else  {
-      if(abs(PS.OldValue - Current) > (0.1 * PS.OldValue))  {
-        PSUpdate(Current);
-      }
-    }
   #endif
 
   // Current safety
@@ -1181,7 +1171,10 @@ void loop() {
   if ((millis() > LastUpdate + INTERVAL) || CheckNow == true)  {
     #ifdef SHT30
       ETUpdate();
+    #elif defined(POWER_SENSOR)
+      PSUpdate(Current);
     #endif
+
     LimitTransgressions = 0;
     LastUpdate = millis();
     CheckNow = false;
