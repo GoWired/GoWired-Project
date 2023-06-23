@@ -716,6 +716,10 @@ void receive(const MyMessage &message)  {
         // Touch fields calibration
         ReadNewReference();
       }
+      else if(RPstr.equals(CONF_MSG_3)) {
+        // Watchdog test procedure / module restart
+        delay(10000);
+      }
     }
   }
 }
