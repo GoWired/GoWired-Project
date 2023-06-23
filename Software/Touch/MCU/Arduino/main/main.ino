@@ -197,16 +197,22 @@ void setup() {
     if(LoadVariant == 0)  {
       // Lighting: One button, single output
       CommonIO[RELAY_ID_1].SetValues(RELAY_OFF, false, 6, TOUCH_FIELD_3, INPUT_PIN_1, RELAY_PIN_1);
+      // Not used touch field for calibration purposes
+      CommonIO[UNUSED_TF_ID].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_1);
     }
     else if(LoadVariant == 1) {
       // Lighting: two buttons, double output
       CommonIO[RELAY_ID_1].SetValues(RELAY_OFF, false, 6, TOUCH_FIELD_1, INPUT_PIN_1, RELAY_PIN_1);
       CommonIO[RELAY_ID_2].SetValues(RELAY_OFF, false, 6, TOUCH_FIELD_2, INPUT_PIN_2, RELAY_PIN_2);
+      // Not used touch field for calibration purposes
+      CommonIO[UNUSED_TF_ID].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_3);
     }
     else if(LoadVariant == 2) {
       // Shutter
       CommonIO[SHUTTER_ID].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_1);
       CommonIO[SHUTTER_ID + 1].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_2);
+      // Not used touch field for calibration purposes
+      CommonIO[UNUSED_TF_ID].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_3);
       Shutter.SetOutputs(RELAY_OFF, RELAY_PIN_1, RELAY_PIN_2);
       // Temporary calibration (first launch only)
       if(!Shutter.Calibrated) {
@@ -230,6 +236,8 @@ void setup() {
     // Every dimmer has two buttons
     CommonIO[0].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_1);
     CommonIO[1].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_2);
+    // Not used touch field for calibration purposes
+    CommonIO[UNUSED_TF_ID].SetValues(RELAY_OFF, false, 5, TOUCH_FIELD_3);
   }
 
   // Indicate inactivity with LEDs
@@ -582,6 +590,21 @@ bool TouchDiagnosis(uint16_t Threshold) {
 }
 
 /**
+ * @brief Diagnoses the operation of touch buttons
+ * 
+ */
+bool TouchDiagnosis2() {
+
+  for(int i=0; i<2; i++)  {
+    CommonIO[UNUSED_TF_ID].CheckInput2(TOUCH_THRESHOLD, LONGPRESS_DURATION, DEBOUNCE_VALUE);
+    if(CommonIO[UNUSED_TF_ID].NewState != 2) return;
+  }
+  
+  CommonIO[UNUSED_TF_ID].NewState = 0;
+  ReadNewReference();
+}
+
+/**
  * @brief Reads new reference value for touch buttons
  * 
  */
@@ -602,6 +625,8 @@ void ReadNewReference() {
   for(int i=0; i<Iterations; i++)  {
     CommonIO[i].ReadReference();
   }
+  
+  CommonIO[UNUSED_TF_ID].ReadReference();
 
   // Rainbow LED visual effect - indicate calibration
   RainbowLED(RAINBOW_DURATION, RAINBOW_RATE);
@@ -806,7 +831,8 @@ void UpdateIO() {
       
       #ifdef SPECIAL_BUTTON
         uint8_t SensorID = i == 0 ? SPECIAL_BUTTON_ID : SPECIAL_BUTTON_ID+1;
-        send(MsgSTATUS.setSensor(SensorID).set(true));
+        send(MsgSTATUS.setSensor(SensorID).set(true));  wait(100);
+        send(MsgSTATUS.setSensor(SensorID).set(false));
       #endif
 
       CommonIO[i].NewState = CommonIO[i].State;
@@ -1061,7 +1087,7 @@ void loop() {
       // Launch Longpress LED sequence
       AdjustLEDs(2, 0);
 
-      for(int j=0; j<2; j++)  {
+      /*for(int j=0; j<2; j++)  {
         UpdateIO();
       }
       if(LongpressDetection > 2)  {
@@ -1069,7 +1095,7 @@ void loop() {
         #ifdef TOUCH_AUTO_DIAGNOSTICS
           ReadNewReference();
         #endif
-      }
+      }*/
 
       // Adjust LEDs back to indicate the states of buttons
       if(HardwareVariant == 0)  {
@@ -1172,13 +1198,14 @@ void loop() {
 
   #ifdef TOUCH_AUTO_DIAGNOSTICS
     // Checking if touch feature works correctly
-    TouchDiagnosis(TOUCH_THRESHOLD);
+    TouchDiagnosis2();
+    /*TouchDiagnosis(TOUCH_THRESHOLD);
 
     // Reading new touch reference if diagnosis shows that previous values were not correct
     if(LimitTransgressions > TOUCH_DIAG_TRESHOLD)  {
       ReadNewReference();
       LimitTransgressions = 0;
-    }
+    }*/
   #endif
   
   // Checking out sensors which report at a defined interval

@@ -133,6 +133,7 @@
 // IDs
 #define RELAY_ID_1 0
 #define RELAY_ID_2 1
+#define UNUSED_TF_ID 2
 #define SHUTTER_ID 0
 #define DIMMER_ID 0
 
