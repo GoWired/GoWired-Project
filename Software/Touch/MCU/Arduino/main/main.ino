@@ -587,6 +587,11 @@ bool TouchDiagnosis(uint16_t Threshold) {
  */
 void ReadNewReference() {
 
+  if(HardwareVariant == 0 && LoadVariant == 2)  {
+    Shutter.NewState = 2;
+    Shutter.Movement();
+  }
+
   // Blink LEDs to indicate inactivity and take a break from normal operation
   for(int i=0; i<5; i++)  {
     BlinkLEDs();
