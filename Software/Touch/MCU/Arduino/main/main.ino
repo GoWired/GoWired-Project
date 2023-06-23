@@ -712,8 +712,10 @@ void receive(const MyMessage &message)  {
           ShutterCalibration(Vcc);
         }
       }
-      /*else if(message.getString() == CONF_MSG_2) { }*/
-      /*else if(message.getString() == CONF_MSG_3) { }*/
+      else if(RPstr.equals(CONF_MSG_2)) {
+        // Touch fields calibration
+        ReadNewReference();
+      }
     }
   }
 }

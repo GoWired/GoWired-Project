@@ -201,8 +201,8 @@
 /***** Configuration by message *****/
 #define CONFIGURATION_SENSOR_ID 20
 #define CONF_MSG_1 "cmd1"
-//#define CONF_MSG_2 "cmd2"
-//#define CONF_MSG_3 "cmd3"
+#define CONF_MSG_2 "cmd2"
+#define CONF_MSG_3 "cmd3"
 
 /***** EEPROM Definitions *****/
 #define SIZE_OF_BYTE 1
