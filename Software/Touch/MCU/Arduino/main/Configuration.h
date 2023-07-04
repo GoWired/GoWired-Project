@@ -157,6 +157,7 @@
 #define FIRST_INPUT_ID 2
 
 /***** Input Config *****/
+#define NUMBER_OF_INPUTS 1
 #ifndef NUMBER_OF_INPUTS
   #define NUMBER_OF_INPUTS 0
 #endif
@@ -204,6 +205,7 @@
 #define CONF_MSG_1 "cmd1"
 #define CONF_MSG_2 "cmd2"
 #define CONF_MSG_3 "cmd3"
+#define CONF_MSG_4 "cmd4"
 
 /***** EEPROM Definitions *****/
 #define SIZE_OF_BYTE 1
