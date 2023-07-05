@@ -310,15 +310,16 @@
 /***** Configuration by message *****/
 #define CONFIGURATION_SENSOR_ID 20
 #define CONF_MSG_1 "cmd1"
-//#define CONF_MSG_2 "cmd2"
-//#define CONF_MSG_3 "cmd3"
+#define CONF_MSG_2 "cmd2"
+#define CONF_MSG_3 "cmd3"
+#define CONF_MSG_4 "cmd4"
 
 /***** EEPROM Definitions *****/
-#define SIZE_OF_INT 2
+#define SIZE_OF_BYTE 1
 #define EEPROM_OFFSET 512                         // First eeprom address to use (prior addresses are taken)
-#define EEA_RS_TIME_DOWN EEPROM_OFFSET            // EEPROM address to save RShutter travel down time
-#define EEA_RS_TIME_UP EEA_RS_TIME_DOWN+SIZE_OF_INT     // EEPROM address to save RShutter travel up time
-#define EEA_RS_POSITION EEA_RS_TIME_UP+SIZE_OF_INT      // EEPROM address to save RShutter last known position
+#define EEA_SHUTTER_TIME_DOWN EEPROM_OFFSET                        // EEPROM address to save Shutter travel down time
+#define EEA_SHUTTER_TIME_UP EEA_SHUTTER_TIME_DOWN+SIZE_OF_BYTE     // EEPROM address to save Shutter travel up time
+#define EEA_SHUTTER_POSITION EEA_SHUTTER_TIME_UP+SIZE_OF_BYTE      // EEPROM address to save Shutter last known position
 
 #endif
 /*
