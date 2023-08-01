@@ -250,10 +250,10 @@
 // ACS712 Power Sensor
 #ifdef POWER_SENSOR
   #if defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
-    #define PS_ID 9
+    #define PS_ID SPECIAL_BUTTON_ID+2
     #define PS_PIN INPUT_PIN_7
   #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
-    #define PS_ID 9
+    #define PS_ID SPECIAL_BUTTON_ID+2
     #define PS_PIN INPUT_PIN_8
   #elif defined(FOUR_RELAY)
     #define PS_ID_1 4
@@ -269,7 +269,7 @@
 
 // Analog Internal Thermometer (Disable for 4RelayDin)
 #ifdef INTERNAL_TEMP
-  #define IT_ID 10
+  #define IT_ID 11
   #if defined(DOUBLE_RELAY) || defined(ROLLER_SHUTTER)
     #define IT_PIN INPUT_PIN_8
   #elif defined(DIMMER) || defined(RGB) || defined(RGBW)
@@ -279,8 +279,8 @@
 
 // 1wire external thermometer (e.g. DHT22)
 #ifdef EXTERNAL_TEMP
-  #define ETT_ID 11
-  #define ETH_ID 12
+  #define ETT_ID IT_ID+1
+  #define ETH_ID ETT_ID+1
   #ifdef DHT22
     #define ET_PIN ONE_WIRE_PIN
   #endif
@@ -292,33 +292,34 @@
 #define ERROR_REPORTING
 #ifdef ERROR_REPORTING
   #ifdef POWER_SENSOR
-    #define ES_ID 13
+    #define ES_ID 15
   #endif
   #ifdef INTERNAL_TEMP
-    #define TS_ID 14
+    #define TS_ID ES_ID+1
   #endif
   #ifdef EXTERNAL_TEMP
-    #define ETS_ID 15
+    #define ETS_ID TS_ID+1
   #endif
 #endif
 
 //#define RS485_DEBUG
 #ifdef RS485_DEBUG
-  #define DEBUG_ID 16
+  #define DEBUG_ID ETS_ID+1
 #endif
 
 /***** Configuration by message *****/
 #define CONFIGURATION_SENSOR_ID 20
 #define CONF_MSG_1 "cmd1"
-//#define CONF_MSG_2 "cmd2"
-//#define CONF_MSG_3 "cmd3"
+#define CONF_MSG_2 "cmd2"
+#define CONF_MSG_3 "cmd3"
+#define CONF_MSG_4 "cmd4"
 
 /***** EEPROM Definitions *****/
-#define SIZE_OF_INT 2
+#define SIZE_OF_BYTE 1
 #define EEPROM_OFFSET 512                         // First eeprom address to use (prior addresses are taken)
-#define EEA_RS_TIME_DOWN EEPROM_OFFSET            // EEPROM address to save RShutter travel down time
-#define EEA_RS_TIME_UP EEA_RS_TIME_DOWN+SIZE_OF_INT     // EEPROM address to save RShutter travel up time
-#define EEA_RS_POSITION EEA_RS_TIME_UP+SIZE_OF_INT      // EEPROM address to save RShutter last known position
+#define EEA_SHUTTER_TIME_DOWN EEPROM_OFFSET                        // EEPROM address to save Shutter travel down time
+#define EEA_SHUTTER_TIME_UP EEA_SHUTTER_TIME_DOWN+SIZE_OF_BYTE     // EEPROM address to save Shutter travel up time
+#define EEA_SHUTTER_POSITION EEA_SHUTTER_TIME_UP+SIZE_OF_BYTE      // EEPROM address to save Shutter last known position
 
 #endif
 /*

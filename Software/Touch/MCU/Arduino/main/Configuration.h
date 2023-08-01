@@ -133,6 +133,7 @@
 // IDs
 #define RELAY_ID_1 0
 #define RELAY_ID_2 1
+#define UNUSED_TF_ID 2
 #define SHUTTER_ID 0
 #define DIMMER_ID 0
 
@@ -156,6 +157,7 @@
 #define FIRST_INPUT_ID 2
 
 /***** Input Config *****/
+#define NUMBER_OF_INPUTS 1
 #ifndef NUMBER_OF_INPUTS
   #define NUMBER_OF_INPUTS 0
 #endif
@@ -166,7 +168,7 @@
 
 // ACS712 Power Sensor
 #ifdef POWER_SENSOR
-  #define PS_ID SPECIAL_BUTTON_ID+1
+  #define PS_ID SPECIAL_BUTTON_ID+2
   #define PS_PIN ANALOG_PIN_4
 #endif
 
@@ -201,8 +203,9 @@
 /***** Configuration by message *****/
 #define CONFIGURATION_SENSOR_ID 20
 #define CONF_MSG_1 "cmd1"
-//#define CONF_MSG_2 "cmd2"
-//#define CONF_MSG_3 "cmd3"
+#define CONF_MSG_2 "cmd2"
+#define CONF_MSG_3 "cmd3"
+#define CONF_MSG_4 "cmd4"
 
 /***** EEPROM Definitions *****/
 #define SIZE_OF_BYTE 1
